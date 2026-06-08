@@ -1,0 +1,693 @@
+<!-- HALL OF DRAFT -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500;600;700&family=Bebas+Neue&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+#hod-root {
+  --bg:#0a0a0f;
+  --panel:#15151f;
+  --gold:#ffb627;
+  --gold-deep:#e89200;
+  --red:#e63946;
+  --green:#2ec4b6;
+  --ink:#f4f4f8;
+  --muted:#8b8b9e;
+  --line:#26263a;
+  font-family:'Oswald',sans-serif;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,182,39,0.08), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(46,196,182,0.06), transparent 60%),
+    var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+  padding:24px 16px 60px;
+  position:relative;
+  overflow-x:hidden;
+}
+#hod-root::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.015) 0 1px,transparent 1px 3px);
+}
+.hod-wrap{max-width:760px;margin:0 auto;position:relative;z-index:1;}
+
+.hod-header{text-align:center;margin-bottom:18px;}
+.hod-title{
+  font-family:'Anton',sans-serif;font-size:clamp(38px,9vw,68px);line-height:0.9;
+  letter-spacing:1px;text-transform:uppercase;
+  background:linear-gradient(180deg,#fff 0%,var(--gold) 60%,var(--gold-deep) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 4px 0 rgba(0,0,0,0.4));
+}
+.hod-sub{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-top:6px;}
+
+.hod-progress{display:flex;align-items:center;justify-content:center;gap:6px;margin:16px 0 8px;flex-wrap:wrap;}
+.hod-dot{width:9px;height:9px;border-radius:50%;background:var(--line);transition:.3s;}
+.hod-dot.filled{background:var(--gold);box-shadow:0 0 8px var(--gold);}
+.hod-counter{font-family:'Bebas Neue';font-size:20px;letter-spacing:1px;color:var(--gold);margin-left:6px;}
+
+/* Slot machine */
+.hod-slot-stage{text-align:center;padding:10px 0 4px;}
+.hod-stage-label{font-size:14px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.hod-reels{display:flex;gap:10px;justify-content:center;margin-bottom:20px;}
+.hod-reel{
+  width:130px;height:110px;background:linear-gradient(180deg,#1c1c2a,#0e0e16);
+  border:2px solid var(--line);border-radius:14px;overflow:hidden;position:relative;
+  box-shadow:inset 0 0 30px rgba(0,0,0,0.6), 0 6px 20px rgba(0,0,0,0.4);
+}
+.hod-reel::before,.hod-reel::after{content:"";position:absolute;left:0;right:0;height:30px;z-index:3;pointer-events:none;}
+.hod-reel::before{top:0;background:linear-gradient(180deg,#0e0e16,transparent);}
+.hod-reel::after{bottom:0;background:linear-gradient(0deg,#0e0e16,transparent);}
+.hod-reel-strip{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;}
+.hod-reel-item{height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.hod-reel-year{font-family:'Anton';font-size:34px;color:var(--gold);line-height:1;}
+.hod-reel-era{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:4px;}
+.hod-reel.spinning .hod-reel-strip{animation:hod-spin .3s linear infinite;}
+@keyframes hod-spin{from{transform:translateY(0)}to{transform:translateY(-110px)}}
+.hod-reel.locked{border-color:var(--gold);box-shadow:0 0 18px rgba(255,182,39,.4),inset 0 0 30px rgba(0,0,0,0.6);}
+
+.hod-btn{
+  font-family:'Bebas Neue';font-size:24px;letter-spacing:2px;
+  background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+  color:#1a1200;border:none;padding:14px 40px;border-radius:50px;cursor:pointer;
+  box-shadow:0 5px 0 #9c6400, 0 8px 20px rgba(0,0,0,.4);transition:.1s;text-transform:uppercase;
+}
+.hod-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #9c6400,0 4px 12px rgba(0,0,0,.4);}
+.hod-btn:disabled{opacity:.4;cursor:not-allowed;}
+.hod-btn.secondary{background:transparent;color:var(--muted);border:1px solid var(--line);box-shadow:none;font-size:16px;padding:8px 22px;}
+.hod-btn.secondary:active{transform:none;}
+
+.hod-season-choices{display:flex;flex-direction:column;gap:10px;margin:8px 0 20px;}
+.hod-season-card{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;
+  display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:.15s;
+}
+.hod-season-card:hover{border-color:var(--gold);transform:translateX(4px);}
+.hod-season-yr{font-family:'Anton';font-size:30px;color:var(--ink);}
+.hod-season-meta{text-align:right;font-size:12px;color:var(--muted);letter-spacing:1px;}
+
+/* Player offer cards */
+.hod-offer-grid{display:grid;grid-template-columns:1fr;gap:10px;margin:6px 0 16px;}
+.hod-pcard{
+  background:linear-gradient(135deg,#1a1a28,#12121c);border:1px solid var(--line);border-radius:14px;
+  padding:14px 16px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;
+  display:flex;align-items:center;gap:14px;
+}
+.hod-pcard:hover{border-color:var(--gold);transform:scale(1.015);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.hod-pcard.disabled{opacity:.3;pointer-events:none;filter:grayscale(1);}
+.hod-pos-badge{
+  font-family:'Bebas Neue';font-size:20px;width:46px;height:46px;flex:none;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;color:#0a0a0f;
+}
+.hod-pos-PG{background:#4cc9f0;} .hod-pos-SG{background:#4895ef;}
+.hod-pos-SF{background:#b5179e;} .hod-pos-PF{background:#f72585;} .hod-pos-C{background:#ff8500;}
+.hod-pinfo{flex:1;min-width:0;}
+.hod-pname{font-size:18px;font-weight:600;line-height:1.1;}
+.hod-pseason{font-size:12px;color:var(--muted);letter-spacing:.5px;}
+.hod-pstats{display:flex;gap:12px;margin-top:5px;font-size:12px;}
+.hod-pstats b{font-family:'Bebas Neue';font-size:17px;color:var(--gold);display:block;line-height:1;}
+.hod-pstats span{color:var(--muted);font-size:10px;letter-spacing:1px;}
+.hod-prating{font-family:'Anton';font-size:30px;flex:none;}
+.hod-r-elite{color:#ffd60a;text-shadow:0 0 12px rgba(255,214,10,.5);}
+.hod-r-good{color:#2ec4b6;} .hod-r-mid{color:#90a4ae;} .hod-r-low{color:#607d8b;}
+
+/* Roster */
+.hod-roster{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px;}
+.hod-roster-title{font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;}
+.hod-pos-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;}
+.hod-pos-tag{font-family:'Bebas Neue';font-size:13px;width:34px;color:var(--gold);}
+.hod-chip{font-size:12px;background:#1f1f2e;border:1px solid var(--line);border-radius:20px;padding:3px 10px;}
+.hod-chip.empty{color:var(--muted);font-style:italic;border-style:dashed;}
+
+/* Result */
+.hod-result{text-align:center;padding:10px 0;}
+.hod-grade{font-family:'Anton';font-size:clamp(80px,22vw,150px);line-height:0.8;margin:6px 0;}
+.hod-overall{font-family:'Bebas Neue';font-size:24px;letter-spacing:2px;color:var(--muted);}
+.hod-verdict{font-size:15px;color:var(--ink);margin:12px auto;max-width:440px;line-height:1.5;}
+.hod-final-roster{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0;text-align:left;}
+.hod-final-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+.hod-fc-top{display:flex;justify-content:space-between;align-items:baseline;}
+.hod-fc-name{font-size:14px;font-weight:600;}
+.hod-fc-rating{font-family:'Anton';font-size:20px;color:var(--gold);}
+.hod-fc-meta{font-size:11px;color:var(--muted);}
+.hod-bar{height:5px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden;}
+.hod-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-deep),var(--gold));border-radius:3px;}
+
+.hod-fade{animation:hod-fade .4s ease;}
+.hod-chem-tag{font-family:'Bebas Neue';font-size:14px;letter-spacing:1px;
+  border:1px solid var(--cc);color:var(--cc);border-radius:20px;padding:4px 12px;}
+@keyframes hod-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.hod-pop{animation:hod-pop .35s cubic-bezier(.2,1.4,.4,1);}
+@keyframes hod-pop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+.hod-hidden{display:none;}
+.hod-foot{text-align:center;font-size:11px;color:var(--muted);margin-top:30px;letter-spacing:1px;line-height:1.6;}
+</style>
+
+<div id="hod-root">
+  <div class="hod-wrap">
+    <div class="hod-header">
+      <div class="hod-title">Hall of Draft</div>
+      <div class="hod-sub">Spin the years · Draft the legends · Beat the grade</div>
+    </div>
+
+    <div class="hod-progress" id="hod-progress"></div>
+
+    <div id="hod-screen"></div>
+
+    <div class="hod-foot">
+      Neuradna zabavna igra · podatki so kurirana izbira ikoničnih sezon<br>
+      ni povezana z NBA
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+// ---- DATASET ----
+// Igra poskusi naložiti zunanji players.json (zgrajen z build_dataset.py:
+// vsi igralci od 1980 naprej). Če ga ni, uporabi vgrajen kuriran POOL spodaj,
+// da deluje takoj. Ko imaš players.json, ga daj poleg te datoteke.
+const P=(pos,name,season,pts,reb,ast,rating)=>({pos,name,season,pts,reb,ast,rating,
+  era:seasonEra(season)});
+function seasonEra(s){const y=parseInt(s);const d=Math.floor(y/10)*10;
+  return({1980:"80s",1990:"90s",2000:"2000s",2010:"2010s",2020:"2020s"})[d]||d+"s";}
+let POOL=[
+  // 1995-96
+  {year:"1995-96",era:"Jordan's return",players:[
+    P("PG","Penny Hardaway","1995-96",21.7,4.3,7.1,87),
+    P("PG","John Stockton","1995-96",14.7,2.7,11.2,84),
+    P("SG","Michael Jordan","1995-96",30.4,6.6,4.3,98),
+    P("SG","Reggie Miller","1995-96",21.1,2.8,3.3,84),
+    P("SF","Scottie Pippen","1995-96",19.4,6.4,5.9,88),
+    P("SF","Grant Hill","1995-96",20.2,9.8,6.9,87),
+    P("PF","Karl Malone","1995-96",25.7,9.8,4.2,92),
+    P("PF","Dennis Rodman","1995-96",5.5,14.9,2.5,80),
+    P("C","Hakeem Olajuwon","1995-96",26.9,10.9,3.6,93),
+    P("C","David Robinson","1995-96",25.0,12.2,3.0,93),
+    P("C","Shaquille O'Neal","1995-96",26.6,11.0,2.9,93),
+    P("SG","Latrell Sprewell","1995-96",18.9,4.4,4.0,79),
+    P("PF","Vin Baker","1995-96",21.1,9.9,2.6,80),
+    P("PG","Nick Van Exel","1995-96",14.4,2.9,6.9,76),
+    P("SF","Detlef Schrempf","1995-96",17.1,5.2,4.4,79),
+  ]},
+  // 2008-09
+  {year:"2008-09",era:"Kobe's peak",players:[
+    P("PG","Chris Paul","2008-09",22.8,5.5,11.0,93),
+    P("PG","Derrick Rose","2008-09",16.8,3.9,6.3,80),
+    P("SG","Kobe Bryant","2008-09",26.8,5.2,4.9,95),
+    P("SG","Dwyane Wade","2008-09",30.2,5.0,7.5,94),
+    P("SF","LeBron James","2008-09",28.4,7.6,7.2,98),
+    P("SF","Paul Pierce","2008-09",20.5,5.6,3.6,85),
+    P("PF","Dirk Nowitzki","2008-09",25.9,8.4,2.4,91),
+    P("PF","Pau Gasol","2008-09",18.9,9.6,3.5,86),
+    P("C","Dwight Howard","2008-09",20.6,13.8,1.4,91),
+    P("C","Shaquille O'Neal","2008-09",17.8,8.4,1.7,82),
+    P("PG","Rajon Rondo","2008-09",11.9,5.2,8.2,80),
+    P("SG","Joe Johnson","2008-09",21.4,4.4,5.8,82),
+    P("SF","Hedo Turkoglu","2008-09",16.8,5.3,4.9,78),
+    P("PF","Zach Randolph","2008-09",20.9,9.4,1.8,80),
+    P("C","Andrew Bynum","2008-09",14.3,8.0,1.4,75),
+  ]},
+  // 1986-87
+  {year:"1986-87",era:"Bird vs Magic",players:[
+    P("PG","Magic Johnson","1986-87",23.9,6.3,12.2,96),
+    P("PG","Isiah Thomas","1986-87",20.6,3.8,10.0,88),
+    P("SG","Michael Jordan","1986-87",37.1,5.2,4.6,97),
+    P("SG","Clyde Drexler","1986-87",21.5,6.3,6.9,86),
+    P("SF","Larry Bird","1986-87",28.1,9.2,7.6,96),
+    P("SF","Dominique Wilkins","1986-87",29.0,6.4,3.3,89),
+    P("PF","Kevin McHale","1986-87",26.1,9.9,2.6,88),
+    P("PF","Charles Barkley","1986-87",23.0,14.6,4.9,90),
+    P("C","Hakeem Olajuwon","1986-87",23.4,11.4,2.9,90),
+    P("C","Kareem Abdul-Jabbar","1986-87",17.5,6.7,2.6,80),
+    P("C","Moses Malone","1986-87",24.1,11.3,1.6,86),
+    P("PG","John Stockton","1986-87",7.9,2.1,8.2,72),
+    P("SG","Alex English","1986-87",28.6,4.5,5.0,84),
+    P("PF","Karl Malone","1986-87",21.7,10.4,2.1,84),
+    P("SF","Chris Mullin","1986-87",15.1,2.6,4.0,74),
+  ]},
+  // 2015-16
+  {year:"2015-16",era:"Warriors 73 wins",players:[
+    P("PG","Stephen Curry","2015-16",30.1,5.4,6.7,98),
+    P("PG","Russell Westbrook","2015-16",23.5,7.8,10.4,93),
+    P("SG","Klay Thompson","2015-16",22.1,3.8,2.1,84),
+    P("SG","James Harden","2015-16",29.0,6.1,7.5,91),
+    P("SF","Kevin Durant","2015-16",28.2,8.2,5.0,95),
+    P("SF","Kawhi Leonard","2015-16",21.2,6.8,2.6,90),
+    P("PF","Draymond Green","2015-16",14.0,9.5,7.4,85),
+    P("PF","LaMarcus Aldridge","2015-16",18.0,8.5,1.5,82),
+    P("C","DeMarcus Cousins","2015-16",26.9,11.5,3.3,88),
+    P("C","Anthony Davis","2015-16",24.3,10.3,1.9,89),
+    P("PG","Damian Lillard","2015-16",25.1,4.0,6.8,88),
+    P("SG","DeMar DeRozan","2015-16",23.5,4.5,4.0,83),
+    P("SF","Paul George","2015-16",23.1,7.0,4.1,87),
+    P("PF","Kevin Love","2015-16",16.0,9.9,2.4,80),
+    P("C","Andre Drummond","2015-16",16.2,14.8,0.8,81),
+  ]},
+  // 2000-01
+  {year:"2000-01",era:"Iverson's MVP",players:[
+    P("PG","Allen Iverson","2000-01",31.1,3.8,4.6,93),
+    P("PG","Jason Kidd","2000-01",16.9,6.4,9.8,88),
+    P("SG","Kobe Bryant","2000-01",28.5,5.9,5.0,91),
+    P("SG","Ray Allen","2000-01",22.0,5.2,4.6,84),
+    P("SF","Vince Carter","2000-01",27.6,5.5,3.9,89),
+    P("SF","Tracy McGrady","2000-01",26.8,7.5,4.6,89),
+    P("PF","Tim Duncan","2000-01",22.2,12.2,3.0,93),
+    P("PF","Chris Webber","2000-01",27.1,11.1,4.2,88),
+    P("C","Shaquille O'Neal","2000-01",28.7,12.7,3.7,96),
+    P("C","Dikembe Mutombo","2000-01",11.5,13.6,1.1,78),
+    P("PG","Gary Payton","2000-01",24.1,4.6,8.1,87),
+    P("SG","Reggie Miller","2000-01",18.9,3.0,2.7,79),
+    P("SF","Paul Pierce","2000-01",25.3,6.4,3.1,85),
+    P("PF","Kevin Garnett","2000-01",22.0,11.4,5.0,91),
+    P("C","Alonzo Mourning","2000-01",13.6,7.8,1.0,74),
+  ]},
+  // 2018-19
+  {year:"2018-19",era:"Giannis rising",players:[
+    P("PG","Stephen Curry","2018-19",27.3,5.3,5.2,93),
+    P("PG","Kyrie Irving","2018-19",23.8,5.0,6.9,87),
+    P("SG","James Harden","2018-19",36.1,6.6,7.5,95),
+    P("SG","Bradley Beal","2018-19",25.6,5.0,5.5,85),
+    P("SF","Kawhi Leonard","2018-19",26.6,7.3,3.3,93),
+    P("SF","Paul George","2018-19",28.0,8.2,4.1,90),
+    P("PF","Giannis Antetokounmpo","2018-19",27.7,12.5,5.9,96),
+    P("PF","Anthony Davis","2018-19",25.9,12.0,3.9,91),
+    P("C","Nikola Jokic","2018-19",20.1,10.8,7.3,90),
+    P("C","Joel Embiid","2018-19",27.5,13.6,3.7,90),
+    P("PG","Damian Lillard","2018-19",25.8,4.6,6.9,89),
+    P("SG","Devin Booker","2018-19",26.6,4.1,6.8,84),
+    P("SF","LeBron James","2018-19",27.4,8.5,8.3,94),
+    P("PF","Pascal Siakam","2018-19",16.9,6.9,3.1,80),
+    P("C","Rudy Gobert","2018-19",15.9,12.9,2.0,83),
+  ]},
+  // 1991-92
+  {year:"1991-92",era:"Bulls dynasty",players:[
+    P("PG","John Stockton","1991-92",15.8,3.3,13.7,89),
+    P("PG","Magic Johnson","1991-92",14.6,7.0,12.5,82),
+    P("SG","Michael Jordan","1991-92",30.1,6.4,6.1,99),
+    P("SG","Clyde Drexler","1991-92",25.0,6.6,6.7,90),
+    P("SF","Scottie Pippen","1991-92",21.0,7.7,7.0,89),
+    P("SF","Chris Mullin","1991-92",25.6,5.6,3.5,85),
+    P("PF","Karl Malone","1991-92",28.0,11.2,3.0,93),
+    P("PF","Charles Barkley","1991-92",23.1,11.1,4.1,90),
+    P("C","David Robinson","1991-92",23.2,12.2,2.7,92),
+    P("C","Patrick Ewing","1991-92",24.0,11.2,1.9,90),
+    P("PG","Tim Hardaway","1991-92",23.4,4.0,10.0,85),
+    P("SG","Reggie Miller","1991-92",20.7,3.1,3.8,82),
+    P("SF","Dominique Wilkins","1991-92",28.1,7.0,3.8,87),
+    P("PF","Dennis Rodman","1991-92",9.8,18.7,2.3,82),
+    P("C","Hakeem Olajuwon","1991-92",21.6,12.1,2.2,89),
+  ]},
+  // 2022-23
+  {year:"2022-23",era:"Jokic & Embiid",players:[
+    P("PG","Luka Doncic","2022-23",32.4,8.6,8.0,95),
+    P("PG","Stephen Curry","2022-23",29.4,6.1,6.3,92),
+    P("SG","Donovan Mitchell","2022-23",28.3,4.4,4.4,87),
+    P("SG","Devin Booker","2022-23",27.8,4.5,5.5,87),
+    P("SF","Jayson Tatum","2022-23",30.1,8.8,4.6,93),
+    P("SF","Jimmy Butler","2022-23",22.9,5.9,5.3,87),
+    P("PF","Giannis Antetokounmpo","2022-23",31.1,11.8,5.7,97),
+    P("PF","Anthony Davis","2022-23",25.9,12.5,2.6,88),
+    P("C","Nikola Jokic","2022-23",24.5,11.8,9.8,97),
+    P("C","Joel Embiid","2022-23",33.1,10.2,4.2,96),
+    P("PG","Shai Gilgeous-Alexander","2022-23",31.4,4.8,5.5,91),
+    P("SG","Anthony Edwards","2022-23",24.6,5.8,4.4,85),
+    P("SF","Kawhi Leonard","2022-23",23.8,6.5,3.9,87),
+    P("PF","Domantas Sabonis","2022-23",19.1,12.3,7.3,85),
+    P("C","Bam Adebayo","2022-23",20.4,9.2,3.2,83),
+  ]},
+  // 2003-04
+  {year:"2003-04",era:"Pistons title",players:[
+    P("PG","Steve Nash","2003-04",14.5,3.0,8.8,84),
+    P("PG","Baron Davis","2003-04",22.9,4.3,7.5,82),
+    P("SG","Kobe Bryant","2003-04",24.0,5.5,5.1,90),
+    P("SG","Tracy McGrady","2003-04",28.0,6.0,5.5,92),
+    P("SF","Peja Stojakovic","2003-04",24.2,6.3,2.1,84),
+    P("SF","Ron Artest","2003-04",18.3,5.3,3.7,82),
+    P("PF","Kevin Garnett","2003-04",24.2,13.9,5.0,96),
+    P("PF","Tim Duncan","2003-04",22.3,12.4,3.1,93),
+    P("C","Shaquille O'Neal","2003-04",21.5,11.5,2.9,91),
+    P("C","Ben Wallace","2003-04",9.5,12.4,1.7,82),
+    P("PG","Sam Cassell","2003-04",19.8,3.2,7.3,82),
+    P("SG","Michael Redd","2003-04",21.7,5.0,2.3,80),
+    P("SF","Paul Pierce","2003-04",23.0,6.5,5.1,85),
+    P("PF","Dirk Nowitzki","2003-04",21.8,8.7,2.7,88),
+    P("C","Yao Ming","2003-04",17.5,9.0,1.5,82),
+  ]},
+  // 1997-98
+  {year:"1997-98",era:"Last Dance",players:[
+    P("PG","Gary Payton","1997-98",19.2,4.6,8.3,87),
+    P("PG","Tim Hardaway","1997-98",18.9,3.6,8.3,84),
+    P("SG","Michael Jordan","1997-98",28.7,5.8,3.5,96),
+    P("SG","Mitch Richmond","1997-98",23.2,4.0,4.2,82),
+    P("SF","Scottie Pippen","1997-98",19.1,5.2,5.8,86),
+    P("SF","Grant Hill","1997-98",21.1,7.7,6.8,89),
+    P("PF","Karl Malone","1997-98",27.0,10.3,3.9,94),
+    P("PF","Tim Duncan","1997-98",21.1,11.9,2.7,90),
+    P("C","Shaquille O'Neal","1997-98",28.3,11.4,2.4,95),
+    P("C","David Robinson","1997-98",21.6,10.6,2.7,89),
+    P("PG","Jason Kidd","1997-98",11.6,6.2,9.1,83),
+    P("SG","Reggie Miller","1997-98",19.5,3.0,2.4,80),
+    P("SF","Glen Rice","1997-98",22.3,4.6,2.4,82),
+    P("PF","Chris Webber","1997-98",21.9,9.5,3.8,86),
+    P("C","Dikembe Mutombo","1997-98",13.4,11.4,1.0,78),
+  ]},
+];
+
+const POSITIONS=["PG","SG","SF","PF","C"];
+const MAX_TEAM=12, MAX_PER_POS=3;
+
+// ---- LOAD EXTERNAL DATASET (players.json) IF PRESENT ----
+// Fetcha z absolutnega raw GitHub URL-ja -> deluje od koderkoli (Pages, lokalno prek serverja, vgneteno).
+const DATA_URL="https://raw.githubusercontent.com/blazerculj-max/hall-of-draft/main/players.json";
+let DATA_SOURCE="vgrajen (kuriran)";
+let DATA_STATUS="builtin"; // builtin | loading | full | error
+async function loadDataset(){
+  try{
+    const res=await fetch(DATA_URL,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const j=await res.json();
+    if(j&&j.seasons&&j.seasons.length){
+      POOL=j.seasons.map(s=>({
+        year:s.year, era:s.era,
+        players:s.players.map(p=>({
+          pos:p.pos,name:p.name,season:p.season,
+          pts:p.pts,reb:p.reb,ast:p.ast,rating:p.rating,
+          era:s.era,gp:p.gp
+        }))
+      })).filter(s=>s.players.length>=5);
+      DATA_SOURCE=`GitHub · ${POOL.length} sezon · ${
+        POOL.reduce((a,s)=>a+s.players.length,0).toLocaleString('sl')} igralcev`;
+      DATA_STATUS="full";
+    }
+  }catch(e){
+    // players.json še ni objavljen ali ni dostopen -> ostani na vgrajenem POOL
+    DATA_STATUS="builtin";
+  }
+}
+
+// ---- STATE ----
+let roster=[]; // {pos,name,season,pts,reb,ast,rating}
+let phase="intro"; // intro | spin | choose-season | offer | result
+let seasonChoices=[];
+let chosenSeason=null;
+let currentOffer=[];
+
+const screen=document.getElementById('hod-screen');
+const progress=document.getElementById('hod-progress');
+
+function posCount(pos){return roster.filter(p=>p.pos===pos).length;}
+function teamFull(){return roster.length>=MAX_TEAM;}
+function missingPositions(){return POSITIONS.filter(p=>posCount(p)<1);}
+// positions we can still add to (under max per pos)
+function openPositions(){return POSITIONS.filter(p=>posCount(p)<MAX_PER_POS);}
+// when remaining slots == missing positions count, force only missing positions
+function forcedPositions(){
+  const slotsLeft=MAX_TEAM-roster.length;
+  const miss=missingPositions();
+  if(slotsLeft<=miss.length && miss.length>0) return miss;
+  return openPositions();
+}
+
+function renderProgress(){
+  let html="";
+  for(let i=0;i<MAX_TEAM;i++){
+    html+=`<div class="hod-dot ${i<roster.length?'filled':''}"></div>`;
+  }
+  html+=`<span class="hod-counter">${roster.length}/12</span>`;
+  progress.innerHTML=html;
+}
+
+function ratingClass(r){
+  if(r>=92)return"hod-r-elite";
+  if(r>=85)return"hod-r-good";
+  if(r>=78)return"hod-r-mid";
+  return"hod-r-low";
+}
+
+function rosterPanel(){
+  let rows=POSITIONS.map(pos=>{
+    const ps=roster.filter(p=>p.pos===pos);
+    let chips=ps.map(p=>`<span class="hod-chip">${p.name.split(' ').slice(-1)[0]} <b style="color:var(--gold)">${p.rating}</b></span>`).join('');
+    if(ps.length===0) chips=`<span class="hod-chip empty">prazno</span>`;
+    return `<div class="hod-pos-row"><span class="hod-pos-tag">${pos}</span>${chips}</div>`;
+  }).join('');
+  return `<div class="hod-roster"><div class="hod-roster-title"><span>TVOJA EKIPA</span><span>${roster.length}/12</span></div>${rows}</div>`;
+}
+
+// ---- SCREENS ----
+function showIntro(){
+  phase="intro";
+  screen.innerHTML=`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">Pravila</div>
+      <div class="hod-verdict" style="margin:0 auto 18px">
+        Zavrti kolut in izberi eno od treh naključnih sezon. Iz nje dobiš 5 igralcev — po enega na vsako pozicijo. Izberi enega in ga dodaj ekipi.<br><br>
+        Sestavi <b style="color:var(--gold)">12 igralcev</b>: največ 3 na pozicijo, vsaj 1 na vsako. Na koncu dobiš oceno ekipe.
+      </div>
+      <button class="hod-btn" id="hod-start">Začni draft</button>
+      <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:1px">
+        vir: ${DATA_SOURCE}
+      </div>
+      ${DATA_STATUS==="builtin"?`<div style="font-size:11px;color:var(--gold-deep);margin-top:6px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.5">
+        players.json še ni na GitHubu — igra teče na vgrajenih 10 sezonah. Ko objaviš poln dataset, se naloži samodejno.
+      </div>`:''}
+    </div>`;
+  document.getElementById('hod-start').onclick=startSpin;
+  renderProgress();
+}
+
+function pickRandomSeasons(){
+  const idx=[...Array(POOL.length).keys()];
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  return idx.slice(0,3).map(i=>POOL[i]);
+}
+
+function startSpin(){
+  phase="spin";
+  seasonChoices=pickRandomSeasons();
+  // build 3 spinning reels
+  const reelHtml=[0,1,2].map(i=>{
+    let strip="";
+    for(let k=0;k<10;k++){
+      const s=POOL[Math.floor(Math.random()*POOL.length)];
+      strip+=`<div class="hod-reel-item"><div class="hod-reel-year">${s.year.split('-')[0]}</div><div class="hod-reel-era">${s.era}</div></div>`;
+    }
+    return `<div class="hod-reel spinning" id="hod-reel-${i}"><div class="hod-reel-strip">${strip}</div></div>`;
+  }).join('');
+  screen.innerHTML=`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">${roster.length===0?'Zavrti za prvo sezono':'Zavrti za naslednjo sezono'}</div>
+      <div class="hod-reels">${reelHtml}</div>
+    </div>
+    ${rosterPanel()}`;
+  // stop reels staggered
+  [0,1,2].forEach(i=>{
+    setTimeout(()=>{
+      const reel=document.getElementById('hod-reel-'+i);
+      reel.classList.remove('spinning');reel.classList.add('locked');
+      const s=seasonChoices[i];
+      reel.querySelector('.hod-reel-strip').innerHTML=
+        `<div class="hod-reel-item"><div class="hod-reel-year">${s.year.split('-')[0]}</div><div class="hod-reel-era">${s.era}</div></div>`;
+      reel.querySelector('.hod-reel-strip').style.transform='translateY(0)';
+      if(i===2) setTimeout(showSeasonChoices,400);
+    }, 700+i*450);
+  });
+}
+
+function showSeasonChoices(){
+  phase="choose-season";
+  const cards=seasonChoices.map((s,i)=>`
+    <div class="hod-season-card hod-pop" data-i="${i}" style="animation-delay:${i*0.08}s">
+      <div><div class="hod-season-yr">${s.year}</div><div style="font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">${s.era}</div></div>
+      <div class="hod-season-meta">izberi to<br>sezono →</div>
+    </div>`).join('');
+  screen.innerHTML=`
+    <div class="hod-fade">
+      <div class="hod-stage-label" style="text-align:center">Izberi sezono za draft</div>
+      <div class="hod-season-choices">${cards}</div>
+    </div>
+    ${rosterPanel()}`;
+  screen.querySelectorAll('.hod-season-card').forEach(c=>{
+    c.onclick=()=>{chosenSeason=seasonChoices[+c.dataset.i];makeOffer();};
+  });
+}
+
+function makeOffer(){
+  phase="offer";
+  const allowed=forcedPositions();
+  // one random player per allowed position from chosen season
+  currentOffer=[];
+  allowed.forEach(pos=>{
+    const cands=chosenSeason.players.filter(p=>p.pos===pos);
+    if(cands.length){
+      const pick=cands[Math.floor(Math.random()*cands.length)];
+      currentOffer.push(pick);
+    }
+  });
+  // if for some reason a position has no candidate in this season, fall back to any allowed
+  if(currentOffer.length===0){
+    chosenSeason.players.forEach(p=>{if(allowed.includes(p.pos))currentOffer.push(p);});
+    currentOffer=currentOffer.slice(0,5);
+  }
+  const forced = (MAX_TEAM-roster.length)<=missingPositions().length && missingPositions().length>0;
+  const cards=currentOffer.map((p,i)=>{
+    const canTake=posCount(p.pos)<MAX_PER_POS;
+    return `
+    <div class="hod-pcard ${canTake?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.07}s">
+      <div class="hod-pos-badge hod-pos-${p.pos}">${p.pos}</div>
+      <div class="hod-pinfo">
+        <div class="hod-pname">${p.name}</div>
+        <div class="hod-pseason">${p.season}${canTake?'':' · pozicija polna'}</div>
+        <div class="hod-pstats">
+          <div><b>${p.pts}</b><span>PPG</span></div>
+          <div><b>${p.reb}</b><span>RPG</span></div>
+          <div><b>${p.ast}</b><span>APG</span></div>
+        </div>
+      </div>
+      <div class="hod-prating ${ratingClass(p.rating)}">${p.rating}</div>
+    </div>`;
+  }).join('');
+  screen.innerHTML=`
+    <div class="hod-fade">
+      <div class="hod-stage-label" style="text-align:center">
+        ${chosenSeason.year} · ${chosenSeason.era}${forced?' · <span style="color:var(--red)">zapolni manjkajoče pozicije</span>':''}
+      </div>
+      <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">Izberi enega igralca</div>
+      <div class="hod-offer-grid">${cards}</div>
+    </div>
+    ${rosterPanel()}`;
+  screen.querySelectorAll('.hod-pcard:not(.disabled)').forEach(c=>{
+    c.onclick=()=>takePlayer(currentOffer[+c.dataset.i]);
+  });
+}
+
+function takePlayer(p){
+  roster.push(p);
+  renderProgress();
+  if(teamFull()){ showResult(); return; }
+  startSpin();
+}
+
+// ---- TEAM EVALUATION ----
+function computeChemistry(){
+  // 1) ERA MATCH: koliko igralcev deli isto dekado
+  const eras={};
+  roster.forEach(p=>{eras[p.era]=(eras[p.era]||0)+1;});
+  const eraKeys=Object.keys(eras);
+  const dominant=Math.max(...Object.values(eras));
+  const eraSpread=eraKeys.length; // 1 = vsi ista doba, 5 = razmetano
+  // bonus če je velika večina iz iste dobe; penal za razpršenost
+  const eraScore = (dominant/MAX_TEAM)*8 - (eraSpread-1)*1.6; // ~ -6..+8
+
+  // 2) POSITIONAL FIT: idealno ~ PG2 SG2/3 SF2 PF2 C2 (uravnoteženo)
+  const ideal={PG:2,SG:3,SF:2,PF:2,C:2};
+  let fitPenalty=0;
+  POSITIONS.forEach(pos=>{
+    const c=posCount(pos);
+    if(c===0) fitPenalty+=4;                 // luknja je huda
+    else fitPenalty+=Math.abs(c-ideal[pos])*1.3;
+  });
+  const fitScore = 6 - fitPenalty;            // ~ -X..+6
+
+  let chem = eraScore + fitScore;             // skupna kemija
+  chem = Math.max(-10, Math.min(10, Math.round(chem)));
+  return {chem, eraScore:Math.round(eraScore*10)/10,
+          fitScore:Math.round(fitScore*10)/10,
+          dominant, eraSpread, eras};
+}
+
+function evaluateTeam(){
+  const sorted=[...roster].sort((a,b)=>b.rating-a.rating);
+  const top5=sorted.slice(0,5);
+  const starterAvg=top5.reduce((s,p)=>s+p.rating,0)/top5.length;
+  const fullAvg=roster.reduce((s,p)=>s+p.rating,0)/roster.length;
+  const posSpread=POSITIONS.filter(p=>posCount(p)>=1).length;
+  const stars=roster.filter(p=>p.rating>=92).length;
+  const starBonus=Math.min(stars*1.3,5);
+  const chemObj=computeChemistry();
+  let overall = starterAvg*0.52 + fullAvg*0.28 + 60*0.15
+              + starBonus + chemObj.chem*0.9;
+  overall=Math.max(40,Math.min(99,Math.round(overall)));
+  return {overall,starterAvg:Math.round(starterAvg*10)/10,
+          fullAvg:Math.round(fullAvg*10)/10,stars,posSpread,top5,chem:chemObj};
+}
+
+function gradeFor(o){
+  if(o>=95)return{g:"S+",c:"#ffd60a",v:"Nesmrtna ekipa. To je all-time superteam — algoritem nima možnosti."};
+  if(o>=90)return{g:"S",c:"#ffd60a",v:"Šampionska zasedba. Globina in zvezde se ujemajo skoraj popolno."};
+  if(o>=86)return{g:"A",c:"#2ec4b6",v:"Resen kandidat za naslov. Močna prva peterka, spodobna klop."};
+  if(o>=82)return{g:"B",c:"#4cc9f0",v:"Solidna playoff ekipa. Nekaj zvezd, a globina niha."};
+  if(o>=77)return{g:"C",c:"#90a4ae",v:"Sredina lestvice. Igrljivo, a brez prave udarne moči."};
+  if(o>=72)return{g:"D",c:"#ff8500",v:"Lottery ekipa. Sreča pri vlekih te ni ravno mazala."};
+  return{g:"F",c:"#e63946",v:"Tank mode. Ampak hej — vsaj imaš zgodbo za pripovedovati."};
+}
+
+function showResult(){
+  phase="result";
+  const ev=evaluateTeam();
+  const gr=gradeFor(ev.overall);
+  const sorted=[...roster].sort((a,b)=>b.rating-a.rating);
+  const cards=sorted.map(p=>`
+    <div class="hod-final-card">
+      <div class="hod-fc-top">
+        <span class="hod-fc-name">${p.name}</span>
+        <span class="hod-fc-rating">${p.rating}</span>
+      </div>
+      <div class="hod-fc-meta">${p.pos} · ${p.season} · ${p.pts}/${p.reb}/${p.ast}</div>
+      <div class="hod-bar"><div class="hod-bar-fill" style="width:${p.rating}%"></div></div>
+    </div>`).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Ocena ekipe</div>
+      <div class="hod-grade hod-pop" style="color:${gr.c};text-shadow:0 0 30px ${gr.c}55">${gr.g}</div>
+      <div class="hod-overall">OVERALL ${ev.overall} · ★ ${ev.stars} zvezd · ${ev.posSpread}/5 pozicij</div>
+      <div class="hod-verdict">${gr.v}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0 4px">
+        <div class="hod-chem-tag" style="--cc:${ev.chem.chem>=3?'var(--green)':ev.chem.chem<=-3?'var(--red)':'var(--muted)'}">
+          KEMIJA ${ev.chem.chem>0?'+':''}${ev.chem.chem}
+        </div>
+        <div class="hod-chem-tag" style="--cc:${ev.chem.eraScore>=0?'var(--green)':'var(--red)'}">
+          ERA-FIT ${ev.chem.eraScore>0?'+':''}${ev.chem.eraScore}
+        </div>
+        <div class="hod-chem-tag" style="--cc:${ev.chem.fitScore>=0?'var(--green)':'var(--red)'}">
+          POZICIJE ${ev.chem.fitScore>0?'+':''}${ev.chem.fitScore}
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">
+        ${ev.chem.eraSpread===1?'Vsi iz iste dobe — popolna kemija.':
+          ev.chem.dominant>=8?'Močno jedro iz ene dobe.':
+          ev.chem.eraSpread>=4?'Razmetane dobe — slog igre se grize.':
+          'Mešane dobe, sprejemljivo.'}
+      </div>
+      <div style="font-size:12px;color:var(--muted);letter-spacing:1px">
+        prva peterka ⌀ ${ev.starterAvg} · cela ekipa ⌀ ${ev.fullAvg}
+      </div>
+      <div class="hod-final-roster">${cards}</div>
+      <button class="hod-btn" id="hod-replay">Nova ekipa</button>
+    </div>`;
+  document.getElementById('hod-replay').onclick=()=>{
+    roster=[];chosenSeason=null;currentOffer=[];renderProgress();showIntro();
+  };
+}
+
+// init
+function showLoading(){
+  screen.innerHTML=`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">Nalagam igralce z GitHuba…</div>
+      <div class="hod-reels">
+        <div class="hod-reel spinning"><div class="hod-reel-strip">
+          ${Array.from({length:6}).map(()=>`<div class="hod-reel-item"><div class="hod-reel-year">···</div></div>`).join('')}
+        </div></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted)">prvič lahko traja nekaj sekund</div>
+    </div>`;
+}
+(async function(){
+  showLoading();
+  await loadDataset();
+  showIntro();
+})();
+})();
+</script>
