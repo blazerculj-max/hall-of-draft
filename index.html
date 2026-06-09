@@ -2208,6 +2208,9 @@ function showResult(){
   phase="result";
   const ev=evaluateTeam();
   const gr=gradeFor(ev.overall);
+  // takoj simuliraj (zamenja najšibkejšo ekipo); sim je lahko null na vgrajenem datasetu
+  const sim=autoSimulate();
+  const res=sim?sim.res:null;
   const sorted=[...roster].sort((a,b)=>b.rating-a.rating);
   const cards=sorted.map(p=>`
     <div class="hod-final-card">
@@ -2218,6 +2221,14 @@ function showResult(){
       <div class="hod-fc-meta">${effPos(p)} · ${p.season} · ${p.pts}/${p.reb}/${p.ast}</div>
       <div class="hod-bar"><div class="hod-bar-fill" style="width:${p.rating}%"></div></div>
     </div>`).join('');
+  // simulacijski blok (če na voljo)
+  const simBlock=res?`
+    <div class="hod-sim-grid" style="margin:10px auto">
+      <div class="hod-sim-stat"><b>${res.avgWins}-${82-res.avgWins}</b><span>REKORD</span></div>
+      <div class="hod-sim-stat"><b>${res.playoffPct}%</b><span>PLAYOFF</span></div>
+      <div class="hod-sim-stat"><b>${res.finalsPct}%</b><span>FINALE</span></div>
+      <div class="hod-sim-stat hod-sim-title"><b>${res.titlePct}%</b><span>NASLOV</span></div>
+    </div>`:'';
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">Ocena ekipe</div>
@@ -2228,53 +2239,46 @@ function showResult(){
         <div class="hod-chem-tag" style="--cc:${ev.chem.chem>=3?'var(--green)':ev.chem.chem<=-3?'var(--red)':'var(--muted)'}">
           KEMIJA ${ev.chem.chem>0?'+':''}${ev.chem.chem}
         </div>
-        <div class="hod-chem-tag" style="--cc:${ev.chem.mateBonus>0?'var(--green)':'var(--muted)'}">
-          SOIGRALCI +${ev.chem.mateBonus}
-        </div>
         <div class="hod-chem-tag" style="--cc:${ev.chem.duoBonus>0?'var(--green)':'var(--muted)'}">
           DUOJI +${ev.chem.duoBonus}
         </div>
         <div class="hod-chem-tag" style="--cc:${ev.chem.rivalScore<0?'var(--red)':'var(--muted)'}">
           RIVALSTVA ${ev.chem.rivalScore}
         </div>
-        <div class="hod-chem-tag" style="--cc:${ev.chem.soloScore<0?'var(--red)':'var(--muted)'}">
-          PRITISK ${ev.chem.soloScore}
-        </div>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:4px">
         ${ev.chem.duoList.length?`Slavni duo: ${ev.chem.duoList.join(', ')}. `:''}${
-          ev.chem.rivalList.length?`Trenja: ${ev.chem.rivalList.join(', ')}. `:''}${
-          ev.chem.mateCount>0?`${ev.chem.mateCount} parov pravih soigralcev.`:
-          ev.chem.eraSpread>=4?'Razmetane dobe — slog igre se grize.':''}
+          ev.chem.rivalList.length?`Trenja: ${ev.chem.rivalList.join(', ')}. `:''}
       </div>
       <div style="font-size:12px;color:var(--muted);letter-spacing:1px">
-        prva peterka ⌀ ${ev.starterAvg} · cela ekipa ⌀ ${ev.fullAvg}
+        prva peterka ⌀ ${ev.starterAvg} · cela ekipa ⌀ ${ev.fullAvg}${res?` · nadomeščaš ${sim.replaced.name}`:''}
       </div>
+      ${simBlock}
       ${budgetMode?`<div style="font-size:12px;color:var(--gold);letter-spacing:1px;margin-top:4px">
         porabljeno $${budgetSpent} / $${budgetTotal} (ostalo $${budgetLeft()})
       </div>`:''}
-      ${dailyMode?dailyResultBanner(ev):''}
+      ${dailyMode?dailyResultBanner(ev, res):''}
       <div class="hod-final-roster">${cards}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="hod-btn" id="hod-sim">Simuliraj sezono 🏆</button>
-        ${dailyMode?'<button class="hod-btn" id="hod-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi na lestvico</button>':''}
+        ${dailyMode?'<button class="hod-btn" id="hod-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi rezultat</button>':''}
         ${dailyMode?'<button class="hod-btn" id="hod-share" style="background:linear-gradient(180deg,#4cc9f0,#3a9fc4);box-shadow:0 5px 0 #2a7a99">Deli</button>':''}
+        <button class="hod-btn secondary" id="hod-edit">Uredi postavitev</button>
         <button class="hod-btn secondary" id="hod-replay">${dailyMode?'Znova (dnevni)':'Nova ekipa'}</button>
       </div>
       ${dailyMode?'<div id="hod-leaderboard"></div>':''}
     </div>`;
-  document.getElementById('hod-sim').onclick=showTeamPicker;
+  document.getElementById('hod-edit').onclick=()=>{ renderCourt(); };
   if(dailyMode){
-    saveDailyResult(ev, null);
+    saveDailyResult(ev, res);
     const sh=document.getElementById('hod-share');
-    if(sh) sh.onclick=()=>shareDaily(ev);
+    if(sh) sh.onclick=()=>shareDaily(ev, res);
     const po=document.getElementById('hod-post');
-    if(po) po.onclick=()=>postToLeaderboard(ev, null, po);
+    if(po) po.onclick=()=>postToLeaderboard(ev, res, po);
     showLeaderboard();
   }
   document.getElementById('hod-replay').onclick=()=>{
     if(dailyMode){ startDaily(); return; }
-    roster=[];chosenSeason=null;currentOffer=[];budgetSpent=0;renderProgress();showIntro();
+    roster=[];chosenSeason=null;currentOffer=[];_cachedLeague=null;budgetSpent=0;renderProgress();showIntro();
   };
 }
 
@@ -2437,6 +2441,22 @@ function showUserTeam(r){
 }
 
 let _cachedLeague=null;
+// samodejna simulacija: tvoja ekipa zamenja NAJŠIBKEJŠO ligaško ekipo (brez izbire)
+function autoSimulate(){
+  if(!_cachedLeague) _cachedLeague=buildLeague();
+  const full=_cachedLeague;
+  if(full.league.length<10) return null;   // ni dovolj za simulacijo (vgrajeni dataset)
+  // najšibkejša ekipa
+  const weakest=[...full.league].sort((a,b)=>a.strength-b.strength)[0];
+  const conf=weakest.conf;
+  const rawMy=userTeamStrength();
+  const myStr=full.leagueMean+(rawMy-full.leagueMean)*(full.stretchK||1.5);
+  const simLeague={season:full.season, leagueMean:full.leagueMean, stretchK:full.stretchK,
+    league:full.league.map(t=>t.abbr===weakest.abbr?{...t,strength:myStr,name:"TVOJA EKIPA",mine:true}:t)};
+  const res=monteCarlo(myStr, simLeague, conf, 1000);
+  return {res, conf, myStr, full, replaced:weakest};
+}
+
 function showTeamPicker(){
   phase="teampick";
   if(!_cachedLeague) _cachedLeague=buildLeague();
