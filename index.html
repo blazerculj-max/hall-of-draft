@@ -179,6 +179,29 @@
 .hod-role-nm{font-size:13px;}
 .hod-role-rt{font-family:'Bebas Neue';font-size:15px;color:var(--gold);}
 .hod-pen{color:var(--red);font-size:10px;margin-left:2px;}
+/* košarkarsko igrišče */
+.hod-court-wrap{position:relative;max-width:340px;margin:0 auto;aspect-ratio:1/1;}
+.hod-court-bg{position:absolute;inset:0;width:100%;height:100%;border-radius:14px;
+  border:1px solid var(--line);box-shadow:inset 0 0 30px rgba(0,0,0,.5);}
+.hod-court-spots{position:absolute;inset:0;}
+.hod-spot{position:absolute;transform:translate(-50%,-50%);width:74px;
+  display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:.12s;}
+.hod-spot-pos{font-family:'Bebas Neue';font-size:12px;letter-spacing:1px;color:var(--gold);}
+.hod-spot.filled{background:rgba(15,15,25,.85);border:2px solid var(--gold);border-radius:10px;padding:4px 2px;}
+.hod-spot.empty{background:rgba(15,15,25,.5);border:2px dashed var(--muted);border-radius:10px;padding:4px 2px;}
+.hod-spot.sel{box-shadow:0 0 14px var(--gold);border-color:#fff;}
+.hod-spot.filled:hover{transform:translate(-50%,-50%) scale(1.05);}
+.hod-spot-name{font-size:12px;font-weight:600;line-height:1.1;text-align:center;}
+.hod-spot-rt{font-family:'Bebas Neue';font-size:15px;color:var(--gold);}
+.hod-spot-empty{font-size:10px;color:var(--muted);font-style:italic;}
+.hod-bench{margin-top:14px;display:flex;flex-direction:column;gap:6px;max-width:440px;margin-left:auto;margin-right:auto;}
+.hod-bench-row{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 10px;text-align:left;}
+.hod-bench-label{font-family:'Bebas Neue';font-size:13px;letter-spacing:1px;color:var(--muted);display:block;margin-bottom:4px;}
+.hod-bench-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.hod-bench-chip{display:flex;align-items:center;gap:6px;background:#1f1f2e;border:1px solid var(--line);
+  border-radius:8px;padding:4px 8px;cursor:pointer;transition:.12s;}
+.hod-bench-chip:hover{border-color:var(--gold);}
+.hod-bench-chip.sel{border-color:#fff;box-shadow:0 0 8px var(--gold);}
 .hod-budget-bar{max-width:380px;margin:0 auto 12px;}
 .hod-budget-row{display:flex;justify-content:space-between;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
 .hod-budget-row b{color:var(--gold);font-family:'Bebas Neue';font-size:16px;}
@@ -1731,66 +1754,188 @@ function monteCarlo(myStr, full, myConf, runs){
 
 function showRoleAssign(){
   phase="roles";
-  autoAssignRoles(roster);  // avto-predlog
-  renderRoleScreen();
+  autoAssignRoles(roster);
+  // dodeli starterjem mesto na igrišču glede na njihovo trenutno pozicijo
+  assignCourtSpots();
+  renderCourt();
 }
-let _roleSel=null; // izbrani igralec za premik
-function renderRoleScreen(){
-  const byRole=r=>roster.filter(p=>p.role===r);
-  const block=(r)=>{
-    const list=byRole(r).map(p=>{
-      const pen=posPenalty(p);
-      const er=Math.round(effRating(p));
-      const sel=_roleSel===p?'sel':'';
-      return `<div class="hod-role-chip ${sel}" data-key="${playerKey(p)}">
-        <span class="hod-role-pos hod-pos-${effPos(p)}">${effPos(p)}</span>
+// vsak starter dobi 'spot' (PG/SG/SF/PF/C). Poskusi po njihovi assignedPos/primarni.
+function assignCourtSpots(){
+  const starters=roster.filter(p=>p.role==="S");
+  const spots=["PG","SG","SF","PF","C"];
+  const taken={};
+  // 1) tisti, ki so že na svoji poziciji
+  starters.forEach(p=>{p.spot=null;});
+  starters.forEach(p=>{
+    const want=effPos(p);
+    if(spots.includes(want)&&!taken[want]){p.spot=want;taken[want]=p;}
+  });
+  // 2) preostali na prosta mesta
+  starters.forEach(p=>{
+    if(p.spot) return;
+    const free=spots.find(s=>!taken[s]);
+    if(free){p.spot=free;taken[free]=p;}
+  });
+  // starterjeva pozicija = njegovo mesto
+  starters.forEach(p=>{ if(p.spot) p.assignedPos=p.spot; });
+}
+
+let _courtSel=null; // izbrani igralec (tap-to-place)
+
+// koordinate mest na polovičnem igrišču (viewBox 0..300 x 0..300), koš zgoraj
+const COURT_SPOTS={
+  PG:{x:150,y:235}, SG:{x:55,y:175}, SF:{x:245,y:175}, PF:{x:90,y:95}, C:{x:150,y:70}
+};
+
+function renderCourt(){
+  const starters=roster.filter(p=>p.role==="S");
+  const bySpot={}; starters.forEach(p=>{if(p.spot)bySpot[p.spot]=p;});
+  const bench=roster.filter(p=>p.role!=="S");
+
+  // SVG mesta
+  const spotNodes=POS_LADDER.map(spot=>{
+    const c=COURT_SPOTS[spot];
+    const p=bySpot[spot];
+    const sel=p&&_courtSel===p?'sel':'';
+    const pen=p?posPenalty(p):0;
+    const er=p?Math.round(effRating(p)):0;
+    const label=p?`${lastNameCap(p)}`:spot;
+    return `
+      <div class="hod-spot ${p?'filled':'empty'} ${sel}" data-spot="${spot}"
+           style="left:${c.x/300*100}%;top:${c.y/300*100}%">
+        <div class="hod-spot-pos">${spot}</div>
+        ${p?`<div class="hod-spot-name">${label}</div>
+             <div class="hod-spot-rt">${er}${pen>0?`<span class="hod-pen">-${pen}</span>`:''}</div>`
+            :`<div class="hod-spot-empty">prazno</div>`}
+      </div>`;
+  }).join('');
+
+  // klop: 6. mož / rotacija / globina
+  const benchGroup=(r)=>{
+    const list=bench.filter(p=>p.role===r).map(p=>{
+      const sel=_courtSel===p?'sel':'';
+      return `<div class="hod-bench-chip ${sel}" data-key="${playerKey(p)}" draggable="true">
+        <span class="hod-role-pos hod-pos-${effPos(p)}">${playerPositions(p)[0]}</span>
         <span class="hod-role-nm">${lastNameCap(p)} <span style="color:var(--muted);font-size:10px">${shortSeason(p)}</span></span>
-        <span class="hod-role-rt">${er}${pen>0?`<span class="hod-pen">-${pen}</span>`:''}</span>
+        <span class="hod-role-rt">${Math.round(effRating(p))}</span>
       </div>`;
     }).join('');
-    const cnt=byRole(r).length, need=ROLE_SLOTS[r];
-    const okCls=cnt===need?'ok':'warn';
-    return `<div class="hod-role-block" data-role="${r}">
-      <div class="hod-role-head ${okCls}">${ROLE_LABEL[r]} <span>${cnt}/${need} · ×${ROLE_WEIGHT[r]}</span></div>
-      <div class="hod-role-list">${list||'<span class="hod-chip empty">prazno</span>'}</div>
+    return `<div class="hod-bench-row" data-bench="${r}">
+      <span class="hod-bench-label">${ROLE_LABEL[r]} <span style="opacity:.6">×${ROLE_WEIGHT[r]}</span></span>
+      <div class="hod-bench-chips">${list||'<span class="hod-chip empty">—</span>'}</div>
     </div>`;
   };
-  const valid=ROLE_ORDER.every(r=>byRole(r).length===ROLE_SLOTS[r]);
+
+  const allStartersPlaced=POS_LADDER.every(s=>bySpot[s]);
   screen.innerHTML=`
     <div class="hod-result hod-fade">
-      <div class="hod-stage-label">Razporedi rotacijo</div>
-      <div class="hod-verdict" style="max-width:440px;margin:0 auto 8px">
-        Klikni igralca, nato ciljno vlogo. Starterji igrajo polno, klop manj. Igralec izven svoje pozicije ima kazen (npr. organizator na centru).
+      <div class="hod-stage-label">Postavi peterko na igrišče</div>
+      <div style="font-size:12px;color:var(--muted);max-width:420px;margin:0 auto 10px">
+        ${isMobileView()?'Tapni igralca, nato mesto.':'Povleci igralca na mesto (ali tapni → mesto).'} Mesto določa pozicijo — igralec izven svoje pozicije dobi kazen.
       </div>
-      ${_roleSel?`<div style="font-size:12px;color:var(--gold);margin-bottom:8px">Izbran: ${lastNameCap(_roleSel)} — klikni vlogo spodaj</div>`:''}
-      <div class="hod-roles-wrap">${ROLE_ORDER.map(block).join('')}</div>
+      ${_courtSel?`<div style="font-size:12px;color:var(--gold);margin-bottom:6px">Izbran: ${lastNameCap(_courtSel)} — izberi mesto ali klop</div>`:''}
+      <div class="hod-court-wrap">
+        <svg class="hod-court-bg" viewBox="0 0 300 300" preserveAspectRatio="none">
+          <defs><linearGradient id="hod-floor" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3a2a1a"/><stop offset="1" stop-color="#2a1e12"/></linearGradient></defs>
+          <rect x="0" y="0" width="300" height="300" fill="url(#hod-floor)"/>
+          <!-- raketa -->
+          <rect x="105" y="0" width="90" height="110" fill="none" stroke="#c98a3a" stroke-width="2"/>
+          <!-- linija prostih metov / krog -->
+          <circle cx="150" cy="110" r="38" fill="none" stroke="#c98a3a" stroke-width="2"/>
+          <!-- koš -->
+          <line x1="130" y1="18" x2="170" y2="18" stroke="#e8e8e8" stroke-width="3"/>
+          <circle cx="150" cy="26" r="7" fill="none" stroke="#ff8500" stroke-width="2.5"/>
+          <!-- tri točka lok -->
+          <path d="M 30 0 L 30 60 Q 150 200 270 60 L 270 0" fill="none" stroke="#c98a3a" stroke-width="2"/>
+        </svg>
+        <div class="hod-court-spots">${spotNodes}</div>
+      </div>
+      <div class="hod-bench">${["6","R","F"].map(benchGroup).join('')}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px">
-        <button class="hod-btn ${valid?'':'disabled'}" id="hod-roles-done">Potrdi ekipo</button>
-        <button class="hod-btn secondary" id="hod-roles-auto">Auto</button>
+        <button class="hod-btn ${allStartersPlaced?'':'disabled'}" id="hod-court-done">Potrdi ekipo</button>
+        <button class="hod-btn secondary" id="hod-court-auto">Auto</button>
       </div>
-      ${valid?'':'<div style="font-size:11px;color:var(--red);margin-top:8px">Vsaka vloga mora imeti točno predpisano število igralcev</div>'}
+      ${allStartersPlaced?'':'<div style="font-size:11px;color:var(--red);margin-top:8px">Zapolni vseh 5 mest na igrišču</div>'}
     </div>`;
-  // klik na igralca = izberi; klik na vlogo (blok) = premakni izbranega tja
-  screen.querySelectorAll('.hod-role-chip').forEach(c=>{
-    c.onclick=(e)=>{
-      e.stopPropagation();
-      const key=c.dataset.key;
-      const p=roster.find(x=>playerKey(x)===key);
-      _roleSel = (_roleSel===p)?null:p;
-      renderRoleScreen();
-    };
+  wireCourt();
+}
+
+function isMobileView(){ return window.matchMedia&&window.matchMedia('(max-width:560px)').matches; }
+
+function wireCourt(){
+  // izbira igralca (klop ali mesto)
+  function selectPlayer(p){ _courtSel=(_courtSel===p)?null:p; renderCourt(); }
+  // postavi izbranega na mesto (spot) — zamenja če zasedeno
+  function placeOnSpot(spot){
+    if(!_courtSel) return;
+    const sel=_courtSel;
+    const occ=roster.find(p=>p.role==="S"&&p.spot===spot);
+    if(sel.role==="S"){
+      // starter <-> starter: zamenjaj mesti
+      const from=sel.spot;
+      if(occ){ occ.spot=from; occ.assignedPos=from; }
+      sel.spot=spot; sel.assignedPos=spot;
+    } else {
+      // klop -> starter: izbrani postane starter na mestu, prejšnji gre na klop v vlogo izbranega
+      const benchRole=sel.role;
+      if(occ){ occ.role=benchRole; occ.spot=null; occ.assignedPos=playerPositions(occ)[0]; }
+      sel.role="S"; sel.spot=spot; sel.assignedPos=spot;
+    }
+    _courtSel=null; renderCourt();
+  }
+  // postavi izbranega na klop (v določeno vlogo)
+  function placeOnBench(role){
+    if(!_courtSel) return;
+    const sel=_courtSel;
+    // koliko mest ima ta vloga
+    const cap=ROLE_SLOTS[role];
+    const inRole=roster.filter(p=>p.role===role&&p!==sel);
+    if(sel.role==="S"){
+      // starter -> klop: njegovo mesto ostane prazno, mora ga zapolniti nekdo. Da peterka ostane polna,
+      // zahtevamo da je to swap (klik na klop igralca), ne prosto. Če je vloga polna, zamenjaj z zadnjim.
+      if(inRole.length>=cap){
+        const victim=inRole[inRole.length-1];
+        victim.role="S"; victim.spot=sel.spot; victim.assignedPos=sel.spot;
+      } else {
+        // vloga ima prostor, a peterka bo nepopolna -> ne dovoli (mora ostati 5)
+        _courtSel=null; renderCourt(); return;
+      }
+      sel.role=role; sel.spot=null; sel.assignedPos=playerPositions(sel)[0];
+    } else {
+      // klop -> klop (druga vloga)
+      if(inRole.length>=cap){
+        const victim=inRole[inRole.length-1];
+        victim.role=sel.role;
+      }
+      sel.role=role;
+    }
+    _courtSel=null; renderCourt();
+  }
+
+  screen.querySelectorAll('.hod-spot').forEach(el=>{
+    const spot=el.dataset.spot;
+    const p=roster.find(x=>x.role==="S"&&x.spot===spot);
+    el.onclick=()=>{ if(_courtSel) placeOnSpot(spot); else if(p) selectPlayer(p); };
+    // drag desktop
+    if(p){ el.setAttribute('draggable','true');
+      el.ondragstart=e=>{_courtSel=p; e.dataTransfer.setData('text','x');}; }
+    el.ondragover=e=>e.preventDefault();
+    el.ondrop=e=>{e.preventDefault(); placeOnSpot(spot);};
   });
-  screen.querySelectorAll('.hod-role-block').forEach(b=>{
-    b.onclick=()=>{
-      if(!_roleSel) return;
-      _roleSel.role=b.dataset.role;
-      _roleSel=null;
-      renderRoleScreen();
-    };
+  screen.querySelectorAll('.hod-bench-chip').forEach(c=>{
+    const p=roster.find(x=>playerKey(x)===c.dataset.key);
+    c.onclick=()=>selectPlayer(p);
+    c.ondragstart=e=>{_courtSel=p; e.dataTransfer.setData('text','x');};
   });
-  const done=document.getElementById('hod-roles-done');
-  if(valid) done.onclick=()=>{ _roleSel=null; showResult(); };
-  document.getElementById('hod-roles-auto').onclick=()=>{ autoAssignRoles(roster); _roleSel=null; renderRoleScreen(); };
+  screen.querySelectorAll('.hod-bench-row').forEach(b=>{
+    b.ondragover=e=>e.preventDefault();
+    b.ondrop=e=>{e.preventDefault(); placeOnBench(b.dataset.bench);};
+    b.onclick=(e)=>{ if(_courtSel && !e.target.closest('.hod-bench-chip')) placeOnBench(b.dataset.bench); };
+  });
+  const done=document.getElementById('hod-court-done');
+  if(done && !done.classList.contains('disabled')) done.onclick=()=>{ _courtSel=null; showResult(); };
+  document.getElementById('hod-court-auto').onclick=()=>{ autoAssignRoles(roster); assignCourtSpots(); _courtSel=null; renderCourt(); };
 }
 
 function showResult(){
