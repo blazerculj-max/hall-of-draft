@@ -590,10 +590,10 @@ const DAILY_GOALS=[
   {id:"chem6", type:"build", label:"Doseži kemijo +6 ali več", test:ev=>ev.chem.chem>=6, fmt:ev=>`kemija +${ev.chem.chem}`},
   {id:"chem8", type:"build", label:"Doseži kemijo +8 ali več", test:ev=>ev.chem.chem>=8, fmt:ev=>`kemija +${ev.chem.chem}`},
   {id:"stars3", type:"build", label:"Ekipa s 3+ zvezdami (92+)", test:ev=>ev.stars>=3, fmt:ev=>`${ev.stars} zvezd`},
-  {id:"win55", type:"sim", label:"Doseži 55+ zmag v sezoni", test:(ev,sim)=>sim&&sim.avgWins>=55, fmt:(ev,sim)=>`${sim.avgWins} zmag`},
-  {id:"win60", type:"sim", label:"Doseži 60+ zmag v sezoni", test:(ev,sim)=>sim&&sim.avgWins>=60, fmt:(ev,sim)=>`${sim.avgWins} zmag`},
-  {id:"playoff", type:"sim", label:"Playoff verjetnost 80%+", test:(ev,sim)=>sim&&sim.playoffPct>=80, fmt:(ev,sim)=>`${sim.playoffPct}% playoff`},
-  {id:"title15", type:"sim", label:"Verjetnost naslova 15%+", test:(ev,sim)=>sim&&sim.titlePct>=15, fmt:(ev,sim)=>`${sim.titlePct}% naslov`},
+  {id:"win55", type:"sim", label:"Doseži 55+ zmag v sezoni", test:(ev,sim)=>sim&&sim.avgWins>=55, fmt:(ev,sim)=>sim?`${sim.avgWins} zmag`:`— zmag`},
+  {id:"win60", type:"sim", label:"Doseži 60+ zmag v sezoni", test:(ev,sim)=>sim&&sim.avgWins>=60, fmt:(ev,sim)=>sim?`${sim.avgWins} zmag`:`— zmag`},
+  {id:"playoff", type:"sim", label:"Playoff verjetnost 80%+", test:(ev,sim)=>sim&&sim.playoffPct>=80, fmt:(ev,sim)=>sim?`${sim.playoffPct}% playoff`:`— % playoff`},
+  {id:"title15", type:"sim", label:"Verjetnost naslova 15%+", test:(ev,sim)=>sim&&sim.titlePct>=15, fmt:(ev,sim)=>sim?`${sim.titlePct}% naslov`:`— % naslov`},
 ];
 function dailyGoal(){
   const seed=todaySeed();
