@@ -146,6 +146,24 @@
 .hod-era-name{font-family:'Anton';font-size:26px;color:var(--ink);line-height:1;}
 .hod-era-chip.on .hod-era-name{color:var(--gold);}
 .hod-era-count{font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+.hod-conf-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:480px;margin:0 auto;text-align:left;}
+.hod-conf-title{font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;color:var(--gold);margin-bottom:6px;text-align:center;}
+.hod-team-chip{display:flex;justify-content:space-between;align-items:center;background:var(--panel);
+  border:1px solid var(--line);border-radius:8px;padding:7px 11px;margin-bottom:5px;cursor:pointer;
+  transition:.12s;font-size:13px;}
+.hod-team-chip:hover{border-color:var(--gold);transform:translateX(3px);}
+.hod-team-str{font-family:'Bebas Neue';color:var(--muted);font-size:14px;}
+.hod-sim-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:420px;margin:16px auto;}
+.hod-sim-stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 4px;}
+.hod-sim-stat b{font-family:'Anton';font-size:26px;color:var(--ink);display:block;line-height:1;}
+.hod-sim-stat span{font-size:9px;letter-spacing:1px;color:var(--muted);}
+.hod-sim-title{border-color:var(--gold);background:linear-gradient(180deg,rgba(255,182,39,.15),transparent);}
+.hod-sim-title b{color:var(--gold);}
+.hod-stand-title{font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;color:var(--muted);margin:14px 0 6px;}
+.hod-standings{max-width:360px;margin:0 auto;text-align:left;}
+.hod-stand-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 10px;border-bottom:1px solid var(--line);}
+.hod-stand-row.mine{background:linear-gradient(90deg,rgba(255,182,39,.18),transparent);
+  border-radius:6px;color:var(--gold);font-weight:600;border-bottom:none;}
 @keyframes hod-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .hod-pop{animation:hod-pop .35s cubic-bezier(.2,1.4,.4,1);}
 @keyframes hod-pop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
@@ -383,7 +401,7 @@ async function loadDataset(){
         players:s.players.map(p=>({
           pos:p.pos,name:p.name,season:p.season,
           pts:p.pts,reb:p.reb,ast:p.ast,rating:p.rating,
-          era:s.era,gp:p.gp
+          era:s.era,gp:p.gp,team:p.team||"",pid:p.pid||0
         }))
       })).filter(s=>s.players.length>=5);
       DATA_SOURCE=`GitHub · ${POOL.length} sezon · ${
@@ -394,6 +412,82 @@ async function loadDataset(){
     // players.json še ni objavljen ali ni dostopen -> ostani na vgrajenem POOL
     DATA_STATUS="builtin";
   }
+}
+
+// ---- KEMIJA: kurirani odnosi (splošno znana dejstva) ----
+// Ujemanje po priimku (zadnja beseda imena), neobčutljivo na velike črke.
+// RIVALSTVA -> penal. Vsak par je [priimekA, priimekB].
+const RIVALRIES=[
+  ["o'neal","bryant"],     // Shaq–Kobe trenja
+  ["barkley","o'neal"],    // znan spor
+  ["thomas","jordan"],     // Pistons–Bulls, "freeze out"
+  ["bird","thomas"],
+  ["wallace","artest"],    // Malice at the Palace povezava
+  ["durant","westbrook"],  // razhod
+  ["paul","rondo"],        // znana trenja
+  ["garnett","anthony"],
+  ["shaq","barkley"],
+];
+// SLAVNI DUOJI -> dodaten bonus poleg team-overlapa (za ikonične pare).
+const DUOS=[
+  ["jordan","pippen"],["bryant","o'neal"],["stockton","malone"],
+  ["curry","thompson"],["james","wade"],["james","irving"],
+  ["nash","stoudemire"],["garnett","pierce"],["duncan","parker"],
+  ["paul","griffin"],["durant","curry"],["kidd","carter"],
+];
+function lastName(n){return (n||"").trim().toLowerCase().split(/\s+/).pop();}
+function pairMatch(a,b,list){
+  const la=lastName(a),lb=lastName(b);
+  return list.some(([x,y])=>(la===x&&lb===y)||(la===y&&lb===x));
+}
+
+// ---- LIGA & KONFERENCE (za simulacijo) ----
+const CONFERENCE={
+  // East
+  BOS:"E",BKN:"E",NYK:"E",PHI:"E",TOR:"E",CHI:"E",CLE:"E",DET:"E",IND:"E",MIL:"E",
+  ATL:"E",CHA:"E",MIA:"E",ORL:"E",WAS:"E",
+  // West
+  DEN:"W",MIN:"W",OKC:"W",POR:"W",UTA:"W",GSW:"W",LAC:"W",LAL:"W",PHX:"W",SAC:"W",
+  DAL:"W",HOU:"W",MEM:"W",NOP:"W",SAS:"W"
+};
+const TEAM_NAME={
+  BOS:"Boston",BKN:"Brooklyn",NYK:"New York",PHI:"Philadelphia",TOR:"Toronto",
+  CHI:"Chicago",CLE:"Cleveland",DET:"Detroit",IND:"Indiana",MIL:"Milwaukee",
+  ATL:"Atlanta",CHA:"Charlotte",MIA:"Miami",ORL:"Orlando",WAS:"Washington",
+  DEN:"Denver",MIN:"Minnesota",OKC:"Oklahoma City",POR:"Portland",UTA:"Utah",
+  GSW:"Golden State",LAC:"LA Clippers",LAL:"LA Lakers",PHX:"Phoenix",SAC:"Sacramento",
+  DAL:"Dallas",HOU:"Houston",MEM:"Memphis",NOP:"New Orleans",SAS:"San Antonio"
+};
+// najnovejša sezona v datasetu
+function latestSeason(){
+  let best=null;
+  POOL.forEach(s=>{ if(!best||s.year>best) best=s.year; });
+  return best;
+}
+// zgradi moč vsake NBA ekipe iz dejanskih igralcev zadnje sezone
+function buildLeague(){
+  const season=latestSeason();
+  const sObj=POOL.find(s=>s.year===season);
+  const teams={};
+  if(sObj){
+    sObj.players.forEach(p=>{
+      const t=(p.team||"").toUpperCase();
+      if(!CONFERENCE[t]) return; // preskoči TOT in neznane
+      (teams[t]=teams[t]||[]).push(p);
+    });
+  }
+  // za vsako ekipo: moč = uteženo povprečje top 8 ratingov
+  const league=[];
+  Object.keys(teams).forEach(t=>{
+    const top=teams[t].sort((a,b)=>b.rating-a.rating).slice(0,8);
+    if(top.length<3) return;
+    const w=[0.22,0.18,0.15,0.12,0.1,0.09,0.08,0.06];
+    let str=0,wsum=0;
+    top.forEach((p,i)=>{const wi=w[i]||0.05;str+=p.rating*wi;wsum+=wi;});
+    str=str/wsum;
+    league.push({abbr:t,name:TEAM_NAME[t]||t,conf:CONFERENCE[t],strength:str});
+  });
+  return {season,league};
 }
 
 // ---- STATE ----
@@ -498,11 +592,12 @@ function showDecadePicker(){
         Iz katerih dekad naj vleče kolut? Izberi eno ali več — ali pusti prazno za vse.
       </div>
       <div class="hod-era-grid">${chips}</div>
-      <div style="margin-top:18px">
-        <button class="hod-btn" id="hod-era-go">Zavrti</button>
+      <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="hod-btn" id="hod-era-go">Zavrti izbrano</button>
+        <button class="hod-btn secondary" id="hod-era-all">Vse sezone</button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-top:12px" id="hod-era-hint">
-        ${selectedEras.size===0?'trenutno: vse dekade':`izbrano: ${[...selectedEras].join(', ')}`}
+        ${selectedEras.size===0?'nič izbrano = vse dekade':`izbrano: ${[...selectedEras].join(', ')}`}
       </div>
     </div>`;
   screen.querySelectorAll('.hod-era-chip').forEach(c=>{
@@ -511,10 +606,11 @@ function showDecadePicker(){
       if(selectedEras.has(e)) selectedEras.delete(e); else selectedEras.add(e);
       c.classList.toggle('on');
       document.getElementById('hod-era-hint').textContent=
-        selectedEras.size===0?'trenutno: vse dekade':`izbrano: ${[...selectedEras].join(', ')}`;
+        selectedEras.size===0?'nič izbrano = vse dekade':`izbrano: ${[...selectedEras].join(', ')}`;
     };
   });
   document.getElementById('hod-era-go').onclick=startSpin;
+  document.getElementById('hod-era-all').onclick=()=>{selectedEras.clear();startSpin();};
 }
 
 function pickRandomSeasons(){
@@ -634,30 +730,70 @@ function takePlayer(p){
 
 // ---- TEAM EVALUATION ----
 function computeChemistry(){
-  // 1) ERA MATCH: koliko igralcev deli isto dekado
+  // 1) ERA MATCH
   const eras={};
   roster.forEach(p=>{eras[p.era]=(eras[p.era]||0)+1;});
-  const eraKeys=Object.keys(eras);
   const dominant=Math.max(...Object.values(eras));
-  const eraSpread=eraKeys.length; // 1 = vsi ista doba, 5 = razmetano
-  // bonus če je velika večina iz iste dobe; penal za razpršenost
-  const eraScore = (dominant/MAX_TEAM)*8 - (eraSpread-1)*1.6; // ~ -6..+8
+  const eraSpread=Object.keys(eras).length;
+  const eraScore=(dominant/MAX_TEAM)*6-(eraSpread-1)*1.2; // rahlo zmanjšan vpliv
 
-  // 2) POSITIONAL FIT: idealno ~ PG2 SG2/3 SF2 PF2 C2 (uravnoteženo)
+  // 2) POSITIONAL FIT + SOLO PRITISK
   const ideal={PG:2,SG:3,SF:2,PF:2,C:2};
-  let fitPenalty=0;
+  let fitPenalty=0, soloPress=0;
   POSITIONS.forEach(pos=>{
     const c=posCount(pos);
-    if(c===0) fitPenalty+=4;                 // luknja je huda
-    else fitPenalty+=Math.abs(c-ideal[pos])*1.3;
+    if(c===0){ fitPenalty+=4; }
+    else{
+      fitPenalty+=Math.abs(c-ideal[pos])*1.1;
+      if(c===1) soloPress+=0.9;   // samo en igralec -> pod pritiskom, brez menjave
+    }
   });
-  const fitScore = 6 - fitPenalty;            // ~ -X..+6
+  const fitScore=6-fitPenalty;
+  const soloScore=-soloPress;      // ~ -0..-4.5
 
-  let chem = eraScore + fitScore;             // skupna kemija
-  chem = Math.max(-10, Math.min(10, Math.round(chem)));
-  return {chem, eraScore:Math.round(eraScore*10)/10,
+  // 3) SOIGRALCI (team-overlap) + DUOJI
+  let mateBonus=0, duoBonus=0, mateCount=0, duoList=[];
+  for(let i=0;i<roster.length;i++){
+    for(let j=i+1;j<roster.length;j++){
+      const a=roster[i], b=roster[j];
+      // ista ekipa v isti sezoni = pravi soigralci
+      if(a.team&&b.team&&a.team===b.team&&a.season===b.season){
+        mateBonus+=1.1; mateCount++;
+      }
+      // ista ekipa kadarkoli (čeprav druga sezona) = manjši bonus
+      else if(a.team&&b.team&&a.team===b.team){
+        mateBonus+=0.4; mateCount++;
+      }
+      // ikoničen duo
+      if(pairMatch(a.name,b.name,DUOS)){
+        duoBonus+=1.6; duoList.push(`${lastName(a.name)}–${lastName(b.name)}`);
+      }
+    }
+  }
+  mateBonus=Math.min(mateBonus,5);
+  duoBonus=Math.min(duoBonus,4);
+
+  // 4) RIVALSTVA -> penal
+  let rivalPenalty=0, rivalList=[];
+  for(let i=0;i<roster.length;i++){
+    for(let j=i+1;j<roster.length;j++){
+      if(pairMatch(roster[i].name,roster[j].name,RIVALRIES)){
+        rivalPenalty+=2.2; rivalList.push(`${lastName(roster[i].name)}–${lastName(roster[j].name)}`);
+      }
+    }
+  }
+  const rivalScore=-Math.min(rivalPenalty,6);
+
+  let chem=eraScore+fitScore+soloScore+mateBonus+duoBonus+rivalScore;
+  chem=Math.max(-12,Math.min(12,Math.round(chem)));
+  return {chem,
+          eraScore:Math.round(eraScore*10)/10,
           fitScore:Math.round(fitScore*10)/10,
-          dominant, eraSpread, eras};
+          soloScore:Math.round(soloScore*10)/10,
+          mateBonus:Math.round(mateBonus*10)/10,
+          duoBonus:Math.round(duoBonus*10)/10,
+          rivalScore:Math.round(rivalScore*10)/10,
+          dominant,eraSpread,eras,mateCount,duoList,rivalList};
 }
 
 function evaluateTeam(){
@@ -686,6 +822,83 @@ function gradeFor(o){
   return{g:"F",c:"#e63946",v:"Tank mode. Ampak hej — vsaj imaš zgodbo za pripovedovati."};
 }
 
+// ---- SIMULACIJA ----
+function userTeamStrength(){
+  const ev=evaluateTeam();
+  const sorted=[...roster].sort((a,b)=>b.rating-a.rating).slice(0,8);
+  const w=[0.22,0.18,0.15,0.12,0.1,0.09,0.08,0.06];
+  let str=0,wsum=0;
+  sorted.forEach((p,i)=>{const wi=w[i]||0.05;str+=p.rating*wi;wsum+=wi;});
+  str=str/wsum;
+  str += ev.chem.chem*0.5;   // kemija premakne moč
+  return str;
+}
+function winProb(a,b,home){
+  const HCA=2.5;             // home court advantage (v točkah moči)
+  const D=30;                // občutljivost (kalibrirano: +12 moči ≈ 70% zmage)
+  const diff=(a-b)+(home?HCA:-HCA);
+  return 1/(1+Math.pow(10,-diff/D));
+}
+function winProbPlayoff(a,b){
+  // playoffi so bolj negotovi (best-of-7, oblika, poškodbe) -> višji D
+  const D=55;
+  return 1/(1+Math.pow(10,-(a-b)/D));
+}
+function simSeason(myStr, league){
+  let wins=0; const games=82, n=league.length;
+  for(let g=0;g<games;g++){
+    const opp=league[g%n];
+    const home=(g%2===0);
+    if(Math.random()<winProb(myStr,opp.strength,home)) wins++;
+  }
+  return wins;
+}
+function monteCarlo(myStr, full, myConf, runs){
+  const confTeams=full.league.filter(t=>t.conf===myConf);
+  const confStr=confTeams.map(t=>t.strength).sort((a,b)=>a-b);
+  const qStr=p=>confStr[Math.floor(confStr.length*p)]||confStr[confStr.length-1];
+  let winsSum=0, winsArr=[], playoff=0, top1=0, finals=0, titles=0;
+  const avgStr=full.league.reduce((s,t)=>s+t.strength,0)/full.league.length;
+  for(let r=0;r<runs;r++){
+    const myWins=simSeason(myStr, full.league);
+    winsSum+=myWins; winsArr.push(myWins);
+    const standings=confTeams.map(t=>{
+      return {abbr:t.abbr, wins:41+(t.strength-avgStr)*1.6 + (Math.random()-0.5)*10};
+    });
+    standings.push({abbr:"__ME__", wins:myWins});
+    standings.sort((a,b)=>b.wins-a.wins);
+    const myRank=standings.findIndex(t=>t.abbr==="__ME__")+1;
+    if(myRank<=8) playoff++;
+    if(myRank===1) top1++;
+    // playoff napredovanje: 4 best-of-7 serije proti vse močnejšim nasprotnikom
+    if(myRank<=8){
+      const opps=[qStr(0.5),qStr(0.7),qStr(0.88),qStr(0.97)+3];
+      let rounds=0;
+      for(let k=0;k<4;k++){
+        const pg=winProbPlayoff(myStr,opps[k]);
+        let pSeries=0;
+        for(let w=4;w<=7;w++){const c=[1,4,10,20][w-4];pSeries+=c*Math.pow(pg,4)*Math.pow(1-pg,w-4);}
+        pSeries=Math.min(pSeries,0.9);
+        if(Math.random()<pSeries) rounds++; else break;
+      }
+      if(rounds>=3) finals++;
+      if(rounds>=4) titles++;
+    }
+  }
+  winsArr.sort((a,b)=>a-b);
+  return {
+    avgWins:Math.round(winsSum/runs),
+    medWins:Math.round(winsArr[Math.floor(runs/2)]),
+    lo:Math.round(winsArr[Math.floor(runs*0.1)]),
+    hi:Math.round(winsArr[Math.floor(runs*0.9)]),
+    playoffPct:Math.round(playoff/runs*100),
+    top1Pct:Math.round(top1/runs*100),
+    finalsPct:Math.round(finals/runs*100),
+    titlePct:Math.round(titles/runs*100),
+    confTeams
+  };
+}
+
 function showResult(){
   phase="result";
   const ev=evaluateTeam();
@@ -706,31 +919,138 @@ function showResult(){
       <div class="hod-grade hod-pop" style="color:${gr.c};text-shadow:0 0 30px ${gr.c}55">${gr.g}</div>
       <div class="hod-overall">OVERALL ${ev.overall} · ★ ${ev.stars} zvezd · ${ev.posSpread}/5 pozicij</div>
       <div class="hod-verdict">${gr.v}</div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0 4px">
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 4px">
         <div class="hod-chem-tag" style="--cc:${ev.chem.chem>=3?'var(--green)':ev.chem.chem<=-3?'var(--red)':'var(--muted)'}">
           KEMIJA ${ev.chem.chem>0?'+':''}${ev.chem.chem}
         </div>
-        <div class="hod-chem-tag" style="--cc:${ev.chem.eraScore>=0?'var(--green)':'var(--red)'}">
-          ERA-FIT ${ev.chem.eraScore>0?'+':''}${ev.chem.eraScore}
+        <div class="hod-chem-tag" style="--cc:${ev.chem.mateBonus>0?'var(--green)':'var(--muted)'}">
+          SOIGRALCI +${ev.chem.mateBonus}
         </div>
-        <div class="hod-chem-tag" style="--cc:${ev.chem.fitScore>=0?'var(--green)':'var(--red)'}">
-          POZICIJE ${ev.chem.fitScore>0?'+':''}${ev.chem.fitScore}
+        <div class="hod-chem-tag" style="--cc:${ev.chem.duoBonus>0?'var(--green)':'var(--muted)'}">
+          DUOJI +${ev.chem.duoBonus}
+        </div>
+        <div class="hod-chem-tag" style="--cc:${ev.chem.rivalScore<0?'var(--red)':'var(--muted)'}">
+          RIVALSTVA ${ev.chem.rivalScore}
+        </div>
+        <div class="hod-chem-tag" style="--cc:${ev.chem.soloScore<0?'var(--red)':'var(--muted)'}">
+          PRITISK ${ev.chem.soloScore}
         </div>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:4px">
-        ${ev.chem.eraSpread===1?'Vsi iz iste dobe — popolna kemija.':
-          ev.chem.dominant>=8?'Močno jedro iz ene dobe.':
-          ev.chem.eraSpread>=4?'Razmetane dobe — slog igre se grize.':
-          'Mešane dobe, sprejemljivo.'}
+        ${ev.chem.duoList.length?`Slavni duo: ${ev.chem.duoList.join(', ')}. `:''}${
+          ev.chem.rivalList.length?`Trenja: ${ev.chem.rivalList.join(', ')}. `:''}${
+          ev.chem.mateCount>0?`${ev.chem.mateCount} parov pravih soigralcev.`:
+          ev.chem.eraSpread>=4?'Razmetane dobe — slog igre se grize.':''}
       </div>
       <div style="font-size:12px;color:var(--muted);letter-spacing:1px">
         prva peterka ⌀ ${ev.starterAvg} · cela ekipa ⌀ ${ev.fullAvg}
       </div>
       <div class="hod-final-roster">${cards}</div>
-      <button class="hod-btn" id="hod-replay">Nova ekipa</button>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="hod-btn" id="hod-sim">Simuliraj sezono 🏆</button>
+        <button class="hod-btn secondary" id="hod-replay">Nova ekipa</button>
+      </div>
     </div>`;
+  document.getElementById('hod-sim').onclick=showTeamPicker;
   document.getElementById('hod-replay').onclick=()=>{
     roster=[];chosenSeason=null;currentOffer=[];renderProgress();showIntro();
+  };
+}
+
+let _cachedLeague=null;
+function showTeamPicker(){
+  phase="teampick";
+  if(!_cachedLeague) _cachedLeague=buildLeague();
+  const full=_cachedLeague;
+  if(full.league.length<10){
+    screen.innerHTML=`<div class="hod-result hod-fade">
+      <div class="hod-stage-label">Simulacija ni na voljo</div>
+      <div class="hod-verdict">Za simulacijo rabim polno sezono ${full.season} z ekipami — to deluje na GitHub datasetu, ne na vgrajenem.</div>
+      <button class="hod-btn secondary" id="hod-back">Nazaj</button></div>`;
+    document.getElementById('hod-back').onclick=showResult;
+    return;
+  }
+  const mk=conf=>full.league.filter(t=>t.conf===conf)
+    .sort((a,b)=>b.strength-a.strength)
+    .map(t=>`<div class="hod-team-chip" data-abbr="${t.abbr}" data-conf="${t.conf}">
+      <span>${t.name}</span><span class="hod-team-str">${Math.round(t.strength)}</span></div>`).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Katero ekipo nadomestiš? (${full.season})</div>
+      <div class="hod-verdict" style="max-width:440px;margin:0 auto 14px">
+        Tvoja all-time ekipa prevzame njen položaj v konferenci. Nato simuliramo sezono ×1000.
+      </div>
+      <div class="hod-conf-wrap">
+        <div><div class="hod-conf-title">VZHOD</div>${mk("E")}</div>
+        <div><div class="hod-conf-title">ZAHOD</div>${mk("W")}</div>
+      </div>
+      <button class="hod-btn secondary" id="hod-back" style="margin-top:14px">Nazaj</button>
+    </div>`;
+  screen.querySelectorAll('.hod-team-chip').forEach(c=>{
+    c.onclick=()=>runSimulation(c.dataset.abbr, c.dataset.conf, full);
+  });
+  document.getElementById('hod-back').onclick=showResult;
+}
+
+function runSimulation(abbr, conf, full){
+  phase="simulating";
+  const replaced=full.league.find(t=>t.abbr===abbr);
+  // zamenjaj izbrano ekipo z uporabnikovo močjo
+  const myStr=userTeamStrength();
+  const simLeague={season:full.season,
+    league:full.league.map(t=>t.abbr===abbr?{...t,strength:myStr,name:"TVOJA EKIPA",mine:true}:t)};
+  screen.innerHTML=`<div class="hod-slot-stage hod-fade">
+    <div class="hod-stage-label">Simuliram sezono ×1000…</div>
+    <div class="hod-reels"><div class="hod-reel spinning"><div class="hod-reel-strip">
+      ${Array.from({length:6}).map(()=>`<div class="hod-reel-item"><div class="hod-reel-year">🏀</div></div>`).join('')}
+    </div></div></div></div>`;
+  setTimeout(()=>{
+    const res=monteCarlo(myStr, simLeague, conf, 1000);
+    showSimResult(res, replaced, conf, myStr, full);
+  }, 600);
+}
+
+function showSimResult(res, replaced, conf, myStr, full){
+  phase="simresult";
+  const confName=conf==="E"?"Vzhodni":"Zahodni";
+  const losses=82-res.avgWins;
+  let verdict;
+  if(res.titlePct>=40) verdict="Dinastija. Liga nima odgovora.";
+  else if(res.titlePct>=20) verdict="Resen prvak — naslov je realen cilj.";
+  else if(res.finalsPct>=30) verdict="Kontender. Finale na dosegu.";
+  else if(res.playoffPct>=70) verdict="Trdna playoff ekipa.";
+  else if(res.playoffPct>=35) verdict="Boj za play-in.";
+  else verdict="Lottery. Sezona za pozabit.";
+  // konferenčna lestvica (povprečje)
+  const avgStr=full.league.reduce((s,t)=>s+t.strength,0)/full.league.length;
+  const table=[...res.confTeams.map(t=>({name:t.name,wins:Math.round(41+(t.strength-avgStr)*1.6),mine:false})),
+               {name:"TVOJA EKIPA",wins:res.avgWins,mine:true}]
+    .sort((a,b)=>b.wins-a.wins);
+  const rows=table.map((t,i)=>`<div class="hod-stand-row ${t.mine?'mine':''}">
+    <span>${i+1}. ${t.name}</span><span>${t.wins}-${82-t.wins}</span></div>`).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Simulacija: ${full.season} · ${confName} konf.</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">nadomestil: ${replaced.name}</div>
+      <div class="hod-grade hod-pop" style="font-size:64px;color:var(--gold)">${res.avgWins}-${losses}</div>
+      <div class="hod-overall">pričakovan rekord (razpon ${res.lo}–${res.hi} zmag)</div>
+      <div class="hod-verdict">${verdict}</div>
+      <div class="hod-sim-grid">
+        <div class="hod-sim-stat"><b>${res.playoffPct}%</b><span>PLAYOFF</span></div>
+        <div class="hod-sim-stat"><b>${res.top1Pct}%</b><span>1. MESTO</span></div>
+        <div class="hod-sim-stat"><b>${res.finalsPct}%</b><span>FINALE</span></div>
+        <div class="hod-sim-stat hod-sim-title"><b>${res.titlePct}%</b><span>NASLOV</span></div>
+      </div>
+      <div class="hod-stand-title">${confName} konferenca (povprečje)</div>
+      <div class="hod-standings">${rows}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+        <button class="hod-btn secondary" id="hod-sim-again">Druga ekipa</button>
+        <button class="hod-btn secondary" id="hod-replay2">Nova ekipa</button>
+      </div>
+    </div>`;
+  document.getElementById('hod-sim-again').onclick=showTeamPicker;
+  document.getElementById('hod-replay2').onclick=()=>{
+    roster=[];chosenSeason=null;currentOffer=[];_cachedLeague=null;renderProgress();showIntro();
   };
 }
 
