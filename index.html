@@ -210,6 +210,10 @@
 .hod-spot-hint.good{color:#0a0a0f;background:var(--green);}
 .hod-spot-hint.mid{color:#0a0a0f;background:var(--gold);}
 .hod-spot-hint.bad{color:#fff;background:var(--red);}
+.hod-spot-view{z-index:5;}
+.hod-spot-view.filled{background:rgba(10,10,18,.92)!important;border:2px solid var(--gold)!important;}
+.hod-spot-view .hod-spot-name{color:#fff!important;font-weight:700;}
+.hod-spot-view .hod-spot-pos{color:var(--gold);}
 .hod-bench{margin-top:14px;display:flex;flex-direction:column;gap:6px;max-width:440px;margin-left:auto;margin-right:auto;}
 .hod-bench-row{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 10px;text-align:left;}
 .hod-bench-label{font-family:'Bebas Neue';font-size:13px;letter-spacing:1px;color:var(--muted);display:block;margin-bottom:4px;}
@@ -242,6 +246,10 @@
 .hod-lb-rank{font-family:'Bebas Neue';font-size:16px;width:28px;text-align:center;flex:none;}
 .hod-lb-nick{flex:1;text-align:left;font-size:14px;}
 .hod-lb-ovr{font-family:'Anton';font-size:20px;color:var(--gold);flex:none;}
+.hod-lb-row.me{border-color:#4cc9f0;background:rgba(76,201,240,.15);box-shadow:0 0 10px rgba(76,201,240,.3);}
+.hod-lb-sep{text-align:center;color:var(--muted);font-size:14px;letter-spacing:3px;padding:3px 0;}
+.hod-lb-myrank{font-size:13px;color:#4cc9f0;margin-bottom:8px;}
+.hod-lb-myrank b{font-size:16px;color:#fff;}
 .hod-budget-bar{max-width:380px;margin:0 auto 12px;}
 .hod-budget-row{display:flex;justify-content:space-between;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
 .hod-budget-row b{color:var(--gold);font-family:'Bebas Neue';font-size:16px;}
@@ -661,9 +669,9 @@ async function supaSubmit(row){
 async function supaLeaderboard(mode, day){
   let url;
   if(mode==="daily"){
-    url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.daily&challenge_day=eq.${encodeURIComponent(day)}&order=overall.desc,created_at.asc&limit=50`;
+    url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.daily&challenge_day=eq.${encodeURIComponent(day)}&order=overall.desc,created_at.asc&limit=300`;
   } else {
-    url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${encodeURIComponent(mode)}&order=overall.desc,created_at.asc&limit=50`;
+    url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${encodeURIComponent(mode)}&order=overall.desc,created_at.asc&limit=300`;
   }
   const res=await fetch(url, { headers:SUPA_HEADERS });
   if(!res.ok) throw new Error("HTTP "+res.status);
@@ -2406,12 +2414,14 @@ async function postToLeaderboard(ev, sim, btn){
   try{
     await supaSubmit(row);
     if(btn){ btn.textContent="✓ Objavljeno"; }
+    _myLastPost={nick, overall:ev.overall, mode};   // za označitev v lestvici
     showLeaderboard();
   }catch(e){
     if(btn){ btn.disabled=false; btn.textContent="📊 Objavi rezultat"; }
     alert("Objava ni uspela (preveri povezavo). "+e.message);
   }
 }
+let _myLastPost=null;
 
 async function showLeaderboard(){
   const box=document.getElementById('hod-leaderboard');
@@ -2426,14 +2436,36 @@ async function showLeaderboard(){
   if(!rows.length){ box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">še ni rezultatov — bodi prvi!</div>`; return; }
   _lbRows=rows;
   const medals=["🥇","🥈","🥉"];
-  const list=rows.map((r,i)=>`
-    <div class="hod-lb-row" data-i="${i}">
+
+  // poišči moj rang (zadnji objavljeni overall v tem načinu)
+  let myIdx=-1;
+  if(_myLastPost && _myLastPost.mode===mode){
+    myIdx=rows.findIndex(r=>r.nickname===_myLastPost.nick && r.overall===_myLastPost.overall);
+  }
+
+  const rowHtml=(r,i)=>`
+    <div class="hod-lb-row ${i===myIdx?'me':''}" data-i="${i}">
       <span class="hod-lb-rank">${medals[i]||(i+1)}</span>
       <span class="hod-lb-nick">${escapeHtml(r.nickname)} ${r.goal_done?'<span style="color:var(--green)">✓</span>':''}</span>
       <span class="hod-lb-ovr">${r.overall}</span>
-    </div>`).join('');
+    </div>`;
+
+  // top 10
+  let html=rows.slice(0,10).map((r,i)=>rowHtml(r,i)).join('');
+
+  // če sem objavil in sem IZVEN top 10 -> dodaj segment (3 nad, jaz, 3 pod)
+  if(myIdx>=10){
+    const from=Math.max(10, myIdx-3), to=Math.min(rows.length, myIdx+4);
+    html+=`<div class="hod-lb-sep">· · ·</div>`;
+    for(let i=from;i<to;i++) html+=rowHtml(rows[i], i);
+  }
+
+  const myRankLine = myIdx>=0
+    ? `<div class="hod-lb-myrank">Tvoja uvrstitev: <b>${myIdx+1}.</b> od ${rows.length}</div>` : '';
+
   box.innerHTML=`<div class="hod-lb-title">${title}</div>
-    <div class="hod-lb-list">${list}</div>
+    ${myRankLine}
+    <div class="hod-lb-list">${html}</div>
     <div style="font-size:10px;color:var(--muted);margin-top:6px">klikni igralca za njegovo ekipo</div>`;
   box.querySelectorAll('.hod-lb-row').forEach(el=>{
     el.onclick=()=>showUserTeam(_lbRows[+el.dataset.i]);
@@ -2448,9 +2480,9 @@ function showUserTeam(r){
   const bySpot={}; rs.filter(p=>p.role==="S").forEach(p=>{if(p.spot)bySpot[p.spot]=p;});
   const spotNodes=POS_LADDER.map(spot=>{
     const c=COURT_SPOTS[spot]; const p=bySpot[spot];
-    return `<div class="hod-spot ${p?'filled':'empty'}" style="left:${c.x/300*100}%;top:${c.y/300*100}%">
+    return `<div class="hod-spot hod-spot-view ${p?'filled':'empty'}" style="left:${c.x/300*100}%;top:${c.y/300*100}%">
       <div class="hod-spot-pos">${spot}</div>
-      ${p?`<div class="hod-spot-name">${lastNameCap(p)}</div><div class="hod-spot-rt">${p.rating}</div>`:'<div class="hod-spot-empty">—</div>'}
+      ${p?`<div class="hod-spot-name" style="color:#fff">${lastNameCap(p)}</div><div class="hod-spot-rt">${p.rating}</div>`:'<div class="hod-spot-empty">—</div>'}
     </div>`;
   }).join('');
   const benchGroups=["6","R","F"].map(role=>{
