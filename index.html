@@ -136,6 +136,16 @@
 .hod-fade{animation:hod-fade .4s ease;}
 .hod-chem-tag{font-family:'Bebas Neue';font-size:14px;letter-spacing:1px;
   border:1px solid var(--cc);color:var(--cc);border-radius:20px;padding:4px 12px;}
+.hod-era-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:440px;margin:0 auto;}
+.hod-era-chip{background:var(--panel);border:2px solid var(--line);border-radius:14px;
+  padding:12px 18px;cursor:pointer;transition:.15s;min-width:96px;display:flex;
+  flex-direction:column;align-items:center;gap:2px;}
+.hod-era-chip:hover{border-color:var(--gold);transform:translateY(-2px);}
+.hod-era-chip.on{border-color:var(--gold);background:linear-gradient(180deg,rgba(255,182,39,.18),rgba(255,182,39,.05));
+  box-shadow:0 0 14px rgba(255,182,39,.25);}
+.hod-era-name{font-family:'Anton';font-size:26px;color:var(--ink);line-height:1;}
+.hod-era-chip.on .hod-era-name{color:var(--gold);}
+.hod-era-count{font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
 @keyframes hod-fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .hod-pop{animation:hod-pop .35s cubic-bezier(.2,1.4,.4,1);}
 @keyframes hod-pop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
@@ -388,10 +398,21 @@ async function loadDataset(){
 
 // ---- STATE ----
 let roster=[]; // {pos,name,season,pts,reb,ast,rating}
-let phase="intro"; // intro | spin | choose-season | offer | result
+let phase="intro"; // intro | decades | spin | choose-season | offer | result
 let seasonChoices=[];
 let chosenSeason=null;
 let currentOffer=[];
+let selectedEras=new Set(); // izbrane dekade za filter
+
+const ERA_ORDER=["80s","90s","2000s","2010s","2020s"];
+function availableEras(){
+  const present=new Set(POOL.map(s=>s.era));
+  return ERA_ORDER.filter(e=>present.has(e));
+}
+function filteredPool(){
+  if(selectedEras.size===0) return POOL;
+  return POOL.filter(s=>selectedEras.has(s.era));
+}
 
 const screen=document.getElementById('hod-screen');
 const progress=document.getElementById('hod-progress');
@@ -453,24 +474,66 @@ function showIntro(){
         players.json še ni na GitHubu — igra teče na vgrajenih 10 sezonah. Ko objaviš poln dataset, se naloži samodejno.
       </div>`:''}
     </div>`;
-  document.getElementById('hod-start').onclick=startSpin;
+  document.getElementById('hod-start').onclick=()=>{
+    if(availableEras().length>1) showDecadePicker(); else startSpin();
+  };
   renderProgress();
 }
 
+function showDecadePicker(){
+  phase="decades";
+  const eras=availableEras();
+  const chips=eras.map(e=>{
+    const n=POOL.filter(s=>s.era===e).length;
+    const on=selectedEras.has(e);
+    return `<div class="hod-era-chip ${on?'on':''}" data-era="${e}">
+      <span class="hod-era-name">${e}</span>
+      <span class="hod-era-count">${n} sezon</span>
+    </div>`;
+  }).join('');
+  screen.innerHTML=`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">Izberi obdobja</div>
+      <div class="hod-verdict" style="margin:0 auto 16px;max-width:420px">
+        Iz katerih dekad naj vleče kolut? Izberi eno ali več — ali pusti prazno za vse.
+      </div>
+      <div class="hod-era-grid">${chips}</div>
+      <div style="margin-top:18px">
+        <button class="hod-btn" id="hod-era-go">Zavrti</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:12px" id="hod-era-hint">
+        ${selectedEras.size===0?'trenutno: vse dekade':`izbrano: ${[...selectedEras].join(', ')}`}
+      </div>
+    </div>`;
+  screen.querySelectorAll('.hod-era-chip').forEach(c=>{
+    c.onclick=()=>{
+      const e=c.dataset.era;
+      if(selectedEras.has(e)) selectedEras.delete(e); else selectedEras.add(e);
+      c.classList.toggle('on');
+      document.getElementById('hod-era-hint').textContent=
+        selectedEras.size===0?'trenutno: vse dekade':`izbrano: ${[...selectedEras].join(', ')}`;
+    };
+  });
+  document.getElementById('hod-era-go').onclick=startSpin;
+}
+
 function pickRandomSeasons(){
-  const idx=[...Array(POOL.length).keys()];
+  const pool=filteredPool();
+  const idx=[...Array(pool.length).keys()];
   for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
-  return idx.slice(0,3).map(i=>POOL[i]);
+  const take=Math.min(3,pool.length);
+  return idx.slice(0,take).map(i=>pool[i]);
 }
 
 function startSpin(){
   phase="spin";
   seasonChoices=pickRandomSeasons();
-  // build 3 spinning reels
-  const reelHtml=[0,1,2].map(i=>{
+  const n=seasonChoices.length;             // 1..3
+  const spinPool=filteredPool();
+  const reelHtml=Array.from({length:n}).map((_,i)=>{
     let strip="";
     for(let k=0;k<10;k++){
-      const s=POOL[Math.floor(Math.random()*POOL.length)];
+      const s=spinPool[Math.floor(Math.random()*spinPool.length)];
       strip+=`<div class="hod-reel-item"><div class="hod-reel-year">${s.year.split('-')[0]}</div><div class="hod-reel-era">${s.era}</div></div>`;
     }
     return `<div class="hod-reel spinning" id="hod-reel-${i}"><div class="hod-reel-strip">${strip}</div></div>`;
@@ -482,7 +545,7 @@ function startSpin(){
     </div>
     ${rosterPanel()}`;
   // stop reels staggered
-  [0,1,2].forEach(i=>{
+  Array.from({length:n}).forEach((_,i)=>{
     setTimeout(()=>{
       const reel=document.getElementById('hod-reel-'+i);
       reel.classList.remove('spinning');reel.classList.add('locked');
@@ -490,7 +553,7 @@ function startSpin(){
       reel.querySelector('.hod-reel-strip').innerHTML=
         `<div class="hod-reel-item"><div class="hod-reel-year">${s.year.split('-')[0]}</div><div class="hod-reel-era">${s.era}</div></div>`;
       reel.querySelector('.hod-reel-strip').style.transform='translateY(0)';
-      if(i===2) setTimeout(showSeasonChoices,400);
+      if(i===n-1) setTimeout(showSeasonChoices,400);
     }, 700+i*450);
   });
 }
