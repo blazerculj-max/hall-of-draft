@@ -159,6 +159,7 @@
 .hod-pright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;}
 .hod-price{font-family:'Bebas Neue';font-size:15px;letter-spacing:.5px;color:var(--gold);
   background:rgba(255,182,39,.12);border:1px solid rgba(255,182,39,.4);border-radius:8px;padding:1px 8px;}
+.hod-after{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.3px;}
 .hod-budget-bar{max-width:380px;margin:0 auto 12px;}
 .hod-budget-row{display:flex;justify-content:space-between;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
 .hod-budget-row b{color:var(--gold);font-family:'Bebas Neue';font-size:16px;}
@@ -661,6 +662,18 @@ const progress=document.getElementById('hod-progress');
 function effPos(p){return p.assignedPos||p.pos;}
 function playerPositions(p){return (p.positions&&p.positions.length)?p.positions:[p.pos];}
 function posCount(pos){return roster.filter(p=>effPos(p)===pos).length;}
+// unikaten ključ igralca = ime + sezona (Jordan 95-96 != Jordan 90-91)
+function playerKey(p){return p.name+"|"+p.season;}
+// priimek z veliko začetnico (lastName vrne lowercase)
+function lastNameCap(p){const l=lastName(p.name);return l?l[0].toUpperCase()+l.slice(1):p.name;}
+// kratka sezona: "1995-96" -> "'96"
+function shortSeason(p){const yr=(p.season||"").split('-');return yr.length>1?"'"+yr[1]:p.season;}
+// je igralec že izbran? (solo: v roster; mp: v katerikoli ekipi)
+function isDrafted(p){
+  const k=playerKey(p);
+  if(mp&&mp.teams) return mp.teams.some(t=>t.roster.some(x=>playerKey(x)===k));
+  return roster.some(x=>playerKey(x)===k);
+}
 function teamFull(){return roster.length>=MAX_TEAM;}
 function missingPositions(){return POSITIONS.filter(p=>posCount(p)<1);}
 // positions we can still add to (under max per pos)
@@ -692,7 +705,7 @@ function ratingClass(r){
 function rosterPanel(){
   let rows=POSITIONS.map(pos=>{
     const ps=roster.filter(p=>effPos(p)===pos);
-    let chips=ps.map(p=>`<span class="hod-chip">${p.name.split(' ').slice(-1)[0]} <b style="color:var(--gold)">${p.rating}</b></span>`).join('');
+    let chips=ps.map(p=>`<span class="hod-chip">${lastNameCap(p)} <span style="color:var(--muted);font-size:10px">${shortSeason(p)}</span> <b style="color:var(--gold)">${p.rating}</b></span>`).join('');
     if(ps.length===0) chips=`<span class="hod-chip empty">prazno</span>`;
     return `<div class="hod-pos-row"><span class="hod-pos-tag">${pos}</span>${chips}</div>`;
   }).join('');
@@ -891,7 +904,7 @@ function makeOffer(){
   const left=budgetLeft();
   currentOffer=[];
   allowed.forEach(pos=>{
-    let cands=chosenSeason.players.filter(p=>p.pos===pos);
+    let cands=chosenSeason.players.filter(p=>p.pos===pos && !isDrafted(p));
     // budget: ponudi le igralce, ki si jih še lahko privoščiš
     if(budgetMode){
       const afford=cands.filter(p=>playerCost(p)<=left);
@@ -907,7 +920,7 @@ function makeOffer(){
     }
   });
   if(currentOffer.length===0){
-    chosenSeason.players.forEach(p=>{if(allowed.includes(p.pos))currentOffer.push(p);});
+    chosenSeason.players.forEach(p=>{if(allowed.includes(p.pos)&&!isDrafted(p))currentOffer.push(p);});
     currentOffer=currentOffer.slice(0,5);
   }
   const forced = (MAX_TEAM-roster.length)<=missingPositions().length && missingPositions().length>0;
@@ -924,8 +937,10 @@ function makeOffer(){
          </div>`
       : '';
     const cost=playerCost(p);
+    const afterBuy=budgetLeft()-cost;
     const priceBadge=budgetMode
-      ? `<div class="hod-price">${cost===0?'FREE':'$'+cost}</div>` : '';
+      ? `<div class="hod-price">${cost===0?'FREE':'$'+cost}</div>
+         <div class="hod-after">→ $${afterBuy}</div>` : '';
     return `
     <div class="hod-pcard ${canTake?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.07}s">
       <div class="hod-pos-badge hod-pos-${p.pos}">${allPos.join('/')}</div>
@@ -1190,6 +1205,7 @@ function mpStartRound(){
   mp.spinSeason=pool[Math.floor(Math.random()*pool.length)];
   // slot machine animacija (en kolut), nato sestavi bazen 10 igralcev
   setMpFrame();
+  mpRenderTeams();   // roster ostane viden med vrtenjem
   setMpAction(`
     <div class="hod-slot-stage hod-fade">
       <div class="hod-stage-label">Runda ${mp.round+1} · vrti se sezona…</div>
@@ -1214,14 +1230,14 @@ function mpStartRound(){
 function mpBuildPool(){
   const s=mp.spinSeason; const pool=[];
   POSITIONS.forEach(pos=>{
-    const cands=s.players.filter(p=>p.pos===pos);
+    const cands=s.players.filter(p=>p.pos===pos && !isDrafted(p));
     // premešaj in vzemi do 2
     for(let k=cands.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[cands[k],cands[j]]=[cands[j],cands[k]];}
     pool.push(...cands.slice(0,2));
   });
   // če katera pozicija nima 2, dopolni z naključnimi iz sezone
   if(pool.length<10){
-    const extra=s.players.filter(p=>!pool.includes(p));
+    const extra=s.players.filter(p=>!pool.includes(p) && !isDrafted(p));
     for(let k=extra.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[extra[k],extra[j]]=[extra[j],extra[k]];}
     pool.push(...extra.slice(0,10-pool.length));
   }
@@ -1268,7 +1284,8 @@ function mpShowPick(){
       </div>
       <div class="hod-pright">
         <div class="hod-prating ${ratingClass(p.rating)}">${p.rating}</div>
-        ${budgetMode?`<div class="hod-price">${cost===0?'FREE':'$'+cost}</div>`:''}
+        ${budgetMode?`<div class="hod-price">${cost===0?'FREE':'$'+cost}</div>
+          <div class="hod-after">→ $${(budgetTotal-team.spent)-cost}</div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1330,6 +1347,7 @@ function mpPlace(poolIdx, assignedPos){
   if(budgetMode) team.spent+=playerCost(p);
   mp.pool.splice(poolIdx,1);
   mp.pickIdx++;
+  mpRenderTeams();   // takoj osveži roster prikaz (da igralec ne "pade ven")
   mpShowPick();
 }
 
@@ -1348,7 +1366,7 @@ function mpRenderTeams(){
   slot.innerHTML=mp.teams.map((t,ti)=>{
     const chips=POSITIONS.map(pos=>{
       const ps=t.roster.filter(p=>effPos(p)===pos);
-      return ps.map(p=>`<span class="hod-chip">${lastName(p.name)} <b style="color:var(--gold)">${p.rating}</b></span>`).join('');
+      return ps.map(p=>`<span class="hod-chip">${lastNameCap(p)} <span style="color:var(--muted);font-size:10px">${shortSeason(p)}</span> <b style="color:var(--gold)">${p.rating}</b></span>`).join('');
     }).join('');
     return `<div class="hod-mp-team" style="--tc:${MP_COLORS[ti]}">
       <div class="hod-mp-team-head"><span>${t.name}</span><span>${t.roster.length}/12</span></div>
