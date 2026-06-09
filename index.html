@@ -149,6 +149,15 @@
 #hod-draft-frame{display:flex;flex-direction:column;}
 .hod-action-zone{min-height:230px;display:flex;flex-direction:column;justify-content:center;}
 #hod-roster-slot{margin-top:6px;}
+.hod-chem-mini{display:inline-flex;align-items:center;gap:6px;margin-top:6px;
+  padding:2px 8px;border-radius:20px;font-size:11px;border:1px solid var(--line);}
+.hod-chem-mini .hod-chem-sign{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;line-height:1;}
+.hod-chem-mini .hod-chem-why{color:var(--muted);letter-spacing:.3px;}
+.hod-chem-mini.pos{border-color:rgba(46,196,182,.5);}
+.hod-chem-mini.pos .hod-chem-sign{color:var(--green);}
+.hod-chem-mini.neg{border-color:rgba(230,57,70,.5);}
+.hod-chem-mini.neg .hod-chem-sign{color:var(--red);}
+.hod-chem-mini.neu .hod-chem-sign{color:var(--muted);}
 .hod-conf-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:480px;margin:0 auto;text-align:left;}
 .hod-conf-title{font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;color:var(--gold);margin-bottom:6px;text-align:center;}
 .hod-team-chip{display:flex;justify-content:space-between;align-items:center;background:var(--panel);
@@ -715,6 +724,15 @@ function makeOffer(){
   const forced = (MAX_TEAM-roster.length)<=missingPositions().length && missingPositions().length>0;
   const cards=currentOffer.map((p,i)=>{
     const canTake=posCount(p.pos)<MAX_PER_POS;
+    const cd=chemDelta(p);
+    const sign=cd.level>0?'+'.repeat(cd.level):cd.level<0?'−'.repeat(-cd.level):'•';
+    const cls=cd.level>0?'pos':cd.level<0?'neg':'neu';
+    const chemBadge=roster.length>0
+      ? `<div class="hod-chem-mini ${cls}" title="vpliv na kemijo">
+           <span class="hod-chem-sign">${sign}</span>
+           ${cd.reason?`<span class="hod-chem-why">${cd.reason}</span>`:''}
+         </div>`
+      : '';
     return `
     <div class="hod-pcard ${canTake?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.07}s">
       <div class="hod-pos-badge hod-pos-${p.pos}">${p.pos}</div>
@@ -726,6 +744,7 @@ function makeOffer(){
           <div><b>${p.reb}</b><span>RPG</span></div>
           <div><b>${p.ast}</b><span>APG</span></div>
         </div>
+        ${chemBadge}
       </div>
       <div class="hod-prating ${ratingClass(p.rating)}">${p.rating}</div>
     </div>`;
@@ -752,42 +771,40 @@ function takePlayer(p){
 }
 
 // ---- TEAM EVALUATION ----
-function computeChemistry(){
+function chemFor(arr){
+  const posC=pos=>arr.filter(p=>p.pos===pos).length;
   // 1) ERA MATCH
   const eras={};
-  roster.forEach(p=>{eras[p.era]=(eras[p.era]||0)+1;});
-  const dominant=Math.max(...Object.values(eras));
+  arr.forEach(p=>{eras[p.era]=(eras[p.era]||0)+1;});
+  const vals=Object.values(eras);
+  const dominant=vals.length?Math.max(...vals):0;
   const eraSpread=Object.keys(eras).length;
-  const eraScore=(dominant/MAX_TEAM)*6-(eraSpread-1)*1.2; // rahlo zmanjšan vpliv
+  const eraScore=(dominant/MAX_TEAM)*6-(eraSpread-1)*1.2;
 
   // 2) POSITIONAL FIT + SOLO PRITISK
   const ideal={PG:2,SG:3,SF:2,PF:2,C:2};
   let fitPenalty=0, soloPress=0;
   POSITIONS.forEach(pos=>{
-    const c=posCount(pos);
+    const c=posC(pos);
     if(c===0){ fitPenalty+=4; }
     else{
       fitPenalty+=Math.abs(c-ideal[pos])*1.1;
-      if(c===1) soloPress+=0.9;   // samo en igralec -> pod pritiskom, brez menjave
+      if(c===1) soloPress+=0.9;
     }
   });
   const fitScore=6-fitPenalty;
-  const soloScore=-soloPress;      // ~ -0..-4.5
+  const soloScore=-soloPress;
 
-  // 3) SOIGRALCI (team-overlap) + DUOJI
+  // 3) SOIGRALCI + DUOJI
   let mateBonus=0, duoBonus=0, mateCount=0, duoList=[];
-  for(let i=0;i<roster.length;i++){
-    for(let j=i+1;j<roster.length;j++){
-      const a=roster[i], b=roster[j];
-      // ista ekipa v isti sezoni = pravi soigralci
+  for(let i=0;i<arr.length;i++){
+    for(let j=i+1;j<arr.length;j++){
+      const a=arr[i], b=arr[j];
       if(a.team&&b.team&&a.team===b.team&&a.season===b.season){
         mateBonus+=1.1; mateCount++;
-      }
-      // ista ekipa kadarkoli (čeprav druga sezona) = manjši bonus
-      else if(a.team&&b.team&&a.team===b.team){
+      } else if(a.team&&b.team&&a.team===b.team){
         mateBonus+=0.4; mateCount++;
       }
-      // ikoničen duo
       if(pairMatch(a.name,b.name,DUOS)){
         duoBonus+=1.6; duoList.push(`${lastName(a.name)}–${lastName(b.name)}`);
       }
@@ -796,20 +813,21 @@ function computeChemistry(){
   mateBonus=Math.min(mateBonus,5);
   duoBonus=Math.min(duoBonus,4);
 
-  // 4) RIVALSTVA -> penal
+  // 4) RIVALSTVA
   let rivalPenalty=0, rivalList=[];
-  for(let i=0;i<roster.length;i++){
-    for(let j=i+1;j<roster.length;j++){
-      if(pairMatch(roster[i].name,roster[j].name,RIVALRIES)){
-        rivalPenalty+=2.2; rivalList.push(`${lastName(roster[i].name)}–${lastName(roster[j].name)}`);
+  for(let i=0;i<arr.length;i++){
+    for(let j=i+1;j<arr.length;j++){
+      if(pairMatch(arr[i].name,arr[j].name,RIVALRIES)){
+        rivalPenalty+=2.2; rivalList.push(`${lastName(arr[i].name)}–${lastName(arr[j].name)}`);
       }
     }
   }
   const rivalScore=-Math.min(rivalPenalty,6);
 
   let chem=eraScore+fitScore+soloScore+mateBonus+duoBonus+rivalScore;
+  const chemRaw=chem;
   chem=Math.max(-12,Math.min(12,Math.round(chem)));
-  return {chem,
+  return {chem, chemRaw,
           eraScore:Math.round(eraScore*10)/10,
           fitScore:Math.round(fitScore*10)/10,
           soloScore:Math.round(soloScore*10)/10,
@@ -817,6 +835,49 @@ function computeChemistry(){
           duoBonus:Math.round(duoBonus*10)/10,
           rivalScore:Math.round(rivalScore*10)/10,
           dominant,eraSpread,eras,mateCount,duoList,rivalList};
+}
+function computeChemistry(){ return chemFor(roster); }
+
+// Δ-kemija: kako kandidat p vpliva na kemijo glede na trenutno ekipo.
+// Temelji na ODNOSIH (soigralci, duoji, rivalstva) + solo-pritisku pozicije,
+// NE na splošnem era/fit učinku (ta je zavajajoč dokler ekipa ni cela).
+function relScore(arr){
+  let s=0;
+  for(let i=0;i<arr.length;i++){
+    for(let j=i+1;j<arr.length;j++){
+      const a=arr[i],b=arr[j];
+      if(a.team&&b.team&&a.team===b.team&&a.season===b.season) s+=1.1;
+      else if(a.team&&b.team&&a.team===b.team) s+=0.4;
+      if(pairMatch(a.name,b.name,DUOS)) s+=1.6;
+      if(pairMatch(a.name,b.name,RIVALRIES)) s-=2.2;
+    }
+  }
+  // solo-pritisk: pozicije z natanko 1 igralcem
+  POSITIONS.forEach(pos=>{ if(arr.filter(x=>x.pos===pos).length===1) s-=0.9; });
+  return s;
+}
+function chemDelta(p){
+  const d=relScore([...roster,p])-relScore(roster);
+  let reason="";
+  for(const m of roster){
+    if(pairMatch(p.name,m.name,RIVALRIES)){reason="rival "+lastName(m.name);break;}
+  }
+  if(!reason) for(const m of roster){
+    if(pairMatch(p.name,m.name,DUOS)){reason="duo z "+lastName(m.name);break;}
+  }
+  if(!reason) for(const m of roster){
+    if(p.team&&m.team&&p.team===m.team&&p.season===m.season){reason="soigralec ("+p.team+")";break;}
+  }
+  if(!reason){
+    const c=roster.filter(x=>x.pos===p.pos).length;
+    if(c>=2) reason="pretrpana poz.";
+  }
+  let level=0;
+  if(d>=2.5) level=3; else if(d>=1.3) level=2; else if(d>=0.3) level=1;
+  else if(d<=-2.5) level=-3; else if(d<=-1.3) level=-2; else if(d<=-0.3) level=-1;
+  // razlog "pretrpana poz." prikaži le ob dejansko negativnem učinku
+  if(reason==="pretrpana poz." && level>=0) reason="";
+  return {delta:Math.round(d*10)/10, level, reason};
 }
 
 function evaluateTeam(){
