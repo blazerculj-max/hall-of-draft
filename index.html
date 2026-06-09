@@ -657,9 +657,14 @@ async function supaSubmit(row){
   if(!res.ok) throw new Error("HTTP "+res.status);
   return true;
 }
-// preberi dnevno lestvico (najboljši na vrh)
-async function supaLeaderboard(day){
-  const url=`${SUPA_URL}/rest/v1/daily_scores?challenge_day=eq.${encodeURIComponent(day)}&order=overall.desc,created_at.asc&limit=50`;
+// preberi lestvico. mode="daily" -> dnevni izziv za določen dan; sicer budget način (all-time)
+async function supaLeaderboard(mode, day){
+  let url;
+  if(mode==="daily"){
+    url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.daily&challenge_day=eq.${encodeURIComponent(day)}&order=overall.desc,created_at.asc&limit=50`;
+  } else {
+    url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${encodeURIComponent(mode)}&order=overall.desc,created_at.asc&limit=50`;
+  }
   const res=await fetch(url, { headers:SUPA_HEADERS });
   if(!res.ok) throw new Error("HTTP "+res.status);
   return await res.json();
@@ -2287,22 +2292,20 @@ function showResult(){
       ${dailyMode?dailyResultBanner(ev, res):''}
       <div class="hod-final-roster">${cards}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        ${dailyMode?'<button class="hod-btn" id="hod-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi rezultat</button>':''}
+        <button class="hod-btn" id="hod-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi rezultat</button>
         ${dailyMode?'<button class="hod-btn" id="hod-share" style="background:linear-gradient(180deg,#4cc9f0,#3a9fc4);box-shadow:0 5px 0 #2a7a99">Deli</button>':''}
         <button class="hod-btn secondary" id="hod-edit">Uredi postavitev</button>
         <button class="hod-btn secondary" id="hod-replay">${dailyMode?'Znova (dnevni)':'Nova ekipa'}</button>
       </div>
-      ${dailyMode?'<div id="hod-leaderboard"></div>':''}
+      <div id="hod-leaderboard"></div>
     </div>`;
   document.getElementById('hod-edit').onclick=()=>{ renderCourt(); };
-  if(dailyMode){
-    saveDailyResult(ev, res);
-    const sh=document.getElementById('hod-share');
-    if(sh) sh.onclick=()=>shareDaily(ev, res);
-    const po=document.getElementById('hod-post');
-    if(po) po.onclick=()=>postToLeaderboard(ev, res, po);
-    showLeaderboard();
-  }
+  if(dailyMode) saveDailyResult(ev, res);
+  const sh=document.getElementById('hod-share');
+  if(sh) sh.onclick=()=>shareDaily(ev, res);
+  const po=document.getElementById('hod-post');
+  if(po) po.onclick=()=>postToLeaderboard(ev, res, po);
+  showLeaderboard();
   document.getElementById('hod-replay').onclick=()=>{
     if(dailyMode){ startDaily(); return; }
     roster=[];chosenSeason=null;currentOffer=[];_cachedLeague=null;budgetSpent=0;renderProgress();showIntro();
@@ -2374,6 +2377,15 @@ function rosterForSave(){
   }));
 }
 
+// trenutni način igre za lestvico: dnevni -> "daily", sicer budget level ali "neomejeno"
+function currentMode(){
+  if(dailyMode) return "daily";
+  if(!budgetMode) return "neomejeno";
+  // ugotovi budget raven iz budgetTotal
+  for(const k in BUDGET_LEVELS){ if(BUDGET_LEVELS[k]===budgetTotal) return k; }
+  return "neomejeno";
+}
+
 async function postToLeaderboard(ev, sim, btn){
   let nick=getNick();
   if(!nick){
@@ -2382,10 +2394,12 @@ async function postToLeaderboard(ev, sim, btn){
     setNick(nick);
   }
   if(btn){ btn.disabled=true; btn.textContent="Objavljam…"; }
-  const g=dailyGoal();
+  const mode=currentMode();
+  const g=dailyMode?dailyGoal():null;
   const row={
-    challenge_day:todayKey(), nickname:nick, goal_id:g.id,
-    goal_done:!!g.test(ev,sim), overall:ev.overall, chem:ev.chem.chem,
+    mode, challenge_day:todayKey(), nickname:nick,
+    goal_id:g?g.id:null, goal_done:g?!!g.test(ev,sim):false,
+    overall:ev.overall, chem:ev.chem.chem,
     sim_wins: sim?sim.avgWins:null, sim_title: sim?sim.titlePct:null,
     roster: rosterForSave()
   };
@@ -2394,7 +2408,7 @@ async function postToLeaderboard(ev, sim, btn){
     if(btn){ btn.textContent="✓ Objavljeno"; }
     showLeaderboard();
   }catch(e){
-    if(btn){ btn.disabled=false; btn.textContent="📊 Objavi na lestvico"; }
+    if(btn){ btn.disabled=false; btn.textContent="📊 Objavi rezultat"; }
     alert("Objava ni uspela (preveri povezavo). "+e.message);
   }
 }
@@ -2402,12 +2416,14 @@ async function postToLeaderboard(ev, sim, btn){
 async function showLeaderboard(){
   const box=document.getElementById('hod-leaderboard');
   if(!box) return;
-  box.innerHTML=`<div class="hod-lb-title">Dnevna lestvica · ${todayKey()}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
+  const mode=currentMode();
+  const title=mode==="daily"?`Dnevna lestvica · ${todayKey()}`
+    :`Lestvica · ${mode==="neomejeno"?"neomejen budget":"budget "+mode}`;
+  box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
   let rows;
-  try{ rows=await supaLeaderboard(todayKey()); }
-  catch(e){ box.innerHTML=`<div class="hod-lb-title">Dnevna lestvica</div><div style="color:var(--red);font-size:12px">lestvice ni bilo mogoče naložiti</div>`; return; }
-  if(!rows.length){ box.innerHTML=`<div class="hod-lb-title">Dnevna lestvica · ${todayKey()}</div><div style="color:var(--muted);font-size:12px">še ni rezultatov — bodi prvi!</div>`; return; }
-  // shrani za klik
+  try{ rows=await supaLeaderboard(mode, todayKey()); }
+  catch(e){ box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--red);font-size:12px">lestvice ni bilo mogoče naložiti</div>`; return; }
+  if(!rows.length){ box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">še ni rezultatov — bodi prvi!</div>`; return; }
   _lbRows=rows;
   const medals=["🥇","🥈","🥉"];
   const list=rows.map((r,i)=>`
@@ -2416,7 +2432,7 @@ async function showLeaderboard(){
       <span class="hod-lb-nick">${escapeHtml(r.nickname)} ${r.goal_done?'<span style="color:var(--green)">✓</span>':''}</span>
       <span class="hod-lb-ovr">${r.overall}</span>
     </div>`).join('');
-  box.innerHTML=`<div class="hod-lb-title">Dnevna lestvica · ${todayKey()}</div>
+  box.innerHTML=`<div class="hod-lb-title">${title}</div>
     <div class="hod-lb-list">${list}</div>
     <div style="font-size:10px;color:var(--muted);margin-top:6px">klikni igralca za njegovo ekipo</div>`;
   box.querySelectorAll('.hod-lb-row').forEach(el=>{
