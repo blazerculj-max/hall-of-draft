@@ -1220,7 +1220,8 @@ function revealWild(p){
 }
 
 // če ima igralec več dovoljenih pozicij, vprašaj kam; sicer takoj dodaj
-function choosePlayerPos(p){
+// isWild=true (skrivnostni igralec) -> brez preklica, ker je zaveza
+function choosePlayerPos(p, isWild){
   const allPos=playerPositions(p);
   const takable=allPos.filter(pos=>posCount(pos)<MAX_PER_POS);
   if(takable.length<=1){ takePlayer(p, takable[0]||allPos[0]); return; }
@@ -1244,13 +1245,14 @@ function choosePlayerPos(p){
       <div class="hod-stage-label" style="text-align:center">${p.name}</div>
       <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px">Kam ga postaviš? <span style="color:var(--gold-deep)">(lahko spremeniš na koncu)</span></div>
       <div class="hod-pos-pick-row">${btns}</div>
-      <button class="hod-btn secondary" id="hod-pos-cancel" style="margin-top:12px">Prekliči</button>
+      ${isWild?'':'<button class="hod-btn secondary" id="hod-pos-cancel" style="margin-top:12px">Prekliči</button>'}
     </div>`;
   a.appendChild(overlay);
   overlay.querySelectorAll('.hod-pos-pick').forEach(b=>{
     b.onclick=()=>{overlay.remove();takePlayer(p,b.dataset.pos);};
   });
-  overlay.querySelector('#hod-pos-cancel').onclick=()=>overlay.remove();
+  const cancel=overlay.querySelector('#hod-pos-cancel');
+  if(cancel) cancel.onclick=()=>overlay.remove();
 }
 
 function takePlayer(p, assignedPos){
