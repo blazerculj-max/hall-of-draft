@@ -164,6 +164,21 @@
 .hod-wild-badge{background:linear-gradient(135deg,#ffb627,#e63946,#b5179e);color:#fff;font-size:20px;
   animation:hod-wildpulse 1.5s ease-in-out infinite;}
 @keyframes hod-wildpulse{0%,100%{box-shadow:0 0 0 rgba(255,182,39,.5)}50%{box-shadow:0 0 14px rgba(255,182,39,.7)}}
+.hod-roles-wrap{display:flex;flex-direction:column;gap:8px;max-width:460px;margin:0 auto;text-align:left;}
+.hod-role-block{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;cursor:pointer;transition:.12s;}
+.hod-role-block:hover{border-color:var(--gold);}
+.hod-role-head{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;margin-bottom:6px;display:flex;justify-content:space-between;}
+.hod-role-head span{color:var(--muted);font-size:12px;}
+.hod-role-head.ok{color:var(--green);} .hod-role-head.warn{color:var(--gold-deep);}
+.hod-role-list{display:flex;flex-wrap:wrap;gap:5px;}
+.hod-role-chip{display:flex;align-items:center;gap:6px;background:#1f1f2e;border:1px solid var(--line);
+  border-radius:8px;padding:4px 8px;cursor:pointer;transition:.12s;}
+.hod-role-chip:hover{border-color:var(--gold);}
+.hod-role-chip.sel{border-color:var(--gold);background:rgba(255,182,39,.15);box-shadow:0 0 8px rgba(255,182,39,.3);}
+.hod-role-pos{font-family:'Bebas Neue';font-size:11px;color:#0a0a0f;border-radius:5px;padding:1px 5px;}
+.hod-role-nm{font-size:13px;}
+.hod-role-rt{font-family:'Bebas Neue';font-size:15px;color:var(--gold);}
+.hod-pen{color:var(--red);font-size:10px;margin-left:2px;}
 .hod-budget-bar{max-width:380px;margin:0 auto 12px;}
 .hod-budget-row{display:flex;justify-content:space-between;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
 .hod-budget-row b{color:var(--gold);font-family:'Bebas Neue';font-size:16px;}
@@ -1075,7 +1090,7 @@ function takePlayer(p, assignedPos){
   roster.push(placed);
   renderProgress();
   updateRosterSlot();
-  if(teamFull()){ showResult(); return; }
+  if(teamFull()){ showRoleAssign(); return; }
   startSpin();
 }
 
@@ -1189,11 +1204,64 @@ function chemDelta(p){
   return {delta:Math.round(d*10)/10, level, reason};
 }
 
+// ===== VLOGE (starter/bench) + out-of-position kazen =====
+const POS_LADDER=["PG","SG","SF","PF","C"];
+// utež po vlogi: S=starter, 6=sixth man, R=role player, F=fringe
+const ROLE_WEIGHT={S:1.0, "6":0.9, R:0.75, F:0.55};
+const ROLE_SLOTS={S:5, "6":1, R:3, F:3};
+const ROLE_LABEL={S:"Starter", "6":"6. mož", R:"Rotacija", F:"Globina"};
+const ROLE_ORDER=["S","6","R","F"];
+
+// kazen za igro izven primarne pozicije
+function posPenalty(p){
+  const positions=playerPositions(p);
+  const ap=effPos(p);
+  if(positions[0]===ap) return 0;
+  const idx=positions.indexOf(ap);
+  if(idx===1) return 3;
+  if(idx===2) return 5;
+  const a=POS_LADDER.indexOf(ap);
+  const minDist=Math.min(...positions.map(x=>Math.abs(POS_LADDER.indexOf(x)-a)));
+  return 6+minDist*5;
+}
+// efektivni rating = (rating - pozicijska kazen) × utež vloge
+function effRating(p){
+  const base=p.rating - posPenalty(p);
+  const w=ROLE_WEIGHT[p.role||"S"]||1.0;
+  return Math.max(20, base*w);
+}
+// avto-razporeditev vlog: najboljših 5 = starterji (pokrij pozicije), nato 6./R/F po ratingu
+function autoAssignRoles(arr){
+  // poskusi pokriti 5 pozicij z najboljšimi na vsaki, ostalo po ratingu
+  const byRating=[...arr].sort((a,b)=>b.rating-a.rating);
+  const starters=[]; const used=new Set();
+  // 1) za vsako pozicijo vzemi najboljšega, ki jo lahko igra primarno
+  POS_LADDER.forEach(pos=>{
+    const cand=byRating.find(p=>!used.has(p)&&playerPositions(p)[0]===pos);
+    if(cand){starters.push(cand);used.add(cand);}
+  });
+  // 2) dopolni do 5 z najboljšimi preostalimi
+  for(const p of byRating){ if(starters.length>=5)break; if(!used.has(p)){starters.push(p);used.add(p);} }
+  // preostali po ratingu -> 6., R, F
+  const rest=byRating.filter(p=>!used.has(p));
+  arr.forEach(p=>{ p.role="F"; });
+  starters.forEach(p=>p.role="S");
+  if(rest[0]) rest[0].role="6";
+  rest.slice(1,4).forEach(p=>p.role="R");
+  rest.slice(4).forEach(p=>p.role="F");
+  return arr;
+}
+
 function evaluateTeam(){
-  const sorted=[...roster].sort((a,b)=>b.rating-a.rating);
-  const top5=sorted.slice(0,5);
-  const starterAvg=top5.reduce((s,p)=>s+p.rating,0)/top5.length;
-  const fullAvg=roster.reduce((s,p)=>s+p.rating,0)/roster.length;
+  // če vloge niso dodeljene, jih avto-dodeli (za oceno)
+  if(!roster.some(p=>p.role)) autoAssignRoles(roster);
+  const eff=roster.map(p=>({p,er:effRating(p)})).sort((a,b)=>b.er-a.er);
+  const starters=roster.filter(p=>p.role==="S");
+  const starterEff=(starters.length?starters:eff.slice(0,5).map(x=>x.p))
+    .map(p=>effRating(p));
+  const starterAvg=starterEff.reduce((s,r)=>s+r,0)/(starterEff.length||1);
+  // cela ekipa uteženo po vlogah
+  const fullAvg=roster.reduce((s,p)=>s+effRating(p),0)/roster.length;
   const posSpread=POSITIONS.filter(p=>posCount(p)>=1).length;
   const stars=roster.filter(p=>p.rating>=92).length;
   const starBonus=Math.min(stars*1.3,5);
@@ -1202,7 +1270,8 @@ function evaluateTeam(){
               + starBonus + chemObj.chem*0.9;
   overall=Math.max(40,Math.min(99,Math.round(overall)));
   return {overall,starterAvg:Math.round(starterAvg*10)/10,
-          fullAvg:Math.round(fullAvg*10)/10,stars,posSpread,top5,chem:chemObj};
+          fullAvg:Math.round(fullAvg*10)/10,stars,posSpread,
+          top5:starters.length?starters:eff.slice(0,5).map(x=>x.p),chem:chemObj};
 }
 
 function gradeFor(o){
@@ -1585,12 +1654,13 @@ function setMpAction(html){ setMpFrame(); document.getElementById('hod-action').
 // ---- SIMULACIJA ----
 function userTeamStrength(){
   const ev=evaluateTeam();
-  const sorted=[...roster].sort((a,b)=>b.rating-a.rating).slice(0,8);
+  // uporabi EFEKTIVNE ratinge (vloga + pozicijska kazen), uteženo top 8
+  const sorted=[...roster].map(p=>effRating(p)).sort((a,b)=>b-a).slice(0,8);
   const w=[0.22,0.18,0.15,0.12,0.1,0.09,0.08,0.06];
   let str=0,wsum=0;
-  sorted.forEach((p,i)=>{const wi=w[i]||0.05;str+=p.rating*wi;wsum+=wi;});
+  sorted.forEach((er,i)=>{const wi=w[i]||0.05;str+=er*wi;wsum+=wi;});
   str=str/wsum;
-  str += ev.chem.chem*0.5;   // kemija premakne moč
+  str += ev.chem.chem*0.5;
   return str;
 }
 function winProb(a,b,home){
@@ -1657,6 +1727,70 @@ function monteCarlo(myStr, full, myConf, runs){
     titlePct:Math.round(titles/runs*100),
     confTeams
   };
+}
+
+function showRoleAssign(){
+  phase="roles";
+  autoAssignRoles(roster);  // avto-predlog
+  renderRoleScreen();
+}
+let _roleSel=null; // izbrani igralec za premik
+function renderRoleScreen(){
+  const byRole=r=>roster.filter(p=>p.role===r);
+  const block=(r)=>{
+    const list=byRole(r).map(p=>{
+      const pen=posPenalty(p);
+      const er=Math.round(effRating(p));
+      const sel=_roleSel===p?'sel':'';
+      return `<div class="hod-role-chip ${sel}" data-key="${playerKey(p)}">
+        <span class="hod-role-pos hod-pos-${effPos(p)}">${effPos(p)}</span>
+        <span class="hod-role-nm">${lastNameCap(p)} <span style="color:var(--muted);font-size:10px">${shortSeason(p)}</span></span>
+        <span class="hod-role-rt">${er}${pen>0?`<span class="hod-pen">-${pen}</span>`:''}</span>
+      </div>`;
+    }).join('');
+    const cnt=byRole(r).length, need=ROLE_SLOTS[r];
+    const okCls=cnt===need?'ok':'warn';
+    return `<div class="hod-role-block" data-role="${r}">
+      <div class="hod-role-head ${okCls}">${ROLE_LABEL[r]} <span>${cnt}/${need} · ×${ROLE_WEIGHT[r]}</span></div>
+      <div class="hod-role-list">${list||'<span class="hod-chip empty">prazno</span>'}</div>
+    </div>`;
+  };
+  const valid=ROLE_ORDER.every(r=>byRole(r).length===ROLE_SLOTS[r]);
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Razporedi rotacijo</div>
+      <div class="hod-verdict" style="max-width:440px;margin:0 auto 8px">
+        Klikni igralca, nato ciljno vlogo. Starterji igrajo polno, klop manj. Igralec izven svoje pozicije ima kazen (npr. organizator na centru).
+      </div>
+      ${_roleSel?`<div style="font-size:12px;color:var(--gold);margin-bottom:8px">Izbran: ${lastNameCap(_roleSel)} — klikni vlogo spodaj</div>`:''}
+      <div class="hod-roles-wrap">${ROLE_ORDER.map(block).join('')}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px">
+        <button class="hod-btn ${valid?'':'disabled'}" id="hod-roles-done">Potrdi ekipo</button>
+        <button class="hod-btn secondary" id="hod-roles-auto">Auto</button>
+      </div>
+      ${valid?'':'<div style="font-size:11px;color:var(--red);margin-top:8px">Vsaka vloga mora imeti točno predpisano število igralcev</div>'}
+    </div>`;
+  // klik na igralca = izberi; klik na vlogo (blok) = premakni izbranega tja
+  screen.querySelectorAll('.hod-role-chip').forEach(c=>{
+    c.onclick=(e)=>{
+      e.stopPropagation();
+      const key=c.dataset.key;
+      const p=roster.find(x=>playerKey(x)===key);
+      _roleSel = (_roleSel===p)?null:p;
+      renderRoleScreen();
+    };
+  });
+  screen.querySelectorAll('.hod-role-block').forEach(b=>{
+    b.onclick=()=>{
+      if(!_roleSel) return;
+      _roleSel.role=b.dataset.role;
+      _roleSel=null;
+      renderRoleScreen();
+    };
+  });
+  const done=document.getElementById('hod-roles-done');
+  if(valid) done.onclick=()=>{ _roleSel=null; showResult(); };
+  document.getElementById('hod-roles-auto').onclick=()=>{ autoAssignRoles(roster); _roleSel=null; renderRoleScreen(); };
 }
 
 function showResult(){
