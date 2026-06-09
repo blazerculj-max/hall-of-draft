@@ -160,6 +160,10 @@
 .hod-price{font-family:'Bebas Neue';font-size:15px;letter-spacing:.5px;color:var(--gold);
   background:rgba(255,182,39,.12);border:1px solid rgba(255,182,39,.4);border-radius:8px;padding:1px 8px;}
 .hod-after{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.3px;}
+.hod-wild{border-color:var(--gold);background:linear-gradient(135deg,rgba(255,182,39,.12),rgba(255,182,39,.03));}
+.hod-wild-badge{background:linear-gradient(135deg,#ffb627,#e63946,#b5179e);color:#fff;font-size:20px;
+  animation:hod-wildpulse 1.5s ease-in-out infinite;}
+@keyframes hod-wildpulse{0%,100%{box-shadow:0 0 0 rgba(255,182,39,.5)}50%{box-shadow:0 0 14px rgba(255,182,39,.7)}}
 .hod-budget-bar{max-width:380px;margin:0 auto 12px;}
 .hod-budget-row{display:flex;justify-content:space-between;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
 .hod-budget-row b{color:var(--gold);font-family:'Bebas Neue';font-size:16px;}
@@ -634,6 +638,7 @@ let budgetMode=false;       // ali igramo z omejenim budgetom
 let budgetTotal=0;          // skupni budget
 let budgetSpent=0;          // porabljeno
 const BUDGET_LEVELS={lahka:650, srednja:500, težka:380};
+const WILD_COST=30;   // fiksna cena za "??" wild igralca (hazard)
 let numPlayers=1;           // 1 = solo, 2-4 = multiplayer snake draft
 
 // multiplayer state
@@ -960,6 +965,24 @@ function makeOffer(){
       </div>
     </div>`;
   }).join('');
+  // WILD kartica "??" — naključen igralec iz trenutne sezone za fiksno ceno
+  const wildAfford=!budgetMode || WILD_COST<=budgetLeft();
+  const wildAvail=chosenSeason.players.some(p=>!isDrafted(p)&&playerPositions(p).some(pos=>posCount(pos)<MAX_PER_POS));
+  const wildOk=wildAfford&&wildAvail;
+  const wildCard=`
+    <div class="hod-pcard hod-wild ${wildOk?'':'disabled'} hod-pop" id="hod-wild-card">
+      <div class="hod-pos-badge hod-wild-badge">??</div>
+      <div class="hod-pinfo">
+        <div class="hod-pname">Skrivnostni igralec</div>
+        <div class="hod-pseason">naključen iz ${chosenSeason.year}${wildOk?'':' · ni na voljo'}</div>
+        <div style="font-size:11px;color:var(--gold-deep);margin-top:4px">lahko zvezda ali polom — tvegaš?</div>
+      </div>
+      <div class="hod-pright">
+        <div class="hod-prating" style="color:var(--gold)">?</div>
+        ${budgetMode?`<div class="hod-price">$${WILD_COST}</div>
+          <div class="hod-after">→ $${budgetLeft()-WILD_COST}</div>`:''}
+      </div>
+    </div>`;
   const budgetBar=budgetMode?`
     <div class="hod-budget-bar">
       <div class="hod-budget-row">
@@ -975,11 +998,45 @@ function makeOffer(){
       </div>
       ${budgetBar}
       <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">Izberi enega igralca</div>
-      <div class="hod-offer-grid">${cards}</div>
+      <div class="hod-offer-grid">${cards}${wildCard}</div>
     </div>`);
-  document.querySelectorAll('#hod-action .hod-pcard:not(.disabled)').forEach(c=>{
+  document.querySelectorAll('#hod-action .hod-pcard:not(.disabled):not(.hod-wild)').forEach(c=>{
     c.onclick=()=>choosePlayerPos(currentOffer[+c.dataset.i]);
   });
+  const wc=document.getElementById('hod-wild-card');
+  if(wc&&wildOk) wc.onclick=()=>takeWild();
+}
+
+// WILD: potegni naključnega še-ne-izbranega igralca iz trenutne sezone z dovoljeno pozicijo
+function takeWild(){
+  const allowed=forcedPositions();
+  let cands=chosenSeason.players.filter(p=>!isDrafted(p)&&playerPositions(p).some(pos=>allowed.includes(pos)&&posCount(pos)<MAX_PER_POS));
+  if(!cands.length){ cands=chosenSeason.players.filter(p=>!isDrafted(p)); }
+  if(!cands.length) return;
+  const pick=cands[Math.floor(Math.random()*cands.length)];
+  // wild ima fiksno ceno (prepiše dejansko ceno igralca)
+  const wildPick={...pick, wildCost:WILD_COST};
+  revealWild(wildPick);
+}
+
+// kratka "reveal" animacija, nato dodelitev pozicije
+function revealWild(p){
+  const a=document.getElementById('hod-action');
+  if(a){
+    const ov=document.createElement('div');
+    ov.className='hod-pos-overlay';
+    ov.innerHTML=`<div class="hod-pos-modal hod-pop" style="text-align:center">
+      <div class="hod-stage-label">Skrivnostni igralec…</div>
+      <div class="hod-prating ${ratingClass(p.rating)}" style="font-size:48px;margin:8px 0">${p.rating}</div>
+      <div class="hod-pname" style="font-size:20px">${p.name}</div>
+      <div class="hod-pseason">${playerPositions(p).join('/')} · ${p.season} · ${p.pts}/${p.reb}/${p.ast}</div>
+      <button class="hod-btn" id="hod-wild-ok" style="margin-top:14px">${budgetMode?'Vzemi za $'+WILD_COST:'Dodaj v ekipo'}</button>
+    </div>`;
+    a.appendChild(ov);
+    ov.querySelector('#hod-wild-ok').onclick=()=>{ ov.remove(); choosePlayerPos(p, true); };
+  } else {
+    choosePlayerPos(p, true);
+  }
 }
 
 // če ima igralec več dovoljenih pozicij, vprašaj kam; sicer takoj dodaj
@@ -1014,7 +1071,7 @@ function choosePlayerPos(p){
 
 function takePlayer(p, assignedPos){
   const placed={...p, assignedPos: assignedPos||p.pos};
-  if(budgetMode) budgetSpent+=playerCost(placed);
+  if(budgetMode) budgetSpent += (p.wildCost!=null?p.wildCost:playerCost(placed));
   roster.push(placed);
   renderProgress();
   updateRosterSlot();
@@ -1182,7 +1239,8 @@ function showMpNames(){
     mp={
       teams:names.map(n=>({name:n,roster:[],spent:0})),
       order:Array.from({length:numPlayers},(_,i)=>i),
-      pickIdx:0, round:0, pool:[], spinSeason:null
+      pickIdx:0, round:0, pool:[], spinSeason:null,
+      wildLeft:numPlayers   // toliko wild kart kolikor je igralcev
     };
     mpStartRound();
   };
@@ -1289,6 +1347,24 @@ function mpShowPick(){
       </div>
     </div>`;
   }).join('');
+  // WILD kartica za multiplayer (skupaj numPlayers kart na voljo)
+  const wildAfford=!budgetMode || WILD_COST<=(budgetTotal-team.spent);
+  const wildPoolAvail=mp.spinSeason.players.some(p=>!isDrafted(p)&&playerPositions(p).some(pos=>allowed.includes(pos)&&mpTeamPosCount(team,pos)<MAX_PER_POS));
+  const wildOk=mp.wildLeft>0 && wildAfford && wildPoolAvail;
+  const wildCard=`
+    <div class="hod-pcard hod-wild ${wildOk?'':'disabled'} hod-pop" id="hod-mp-wild">
+      <div class="hod-pos-badge hod-wild-badge">??</div>
+      <div class="hod-pinfo">
+        <div class="hod-pname">Skrivnostni igralec</div>
+        <div class="hod-pseason">naključen iz ${mp.spinSeason.year} · ${mp.wildLeft} ostalo${wildOk?'':' · ni na voljo'}</div>
+        <div style="font-size:11px;color:var(--gold-deep);margin-top:4px">zvezda ali polom?</div>
+      </div>
+      <div class="hod-pright">
+        <div class="hod-prating" style="color:var(--gold)">?</div>
+        ${budgetMode?`<div class="hod-price">$${WILD_COST}</div>
+          <div class="hod-after">→ $${(budgetTotal-team.spent)-WILD_COST}</div>`:''}
+      </div>
+    </div>`;
   // vrstni red runde (vizualno)
   const orderTags=mp.order.map((ti,idx)=>`<span class="hod-order-tag ${idx===mp.pickIdx?'active':''}" style="--tc:${MP_COLORS[ti]}">${mp.teams[ti].name}</span>`).join('');
   setMpFrame();
@@ -1301,12 +1377,75 @@ function mpShowPick(){
         Na potezi: <b>${team.name}</b> &nbsp;(${team.roster.length}/12)${budgetMode?` · $${budgetTotal-team.spent}`:''}
       </div>
       <div class="hod-order-strip">${orderTags}</div>
-      <div class="hod-offer-grid hod-mp-grid">${cards}</div>
+      <div class="hod-offer-grid hod-mp-grid">${cards}${wildCard}</div>
     </div>`);
-  document.querySelectorAll('#hod-action .hod-pcard:not(.disabled)').forEach(c=>{
+  document.querySelectorAll('#hod-action .hod-pcard:not(.disabled):not(.hod-wild)').forEach(c=>{
     c.onclick=()=>mpPick(+c.dataset.i);
   });
+  const wc=document.getElementById('hod-mp-wild');
+  if(wc&&wildOk) wc.onclick=()=>mpWild();
   mpRenderTeams();
+}
+
+// MP WILD: naključen še-ne-izbran igralec iz trenutne sezone z dovoljeno pozicijo
+function mpWild(){
+  const teamI=mp.order[mp.pickIdx];
+  const team=mp.teams[teamI];
+  const allowed=mpAllowedPos(team);
+  let cands=mp.spinSeason.players.filter(p=>!isDrafted(p)&&playerPositions(p).some(pos=>allowed.includes(pos)&&mpTeamPosCount(team,pos)<MAX_PER_POS));
+  if(!cands.length) cands=mp.spinSeason.players.filter(p=>!isDrafted(p));
+  if(!cands.length) return;
+  const pick=cands[Math.floor(Math.random()*cands.length)];
+  mp.wildLeft--;
+  // reveal nato dodelitev pozicije
+  const a=document.getElementById('hod-action');
+  const ov=document.createElement('div');
+  ov.className='hod-pos-overlay';
+  ov.innerHTML=`<div class="hod-pos-modal hod-pop" style="text-align:center">
+    <div class="hod-stage-label">${team.name} — skrivnostni igralec…</div>
+    <div class="hod-prating ${ratingClass(pick.rating)}" style="font-size:48px;margin:8px 0">${pick.rating}</div>
+    <div class="hod-pname" style="font-size:20px">${pick.name}</div>
+    <div class="hod-pseason">${playerPositions(pick).join('/')} · ${pick.season} · ${pick.pts}/${pick.reb}/${pick.ast}</div>
+    <button class="hod-btn" id="hod-mpwild-ok" style="margin-top:14px">${budgetMode?'Vzemi za $'+WILD_COST:'Dodaj'}</button>
+  </div>`;
+  a.appendChild(ov);
+  ov.querySelector('#hod-mpwild-ok').onclick=()=>{
+    ov.remove();
+    mpWildPlace(pick);
+  };
+}
+function mpWildPlace(pick){
+  const teamI=mp.order[mp.pickIdx];
+  const team=mp.teams[teamI];
+  const allowed=mpAllowedPos(team);
+  const playable=playerPositions(pick).filter(pos=>allowed.includes(pos));
+  // če več pozicij, izbirnik; sicer takoj
+  if(playable.length<=1){
+    team.roster.push({...pick, assignedPos:playable[0]||pick.pos, wildCost:WILD_COST});
+    if(budgetMode) team.spent+=WILD_COST;
+    mp.pickIdx++; mpRenderTeams(); mpShowPick(); return;
+  }
+  const btns=playable.map(pos=>{
+    const c=mpTeamPosCount(team,pos);
+    return `<button class="hod-btn hod-pos-pick" data-pos="${pos}"><span style="font-family:'Anton';font-size:22px">${pos}</span><span style="display:block;font-size:10px;letter-spacing:1px;opacity:.8">${c}/3</span></button>`;
+  }).join('');
+  const a=document.getElementById('hod-action');
+  const ov=document.createElement('div');
+  ov.className='hod-pos-overlay';
+  ov.innerHTML=`<div class="hod-pos-modal hod-pop">
+    <div class="hod-stage-label" style="text-align:center">${pick.name}</div>
+    <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px">${team.name} — kam ga postaviš?</div>
+    <div class="hod-pos-pick-row">${btns}</div>
+  </div>`;
+  a.appendChild(ov);
+  ov.querySelectorAll('.hod-pos-pick').forEach(b=>{
+    b.onclick=()=>{
+      ov.remove();
+      team.roster.push({...pick, assignedPos:b.dataset.pos, wildCost:WILD_COST});
+      if(budgetMode) team.spent+=WILD_COST;
+      mp.pickIdx++; mpRenderTeams(); mpShowPick();
+    };
+  });
 }
 
 function mpPick(poolIdx){
