@@ -603,7 +603,7 @@ function buildLeague(){
       (teams[t]=teams[t]||[]).push(p);
     });
   }
-  // za vsako ekipo: moč = uteženo povprečje top 8 ratingov
+  // za vsako ekipo: surova moč = uteženo povprečje top 8 ratingov
   const league=[];
   Object.keys(teams).forEach(t=>{
     const top=teams[t].sort((a,b)=>b.rating-a.rating).slice(0,8);
@@ -612,9 +612,14 @@ function buildLeague(){
     let str=0,wsum=0;
     top.forEach((p,i)=>{const wi=w[i]||0.05;str+=p.rating*wi;wsum+=wi;});
     str=str/wsum;
-    league.push({abbr:t,name:TEAM_NAME[t]||t,conf:CONFERENCE[t],strength:str});
+    league.push({abbr:t,name:TEAM_NAME[t]||t,conf:CONFERENCE[t],rawStrength:str});
   });
-  return {season,league};
+  // RAZTEGNI razpon moči okoli povprečja (surove moči so prestisnjene -> realen
+  // NBA razpon ~64..21 zmag). Shranimo leagueMean za kalibracijo uporabnika.
+  const leagueMean=league.reduce((a,t)=>a+t.rawStrength,0)/(league.length||1);
+  const K=1.5;
+  league.forEach(t=>{ t.strength=leagueMean+(t.rawStrength-leagueMean)*K; });
+  return {season, league, leagueMean, stretchK:K};
 }
 
 // ---- STATE ----
@@ -1596,9 +1601,10 @@ function showTeamPicker(){
 function runSimulation(abbr, conf, full){
   phase="simulating";
   const replaced=full.league.find(t=>t.abbr===abbr);
-  // zamenjaj izbrano ekipo z uporabnikovo močjo
-  const myStr=userTeamStrength();
-  const simLeague={season:full.season,
+  // uporabnikova surova moč -> raztegni na isto lestvico kot ligaške moči
+  const rawMy=userTeamStrength();
+  const myStr=full.leagueMean+(rawMy-full.leagueMean)*(full.stretchK||1.5);
+  const simLeague={season:full.season, leagueMean:full.leagueMean, stretchK:full.stretchK,
     league:full.league.map(t=>t.abbr===abbr?{...t,strength:myStr,name:"TVOJA EKIPA",mine:true}:t)};
   screen.innerHTML=`<div class="hod-slot-stage hod-fade">
     <div class="hod-stage-label">Simuliram sezono ×1000…</div>
