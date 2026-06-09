@@ -219,6 +219,16 @@
 .hod-bench-chip:hover{border-color:var(--gold);}
 .hod-bench-chip.sel{border-color:#fff;box-shadow:0 0 8px var(--gold);}
 .hod-bench-unassigned{border-color:var(--gold)!important;background:rgba(255,182,39,.06)!important;margin-bottom:8px;}
+/* lestvica */
+.hod-leaderboard,#hod-leaderboard{max-width:420px;margin:18px auto 0;}
+.hod-lb-title{font-family:'Bebas Neue';font-size:18px;letter-spacing:1px;color:#4cc9f0;margin-bottom:8px;}
+.hod-lb-list{display:flex;flex-direction:column;gap:4px;}
+.hod-lb-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:7px 12px;cursor:pointer;transition:.12s;}
+.hod-lb-row:hover{border-color:#4cc9f0;transform:translateX(3px);}
+.hod-lb-rank{font-family:'Bebas Neue';font-size:16px;width:28px;text-align:center;flex:none;}
+.hod-lb-nick{flex:1;text-align:left;font-size:14px;}
+.hod-lb-ovr{font-family:'Anton';font-size:20px;color:var(--gold);flex:none;}
 .hod-budget-bar{max-width:380px;margin:0 auto 12px;}
 .hod-budget-row{display:flex;justify-content:space-between;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
 .hod-budget-row b{color:var(--gold);font-family:'Bebas Neue';font-size:16px;}
@@ -615,6 +625,32 @@ function storeGet(k){ try{const v=localStorage.getItem(k);return v;}catch(e){ret
 function storeSet(k,v){ try{localStorage.setItem(k,v);}catch(e){_memStore[k]=v;} }
 function dailyRecord(){ try{return JSON.parse(storeGet("hod-daily")||"{}");}catch(e){return {};} }
 function saveDailyRecord(r){ storeSet("hod-daily",JSON.stringify(r)); }
+
+// ===== SUPABASE (dnevna lestvica) =====
+const SUPA_URL="https://rlteeloltejitpwreami.supabase.co";
+const SUPA_KEY="sb_publishable_YF8jeoqBoRAq_EUXAnoa-Q_MvWFu1zi";
+const SUPA_HEADERS={ "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Content-Type":"application/json" };
+
+// vzdevek igralca (shranjen lokalno)
+function getNick(){ return storeGet("hod-nick")||""; }
+function setNick(n){ storeSet("hod-nick", n); }
+
+// vstavi rezultat na lestvico
+async function supaSubmit(row){
+  const res=await fetch(`${SUPA_URL}/rest/v1/daily_scores`, {
+    method:"POST", headers:{...SUPA_HEADERS, "Prefer":"return=minimal"},
+    body:JSON.stringify(row)
+  });
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  return true;
+}
+// preberi dnevno lestvico (najboljši na vrh)
+async function supaLeaderboard(day){
+  const url=`${SUPA_URL}/rest/v1/daily_scores?challenge_day=eq.${encodeURIComponent(day)}&order=overall.desc,created_at.asc&limit=50`;
+  const res=await fetch(url, { headers:SUPA_HEADERS });
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  return await res.json();
+}
 const MAX_TEAM=12, MAX_PER_POS=3;
 
 // ---- LOAD EXTERNAL DATASET (players.json) IF PRESENT ----
@@ -2221,16 +2257,20 @@ function showResult(){
       <div class="hod-final-roster">${cards}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn" id="hod-sim">Simuliraj sezono 🏆</button>
-        ${dailyMode?'<button class="hod-btn" id="hod-share" style="background:linear-gradient(180deg,#4cc9f0,#3a9fc4);box-shadow:0 5px 0 #2a7a99">Deli rezultat</button>':''}
+        ${dailyMode?'<button class="hod-btn" id="hod-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi na lestvico</button>':''}
+        ${dailyMode?'<button class="hod-btn" id="hod-share" style="background:linear-gradient(180deg,#4cc9f0,#3a9fc4);box-shadow:0 5px 0 #2a7a99">Deli</button>':''}
         <button class="hod-btn secondary" id="hod-replay">${dailyMode?'Znova (dnevni)':'Nova ekipa'}</button>
       </div>
+      ${dailyMode?'<div id="hod-leaderboard"></div>':''}
     </div>`;
   document.getElementById('hod-sim').onclick=showTeamPicker;
   if(dailyMode){
-    // shrani rezultat sestave (sim cilji se preverijo po simulaciji)
     saveDailyResult(ev, null);
     const sh=document.getElementById('hod-share');
     if(sh) sh.onclick=()=>shareDaily(ev);
+    const po=document.getElementById('hod-post');
+    if(po) po.onclick=()=>postToLeaderboard(ev, null, po);
+    showLeaderboard();
   }
   document.getElementById('hod-replay').onclick=()=>{
     if(dailyMode){ startDaily(); return; }
@@ -2290,6 +2330,110 @@ function shareDaily(ev, sim){
 function copyShare(txt){
   try{ navigator.clipboard.writeText(txt); alert("Rezultat kopiran! Prilepi ga kamorkoli."); }
   catch(e){ alert(txt); }
+}
+
+// ===== LESTVICA: objava + prikaz =====
+// shranimo roster s pozicijami/vlogami/mesti, da klik pokaže polno postavitev
+function rosterForSave(){
+  return roster.map(p=>({
+    name:p.name, season:p.season, rating:p.rating,
+    pos:p.pos, positions:playerPositions(p), assignedPos:effPos(p),
+    role:p.role||"F", spot:p.spot||null,
+    pts:p.pts, reb:p.reb, ast:p.ast
+  }));
+}
+
+async function postToLeaderboard(ev, sim, btn){
+  let nick=getNick();
+  if(!nick){
+    nick=(prompt("Vnesi svoj vzdevek za lestvico:")||"").trim().slice(0,14);
+    if(!nick) return;
+    setNick(nick);
+  }
+  if(btn){ btn.disabled=true; btn.textContent="Objavljam…"; }
+  const g=dailyGoal();
+  const row={
+    challenge_day:todayKey(), nickname:nick, goal_id:g.id,
+    goal_done:!!g.test(ev,sim), overall:ev.overall, chem:ev.chem.chem,
+    sim_wins: sim?sim.avgWins:null, sim_title: sim?sim.titlePct:null,
+    roster: rosterForSave()
+  };
+  try{
+    await supaSubmit(row);
+    if(btn){ btn.textContent="✓ Objavljeno"; }
+    showLeaderboard();
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.textContent="📊 Objavi na lestvico"; }
+    alert("Objava ni uspela (preveri povezavo). "+e.message);
+  }
+}
+
+async function showLeaderboard(){
+  const box=document.getElementById('hod-leaderboard');
+  if(!box) return;
+  box.innerHTML=`<div class="hod-lb-title">Dnevna lestvica · ${todayKey()}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
+  let rows;
+  try{ rows=await supaLeaderboard(todayKey()); }
+  catch(e){ box.innerHTML=`<div class="hod-lb-title">Dnevna lestvica</div><div style="color:var(--red);font-size:12px">lestvice ni bilo mogoče naložiti</div>`; return; }
+  if(!rows.length){ box.innerHTML=`<div class="hod-lb-title">Dnevna lestvica · ${todayKey()}</div><div style="color:var(--muted);font-size:12px">še ni rezultatov — bodi prvi!</div>`; return; }
+  // shrani za klik
+  _lbRows=rows;
+  const medals=["🥇","🥈","🥉"];
+  const list=rows.map((r,i)=>`
+    <div class="hod-lb-row" data-i="${i}">
+      <span class="hod-lb-rank">${medals[i]||(i+1)}</span>
+      <span class="hod-lb-nick">${escapeHtml(r.nickname)} ${r.goal_done?'<span style="color:var(--green)">✓</span>':''}</span>
+      <span class="hod-lb-ovr">${r.overall}</span>
+    </div>`).join('');
+  box.innerHTML=`<div class="hod-lb-title">Dnevna lestvica · ${todayKey()}</div>
+    <div class="hod-lb-list">${list}</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:6px">klikni igralca za njegovo ekipo</div>`;
+  box.querySelectorAll('.hod-lb-row').forEach(el=>{
+    el.onclick=()=>showUserTeam(_lbRows[+el.dataset.i]);
+  });
+}
+let _lbRows=[];
+function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+// prikaz tuje ekipe (iz shranjenega rosterja) na igrišču
+function showUserTeam(r){
+  const rs=r.roster||[];
+  const bySpot={}; rs.filter(p=>p.role==="S").forEach(p=>{if(p.spot)bySpot[p.spot]=p;});
+  const spotNodes=POS_LADDER.map(spot=>{
+    const c=COURT_SPOTS[spot]; const p=bySpot[spot];
+    return `<div class="hod-spot ${p?'filled':'empty'}" style="left:${c.x/300*100}%;top:${c.y/300*100}%">
+      <div class="hod-spot-pos">${spot}</div>
+      ${p?`<div class="hod-spot-name">${lastNameCap(p)}</div><div class="hod-spot-rt">${p.rating}</div>`:'<div class="hod-spot-empty">—</div>'}
+    </div>`;
+  }).join('');
+  const benchGroups=["6","R","F"].map(role=>{
+    const ps=rs.filter(p=>p.role===role);
+    if(!ps.length) return '';
+    const chips=ps.map(p=>`<span class="hod-bench-chip"><span class="hod-role-pos hod-pos-${p.assignedPos||p.pos}">${p.assignedPos||p.pos}</span> ${lastNameCap(p)} <b style="color:var(--gold)">${p.rating}</b></span>`).join('');
+    return `<div class="hod-bench-row"><span class="hod-bench-label">${ROLE_LABEL[role]}</span><div class="hod-bench-chips">${chips}</div></div>`;
+  }).join('');
+  const ov=document.createElement('div');
+  ov.className='hod-pos-overlay'; ov.style.position='fixed'; ov.style.zIndex='100';
+  ov.innerHTML=`<div class="hod-pos-modal hod-pop" style="max-width:380px;max-height:90vh;overflow-y:auto">
+    <div class="hod-stage-label" style="text-align:center">${escapeHtml(r.nickname)} · OVERALL ${r.overall}</div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px">kemija ${r.chem>0?'+':''}${r.chem}${r.sim_wins!=null?` · ${r.sim_wins} zmag`:''}</div>
+    <div class="hod-court-wrap" style="max-width:300px">
+      <svg class="hod-court-bg" viewBox="0 0 300 300" preserveAspectRatio="none">
+        <rect x="0" y="0" width="300" height="300" fill="#2a1e12"/>
+        <rect x="105" y="0" width="90" height="110" fill="none" stroke="#c98a3a" stroke-width="2"/>
+        <circle cx="150" cy="110" r="38" fill="none" stroke="#c98a3a" stroke-width="2"/>
+        <line x1="130" y1="18" x2="170" y2="18" stroke="#e8e8e8" stroke-width="3"/>
+        <circle cx="150" cy="26" r="7" fill="none" stroke="#ff8500" stroke-width="2.5"/>
+        <path d="M 30 0 L 30 60 Q 150 200 270 60 L 270 0" fill="none" stroke="#c98a3a" stroke-width="2"/>
+      </svg>
+      <div class="hod-court-spots">${spotNodes}</div>
+    </div>
+    <div class="hod-bench" style="margin-top:10px">${benchGroups}</div>
+    <button class="hod-btn secondary" id="hod-ut-close" style="margin-top:12px;width:100%">Zapri</button>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#hod-ut-close').onclick=()=>ov.remove();
+  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
 }
 
 let _cachedLeague=null;
@@ -2385,9 +2529,11 @@ function showSimResult(res, replaced, conf, myStr, full){
       ${dailyMode?dailyResultBanner(evaluateTeam(), res):''}
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
         <button class="hod-btn secondary" id="hod-sim-again">Druga ekipa</button>
-        ${dailyMode?'<button class="hod-btn" id="hod-share2" style="background:linear-gradient(180deg,#4cc9f0,#3a9fc4);box-shadow:0 5px 0 #2a7a99">Deli rezultat</button>':''}
+        ${dailyMode?'<button class="hod-btn" id="hod-post2" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi na lestvico</button>':''}
+        ${dailyMode?'<button class="hod-btn" id="hod-share2" style="background:linear-gradient(180deg,#4cc9f0,#3a9fc4);box-shadow:0 5px 0 #2a7a99">Deli</button>':''}
         <button class="hod-btn secondary" id="hod-replay2">${dailyMode?'Znova (dnevni)':'Nova ekipa'}</button>
       </div>
+      ${dailyMode?'<div id="hod-leaderboard"></div>':''}
     </div>`;
   document.getElementById('hod-sim-again').onclick=showTeamPicker;
   if(dailyMode){
@@ -2395,6 +2541,9 @@ function showSimResult(res, replaced, conf, myStr, full){
     saveDailyResult(ev, res);   // shrani s simulacijskim rezultatom
     const sh=document.getElementById('hod-share2');
     if(sh) sh.onclick=()=>shareDaily(ev, res);
+    const po=document.getElementById('hod-post2');
+    if(po) po.onclick=()=>postToLeaderboard(ev, res, po);
+    showLeaderboard();
   }
   document.getElementById('hod-replay2').onclick=()=>{
     if(dailyMode){ startDaily(); return; }
