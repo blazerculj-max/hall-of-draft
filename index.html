@@ -184,6 +184,10 @@
 .hod-court-bg{position:absolute;inset:0;width:100%;height:100%;border-radius:14px;
   border:1px solid var(--line);box-shadow:inset 0 0 30px rgba(0,0,0,.5);}
 .hod-court-spots{position:absolute;inset:0;}
+.hod-court-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.hod-chem-legend{display:flex;gap:14px;justify-content:center;font-size:11px;color:var(--muted);margin-top:8px;flex-wrap:wrap;}
+.hod-chem-legend span{display:flex;align-items:center;gap:5px;}
+.hod-chem-legend i{width:16px;height:3px;border-radius:2px;display:inline-block;}
 .hod-spot{position:absolute;transform:translate(-50%,-50%);width:74px;
   display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:.12s;}
 .hod-spot-pos{font-family:'Bebas Neue';font-size:12px;letter-spacing:1px;color:var(--gold);}
@@ -1247,9 +1251,27 @@ function posPenalty(p){
   const minDist=Math.min(...positions.map(x=>Math.abs(POS_LADDER.indexOf(x)-a)));
   return 6+minDist*5;
 }
-// efektivni rating = (rating - pozicijska kazen) × utež vloge
+// par-kemija med dvema igralcema: vrne {level:-1|0|1, str:jakost}
+function pairChem(a,b){
+  if(pairMatch(a.name,b.name,RIVALRIES)) return {level:-1, str:2.5};
+  let pos=0;
+  if(pairMatch(a.name,b.name,DUOS)) pos+=2.5;
+  if(a.team&&b.team&&a.team===b.team&&a.season===b.season) pos+=2.0;
+  else if(a.team&&b.team&&a.team===b.team) pos+=0.8;
+  if(pos>0) return {level:1, str:pos};
+  return {level:0, str:0};
+}
+// kemija prilagoditev igralca = vsota njegovih par-učinkov med starterji (±rating)
+function playerChemAdj(p){
+  if(p.role!=="S") return 0;
+  const starters=roster.filter(x=>x.role==="S"&&x!==p);
+  let adj=0;
+  starters.forEach(o=>{ const c=pairChem(p,o); adj += c.level*c.str; });
+  return Math.max(-8, Math.min(8, adj));   // omeji vpliv
+}
+// efektivni rating = (rating - pozicijska kazen + kemija) × utež vloge
 function effRating(p){
-  const base=p.rating - posPenalty(p);
+  const base=p.rating - posPenalty(p) + playerChemAdj(p);
   const w=ROLE_WEIGHT[p.role||"S"]||1.0;
   return Math.max(20, base*w);
 }
@@ -1792,6 +1814,22 @@ function renderCourt(){
   const bySpot={}; starters.forEach(p=>{if(p.spot)bySpot[p.spot]=p;});
   const bench=roster.filter(p=>p.role!=="S");
 
+  // kemija-črte med vsemi pari starterjev na igrišču
+  let chemLines="";
+  const placed=POS_LADDER.filter(s=>bySpot[s]);
+  for(let i=0;i<placed.length;i++){
+    for(let j=i+1;j<placed.length;j++){
+      const sa=placed[i], sb=placed[j];
+      const a=COURT_SPOTS[sa], b=COURT_SPOTS[sb];
+      const c=pairChem(bySpot[sa],bySpot[sb]);
+      const col=c.level>0?'#2ec4b6':c.level<0?'#e63946':'#c9a23a';
+      const op=c.level===0?0.22:0.85;
+      const wdt=c.level===0?1:2.2;
+      const dash=c.level<0?'4 3':'';
+      chemLines+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${col}" stroke-width="${wdt}" stroke-opacity="${op}" ${dash?`stroke-dasharray="${dash}"`:''}/>`;
+    }
+  }
+
   // SVG mesta
   const spotNodes=POS_LADDER.map(spot=>{
     const c=COURT_SPOTS[spot];
@@ -1849,7 +1887,13 @@ function renderCourt(){
           <!-- tri točka lok -->
           <path d="M 30 0 L 30 60 Q 150 200 270 60 L 270 0" fill="none" stroke="#c98a3a" stroke-width="2"/>
         </svg>
+        <svg class="hod-court-lines" viewBox="0 0 300 300" preserveAspectRatio="none">${chemLines}</svg>
         <div class="hod-court-spots">${spotNodes}</div>
+      </div>
+      <div class="hod-chem-legend">
+        <span><i style="background:#2ec4b6"></i> dobra kemija</span>
+        <span><i style="background:#c9a23a"></i> nevtralno</span>
+        <span><i style="background:#e63946"></i> trenje</span>
       </div>
       <div class="hod-bench">${["6","R","F"].map(benchGroup).join('')}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px">
