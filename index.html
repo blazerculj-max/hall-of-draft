@@ -206,6 +206,10 @@
 .hod-spot-name{font-size:12px;font-weight:600;line-height:1.1;text-align:center;}
 .hod-spot-rt{font-family:'Bebas Neue';font-size:15px;color:var(--gold);}
 .hod-spot-empty{font-size:10px;color:var(--muted);font-style:italic;}
+.hod-spot-hint{font-family:'Bebas Neue';font-size:14px;margin-top:2px;padding:0 5px;border-radius:5px;}
+.hod-spot-hint.good{color:#0a0a0f;background:var(--green);}
+.hod-spot-hint.mid{color:#0a0a0f;background:var(--gold);}
+.hod-spot-hint.bad{color:#fff;background:var(--red);}
 .hod-bench{margin-top:14px;display:flex;flex-direction:column;gap:6px;max-width:440px;margin-left:auto;margin-right:auto;}
 .hod-bench-row{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 10px;text-align:left;}
 .hod-bench-label{font-family:'Bebas Neue';font-size:13px;letter-spacing:1px;color:var(--muted);display:block;margin-bottom:4px;}
@@ -1213,31 +1217,10 @@ function revealWild(p){
 // če ima igralec več dovoljenih pozicij, vprašaj kam; sicer takoj dodaj
 function choosePlayerPos(p){
   const allPos=playerPositions(p);
+  // med draftom NE sprašujemo za pozicijo — dodamo s prvo dovoljeno (max 3/poz).
+  // končno razporeditev igralec naredi na igrišču.
   const takable=allPos.filter(pos=>posCount(pos)<MAX_PER_POS);
-  if(takable.length<=1){ takePlayer(p, takable[0]||allPos[0]); return; }
-  // mini izbirnik v action coni
-  const btns=takable.map(pos=>{
-    const c=posCount(pos);
-    return `<button class="hod-btn hod-pos-pick" data-pos="${pos}">
-      <span style="font-family:'Anton';font-size:22px">${pos}</span>
-      <span style="display:block;font-size:10px;letter-spacing:1px;opacity:.8">${c}/3 zasedeno</span>
-    </button>`;
-  }).join('');
-  const a=document.getElementById('hod-action');
-  const overlay=document.createElement('div');
-  overlay.className='hod-pos-overlay';
-  overlay.innerHTML=`
-    <div class="hod-pos-modal hod-pop">
-      <div class="hod-stage-label" style="text-align:center">${p.name}</div>
-      <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px">Kam ga postaviš?</div>
-      <div class="hod-pos-pick-row">${btns}</div>
-      <button class="hod-btn secondary" id="hod-pos-cancel" style="margin-top:12px">Prekliči</button>
-    </div>`;
-  a.appendChild(overlay);
-  overlay.querySelectorAll('.hod-pos-pick').forEach(b=>{
-    b.onclick=()=>{overlay.remove();takePlayer(p,b.dataset.pos);};
-  });
-  overlay.querySelector('#hod-pos-cancel').onclick=()=>overlay.remove();
+  takePlayer(p, takable[0]||allPos[0]);
 }
 
 function takePlayer(p, assignedPos){
@@ -1379,6 +1362,21 @@ function posPenalty(p){
   const a=POS_LADDER.indexOf(ap);
   const minDist=Math.min(...positions.map(x=>Math.abs(POS_LADDER.indexOf(x)-a)));
   return 6+minDist*5;
+}
+// kazen, ki bi jo igralec imel na DOLOČENI poziciji (brez spreminjanja igralca)
+function penaltyAtPos(p, pos){
+  const positions=playerPositions(p);
+  if(positions[0]===pos) return 0;
+  const idx=positions.indexOf(pos);
+  if(idx===1) return 3;
+  if(idx===2) return 5;
+  const a=POS_LADDER.indexOf(pos);
+  const minDist=Math.min(...positions.map(x=>Math.abs(POS_LADDER.indexOf(x)-a)));
+  return 6+minDist*5;
+}
+// približni rating, ki bi ga igralec imel na DOLOČENI poziciji (kot starter)
+function ratingAtPos(p, pos){
+  return Math.round(p.rating - penaltyAtPos(p, pos));
 }
 // par-kemija med dvema igralcema: vrne {level:-1|0|1, str:jakost}
 function pairChem(a,b){
@@ -1967,6 +1965,14 @@ function renderCourt(){
     const pen=p?posPenalty(p):0;
     const er=p?Math.round(effRating(p)):0;
     const label=p?`${lastNameCap(p)}`:spot;
+    // namig: če je nek igralec izbran (in ni ta na tem mestu), pokaži kakšen rating bi imel TU
+    let hint="";
+    if(_courtSel && _courtSel!==p){
+      const hr=ratingAtPos(_courtSel, spot);
+      const hp=penaltyAtPos(_courtSel, spot);
+      const cls=hp===0?'good':hp<=5?'mid':'bad';
+      hint=`<div class="hod-spot-hint ${cls}">${hr}${hp>0?` <span class="hod-pen">-${hp}</span>`:''}</div>`;
+    }
     return `
       <div class="hod-spot ${p?'filled':'empty'} ${sel}" data-spot="${spot}"
            style="left:${c.x/300*100}%;top:${c.y/300*100}%">
@@ -1974,6 +1980,7 @@ function renderCourt(){
         ${p?`<div class="hod-spot-name">${label}</div>
              <div class="hod-spot-rt">${er}${pen>0?`<span class="hod-pen">-${pen}</span>`:''}</div>`
             :`<div class="hod-spot-empty">prazno</div>`}
+        ${hint}
       </div>`;
   }).join('');
 
