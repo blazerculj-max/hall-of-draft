@@ -84,7 +84,8 @@
 }
 .hod-season-card:hover{border-color:var(--gold);transform:translateX(4px);}
 .hod-season-yr{font-family:'Anton';font-size:30px;color:var(--ink);}
-.hod-season-meta{text-align:right;font-size:12px;color:var(--muted);letter-spacing:1px;}
+.hod-season-fact{font-size:11.5px;color:var(--gold-deep);line-height:1.35;margin-top:4px;font-style:italic;}
+.hod-season-meta{text-align:right;font-size:12px;color:var(--muted);letter-spacing:1px;flex:none;margin-left:10px;}
 
 /* Player offer cards */
 .hod-offer-grid{display:grid;grid-template-columns:1fr;gap:10px;margin:6px 0 16px;}
@@ -722,6 +723,51 @@ function buildLeague(){
 let roster=[]; // {pos,name,season,pts,reb,ast,rating}
 let phase="intro"; // intro | decades | spin | choose-season | offer | result
 let seasonChoices=[];
+
+// ročna dejstva o znamenitih sezonah (prikazana na kartici izbire)
+const SEASON_FACTS={
+  "1985-86":"Bird na vrhuncu — Celticsi 67 zmag in naslov",
+  "1986-87":"Magic MVP, Lakers Showtime na vrhuncu",
+  "1987-88":"Jordan MVP in obrambni igralec leta hkrati",
+  "1988-89":"Detroit Bad Boys osvojijo prvi naslov",
+  "1989-90":"Bad Boys ponovijo — Detroitova obramba kralj",
+  "1990-91":"Jordan slekel Magica — prvi Bullsov naslov",
+  "1991-92":"Bulls dominirajo, Jordan drugi naslov",
+  "1992-93":"Jordanov three-peat, Barkley MVP v Phoenixu",
+  "1993-94":"Hakeemovo leto — naslov in MVP brez Jordana",
+  "1994-95":"Hakeem ponovi, Spurs in Robinson MVP",
+  "1995-96":"Bullsovih rekordnih 72 zmag, Jordan se vrne",
+  "1996-97":"Bulls 69 zmag, Jordan-Malone MVP duel",
+  "1997-98":"Jordanov zadnji ples — šesti naslov",
+  "1998-99":"Skrajšana sezona, Spursi prvi naslov",
+  "1999-00":"Shaq MVP, Lakers začetek dinastije",
+  "2000-01":"Iverson MVP, Lakers skozi playoff 15-1",
+  "2001-02":"Shaq-Kobe tretji zaporedni naslov",
+  "2002-03":"Spursi spet na vrhu, Duncan MVP",
+  "2003-04":"Detroitova obramba ruši Lakers superteam",
+  "2004-05":"Nash MVP, Suns sedem sekund ali manj",
+  "2005-06":"Kobejevih 81 točk, Wade-Shaq naslov v Miamiju",
+  "2006-07":"Dirk MVP, a Warriorsovo 'We Believe' presenečenje",
+  "2007-08":"KG v Bostonu — novi Big Three, naslov",
+  "2008-09":"Kobejev prvi naslov brez Shaqa, LeBron MVP",
+  "2009-10":"Kobejev peti prsten, Lakers ubranijo naslov",
+  "2010-11":"Dirkov maščevalni pohod — Dallas ruši Heat",
+  "2011-12":"LeBronov prvi naslov, skrajšana sezona",
+  "2012-13":"Heatov 27-zmag niz, LeBron na vrhuncu",
+  "2013-14":"Spursova ekipna mojstrovina nad Heat",
+  "2014-15":"Curry MVP, Warriors začnejo dinastijo",
+  "2015-16":"Warriorsovih rekordnih 73 zmag, Curry soglasni MVP",
+  "2016-17":"Durant v Golden State — superteam naslov",
+  "2017-18":"Warriors spet prvaki, Harden MVP",
+  "2018-19":"Raptorsi in Kawhi prekinejo dinastijo",
+  "2019-20":"Mehurček v Orlandu, LeBron-AD naslov",
+  "2020-21":"Giannis vrhunec — Bucks prvi naslov po 50 letih",
+  "2021-22":"Curry finals MVP, Warriors spet na vrhu",
+  "2022-23":"Jokić vodi Denver do prvega naslova",
+  "2023-24":"Boston dominira, Tatum-Brown naslov",
+  "2024-25":"SGA in OKC — nova sila na zahodu",
+};
+function seasonFact(year){ return SEASON_FACTS[year]||""; }
 let chosenSeason=null;
 let currentOffer=[];
 let selectedEras=new Set(); // izbrane dekade za filter
@@ -1006,11 +1052,18 @@ function startSpin(){
 
 function showSeasonChoices(){
   phase="choose-season";
-  const cards=seasonChoices.map((s,i)=>`
+  const cards=seasonChoices.map((s,i)=>{
+    const fact=seasonFact(s.year);
+    return `
     <div class="hod-season-card hod-pop" data-i="${i}" style="animation-delay:${i*0.08}s">
-      <div><div class="hod-season-yr">${s.year}</div><div style="font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">${s.era}</div></div>
-      <div class="hod-season-meta">izberi to<br>sezono →</div>
-    </div>`).join('');
+      <div style="flex:1;min-width:0">
+        <div class="hod-season-yr">${s.year}</div>
+        <div style="font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">${s.era}</div>
+        ${fact?`<div class="hod-season-fact">${fact}</div>`:''}
+      </div>
+      <div class="hod-season-meta">izberi →</div>
+    </div>`;
+  }).join('');
   setAction(`
     <div class="hod-fade">
       <div class="hod-stage-label" style="text-align:center">Izberi sezono za draft</div>
