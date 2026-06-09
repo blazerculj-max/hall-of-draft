@@ -146,6 +146,9 @@
 .hod-era-name{font-family:'Anton';font-size:26px;color:var(--ink);line-height:1;}
 .hod-era-chip.on .hod-era-name{color:var(--gold);}
 .hod-era-count{font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+#hod-draft-frame{display:flex;flex-direction:column;}
+.hod-action-zone{min-height:230px;display:flex;flex-direction:column;justify-content:center;}
+#hod-roster-slot{margin-top:6px;}
 .hod-conf-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:480px;margin:0 auto;text-align:left;}
 .hod-conf-title{font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;color:var(--gold);margin-bottom:6px;text-align:center;}
 .hod-team-chip{display:flex;justify-content:space-between;align-items:center;background:var(--panel);
@@ -550,6 +553,26 @@ function rosterPanel(){
   return `<div class="hod-roster"><div class="hod-roster-title"><span>TVOJA EKIPA</span><span>${roster.length}/12</span></div>${rows}</div>`;
 }
 
+// Stabilni okvir za draft fazo: zgrajen enkrat, vsebina con se menja brez skakanja.
+function ensureDraftFrame(){
+  if(document.getElementById('hod-action')) return; // že obstaja
+  screen.innerHTML=`
+    <div id="hod-draft-frame">
+      <div id="hod-action" class="hod-action-zone"></div>
+      <div id="hod-roster-slot"></div>
+    </div>`;
+}
+function setAction(html){
+  ensureDraftFrame();
+  const a=document.getElementById('hod-action');
+  a.innerHTML=html;
+}
+function updateRosterSlot(){
+  ensureDraftFrame();
+  document.getElementById('hod-roster-slot').innerHTML=rosterPanel();
+}
+function leaveDraftFrame(){ /* naslednji full-screen render sam prepiše screen */ }
+
 // ---- SCREENS ----
 function showIntro(){
   phase="intro";
@@ -634,16 +657,17 @@ function startSpin(){
     }
     return `<div class="hod-reel spinning" id="hod-reel-${i}"><div class="hod-reel-strip">${strip}</div></div>`;
   }).join('');
-  screen.innerHTML=`
+  updateRosterSlot();
+  setAction(`
     <div class="hod-slot-stage hod-fade">
       <div class="hod-stage-label">${roster.length===0?'Zavrti za prvo sezono':'Zavrti za naslednjo sezono'}</div>
       <div class="hod-reels">${reelHtml}</div>
-    </div>
-    ${rosterPanel()}`;
+    </div>`);
   // stop reels staggered
   Array.from({length:n}).forEach((_,i)=>{
     setTimeout(()=>{
       const reel=document.getElementById('hod-reel-'+i);
+      if(!reel) return;
       reel.classList.remove('spinning');reel.classList.add('locked');
       const s=seasonChoices[i];
       reel.querySelector('.hod-reel-strip').innerHTML=
@@ -661,13 +685,12 @@ function showSeasonChoices(){
       <div><div class="hod-season-yr">${s.year}</div><div style="font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">${s.era}</div></div>
       <div class="hod-season-meta">izberi to<br>sezono →</div>
     </div>`).join('');
-  screen.innerHTML=`
+  setAction(`
     <div class="hod-fade">
       <div class="hod-stage-label" style="text-align:center">Izberi sezono za draft</div>
       <div class="hod-season-choices">${cards}</div>
-    </div>
-    ${rosterPanel()}`;
-  screen.querySelectorAll('.hod-season-card').forEach(c=>{
+    </div>`);
+  document.querySelectorAll('#hod-action .hod-season-card').forEach(c=>{
     c.onclick=()=>{chosenSeason=seasonChoices[+c.dataset.i];makeOffer();};
   });
 }
@@ -707,16 +730,15 @@ function makeOffer(){
       <div class="hod-prating ${ratingClass(p.rating)}">${p.rating}</div>
     </div>`;
   }).join('');
-  screen.innerHTML=`
+  setAction(`
     <div class="hod-fade">
       <div class="hod-stage-label" style="text-align:center">
         ${chosenSeason.year} · ${chosenSeason.era}${forced?' · <span style="color:var(--red)">zapolni manjkajoče pozicije</span>':''}
       </div>
       <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">Izberi enega igralca</div>
       <div class="hod-offer-grid">${cards}</div>
-    </div>
-    ${rosterPanel()}`;
-  screen.querySelectorAll('.hod-pcard:not(.disabled)').forEach(c=>{
+    </div>`);
+  document.querySelectorAll('#hod-action .hod-pcard:not(.disabled)').forEach(c=>{
     c.onclick=()=>takePlayer(currentOffer[+c.dataset.i]);
   });
 }
@@ -724,6 +746,7 @@ function makeOffer(){
 function takePlayer(p){
   roster.push(p);
   renderProgress();
+  updateRosterSlot();
   if(teamFull()){ showResult(); return; }
   startSpin();
 }
