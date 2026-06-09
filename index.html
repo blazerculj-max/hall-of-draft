@@ -218,6 +218,7 @@
   border-radius:8px;padding:4px 8px;cursor:pointer;transition:.12s;}
 .hod-bench-chip:hover{border-color:var(--gold);}
 .hod-bench-chip.sel{border-color:#fff;box-shadow:0 0 8px var(--gold);}
+.hod-bench-unassigned{border-color:var(--gold)!important;background:rgba(255,182,39,.06)!important;margin-bottom:8px;}
 .hod-budget-bar{max-width:380px;margin:0 auto 12px;}
 .hod-budget-row{display:flex;justify-content:space-between;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
 .hod-budget-row b{color:var(--gold);font-family:'Bebas Neue';font-size:16px;}
@@ -2000,7 +2001,22 @@ function renderCourt(){
     </div>`;
   };
 
+  const unassigned=roster.filter(p=>!p.role);
+  const unassignedHtml=unassigned.length?`
+    <div class="hod-bench-row hod-bench-unassigned" data-bench="pool">
+      <span class="hod-bench-label" style="color:var(--gold)">Nerazporejeni (${unassigned.length}) — postavi jih</span>
+      <div class="hod-bench-chips">${unassigned.map(p=>{
+        const sel=_courtSel===p?'sel':'';
+        return `<div class="hod-bench-chip ${sel}" data-key="${playerKey(p)}" draggable="true">
+          <span class="hod-role-pos hod-pos-${playerPositions(p)[0]}">${playerPositions(p)[0]}</span>
+          <span class="hod-role-nm">${lastNameCap(p)} <span style="color:var(--muted);font-size:10px">${shortSeason(p)}</span></span>
+          <span class="hod-role-rt">${p.rating}</span>
+        </div>`;
+      }).join('')}</div>
+    </div>`:'';
+
   const allStartersPlaced=POS_LADDER.every(s=>bySpot[s]);
+  const allPlaced=allStartersPlaced && unassigned.length===0;
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">Postavi peterko na igrišče</div>
@@ -2014,14 +2030,10 @@ function renderCourt(){
           <defs><linearGradient id="hod-floor" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stop-color="#3a2a1a"/><stop offset="1" stop-color="#2a1e12"/></linearGradient></defs>
           <rect x="0" y="0" width="300" height="300" fill="url(#hod-floor)"/>
-          <!-- raketa -->
           <rect x="105" y="0" width="90" height="110" fill="none" stroke="#c98a3a" stroke-width="2"/>
-          <!-- linija prostih metov / krog -->
           <circle cx="150" cy="110" r="38" fill="none" stroke="#c98a3a" stroke-width="2"/>
-          <!-- koš -->
           <line x1="130" y1="18" x2="170" y2="18" stroke="#e8e8e8" stroke-width="3"/>
           <circle cx="150" cy="26" r="7" fill="none" stroke="#ff8500" stroke-width="2.5"/>
-          <!-- tri točka lok -->
           <path d="M 30 0 L 30 60 Q 150 200 270 60 L 270 0" fill="none" stroke="#c98a3a" stroke-width="2"/>
         </svg>
         <svg class="hod-court-lines" viewBox="0 0 300 300" preserveAspectRatio="none">${chemLines}</svg>
@@ -2032,12 +2044,15 @@ function renderCourt(){
         <span><i style="background:#c9a23a"></i> nevtralno</span>
         <span><i style="background:#e63946"></i> trenje</span>
       </div>
+      ${unassignedHtml}
       <div class="hod-bench">${["6","R","F"].map(benchGroup).join('')}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px">
-        <button class="hod-btn ${allStartersPlaced?'':'disabled'}" id="hod-court-done">Potrdi ekipo</button>
+        <button class="hod-btn ${allPlaced?'':'disabled'}" id="hod-court-done">Potrdi ekipo</button>
         <button class="hod-btn secondary" id="hod-court-auto">Auto</button>
+        <button class="hod-btn secondary" id="hod-court-clear">Počisti</button>
       </div>
-      ${allStartersPlaced?'':'<div style="font-size:11px;color:var(--red);margin-top:8px">Zapolni vseh 5 mest na igrišču</div>'}
+      ${!allStartersPlaced?'<div style="font-size:11px;color:var(--red);margin-top:8px">Zapolni vseh 5 mest na igrišču</div>'
+        :(unassigned.length?'<div style="font-size:11px;color:var(--red);margin-top:8px">Razporedi še nerazporejene igralce na klop</div>':'')}
     </div>`;
   wireCourt();
 }
@@ -2045,49 +2060,49 @@ function renderCourt(){
 function isMobileView(){ return window.matchMedia&&window.matchMedia('(max-width:560px)').matches; }
 
 function wireCourt(){
-  // izbira igralca (klop ali mesto)
   function selectPlayer(p){ _courtSel=(_courtSel===p)?null:p; renderCourt(); }
   // postavi izbranega na mesto (spot) — zamenja če zasedeno
   function placeOnSpot(spot){
     if(!_courtSel) return;
     const sel=_courtSel;
-    const occ=roster.find(p=>p.role==="S"&&p.spot===spot);
+    const occ=roster.find(p=>p.role==="S"&&p.spot===spot&&p!==sel);
     if(sel.role==="S"){
-      // starter <-> starter: zamenjaj mesti
+      // starter na drugo mesto: če zasedeno -> zamenjaj mesti
       const from=sel.spot;
       if(occ){ occ.spot=from; occ.assignedPos=from; }
       sel.spot=spot; sel.assignedPos=spot;
     } else {
-      // klop -> starter: izbrani postane starter na mestu, prejšnji gre na klop v vlogo izbranega
-      const benchRole=sel.role;
-      if(occ){ occ.role=benchRole; occ.spot=null; occ.assignedPos=playerPositions(occ)[0]; }
+      // klop/bazen -> mesto: izrinjeni gre v vlogo izbranega (ali bazen če iz bazena)
+      const prevRole=sel.role; // "6"/"R"/"F" ali null
+      if(occ){ occ.role=prevRole||null; occ.spot=null; occ.assignedPos=playerPositions(occ)[0]; }
       sel.role="S"; sel.spot=spot; sel.assignedPos=spot;
     }
     _courtSel=null; renderCourt();
   }
-  // postavi izbranega na klop (v določeno vlogo)
+  // postavi izbranega na klop v vlogo (ali v bazen če role="pool")
   function placeOnBench(role){
     if(!_courtSel) return;
     const sel=_courtSel;
-    // koliko mest ima ta vloga
+    if(role==="pool"){ // vrni v nerazporejene
+      sel.role=null; sel.spot=null; sel.assignedPos=playerPositions(sel)[0];
+      _courtSel=null; renderCourt(); return;
+    }
     const cap=ROLE_SLOTS[role];
     const inRole=roster.filter(p=>p.role===role&&p!==sel);
     if(sel.role==="S"){
-      // starter -> klop: njegovo mesto ostane prazno, mora ga zapolniti nekdo. Da peterka ostane polna,
-      // zahtevamo da je to swap (klik na klop igralca), ne prosto. Če je vloga polna, zamenjaj z zadnjim.
+      const freedSpot=sel.spot;
       if(inRole.length>=cap){
+        // vloga polna -> zadnji v vlogi gre na sproščeno mesto
         const victim=inRole[inRole.length-1];
-        victim.role="S"; victim.spot=sel.spot; victim.assignedPos=sel.spot;
-      } else {
-        // vloga ima prostor, a peterka bo nepopolna -> ne dovoli (mora ostati 5)
-        _courtSel=null; renderCourt(); return;
+        victim.role="S"; victim.spot=freedSpot; victim.assignedPos=freedSpot;
       }
+      // če vloga ni polna, mesto ostane prazno (peterka nepopolna -> dovoljeno med urejanjem)
       sel.role=role; sel.spot=null; sel.assignedPos=playerPositions(sel)[0];
     } else {
-      // klop -> klop (druga vloga)
+      // klop/bazen -> klop: če polna, izrini zadnjega v bazen
       if(inRole.length>=cap){
         const victim=inRole[inRole.length-1];
-        victim.role=sel.role;
+        victim.role=null; victim.spot=null;
       }
       sel.role=role;
     }
@@ -2098,7 +2113,6 @@ function wireCourt(){
     const spot=el.dataset.spot;
     const p=roster.find(x=>x.role==="S"&&x.spot===spot);
     el.onclick=()=>{ if(_courtSel) placeOnSpot(spot); else if(p) selectPlayer(p); };
-    // drag desktop
     if(p){ el.setAttribute('draggable','true');
       el.ondragstart=e=>{_courtSel=p; e.dataTransfer.setData('text','x');}; }
     el.ondragover=e=>e.preventDefault();
@@ -2106,7 +2120,7 @@ function wireCourt(){
   });
   screen.querySelectorAll('.hod-bench-chip').forEach(c=>{
     const p=roster.find(x=>playerKey(x)===c.dataset.key);
-    c.onclick=()=>selectPlayer(p);
+    c.onclick=(e)=>{ e.stopPropagation(); selectPlayer(p); };
     c.ondragstart=e=>{_courtSel=p; e.dataTransfer.setData('text','x');};
   });
   screen.querySelectorAll('.hod-bench-row').forEach(b=>{
@@ -2117,6 +2131,10 @@ function wireCourt(){
   const done=document.getElementById('hod-court-done');
   if(done && !done.classList.contains('disabled')) done.onclick=()=>{ _courtSel=null; showResult(); };
   document.getElementById('hod-court-auto').onclick=()=>{ autoAssignRoles(roster); assignCourtSpots(); _courtSel=null; renderCourt(); };
+  document.getElementById('hod-court-clear').onclick=()=>{
+    roster.forEach(p=>{ p.role=null; p.spot=null; p.assignedPos=playerPositions(p)[0]; });
+    _courtSel=null; renderCourt();
+  };
 }
 
 function showResult(){
