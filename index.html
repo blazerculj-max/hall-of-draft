@@ -258,6 +258,10 @@
 .hod-pos-modal{background:var(--panel);border:1px solid var(--gold);border-radius:16px;padding:20px 24px;max-width:360px;}
 .hod-pos-pick-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 .hod-btn.hod-pos-pick{padding:12px 18px;line-height:1.1;}
+.hod-pick-rt{display:block;font-family:'Bebas Neue';font-size:16px;margin:3px 0;padding:1px 6px;border-radius:5px;}
+.hod-pick-rt.good{color:#0a0a0f;background:var(--green);}
+.hod-pick-rt.mid{color:#0a0a0f;background:var(--gold);}
+.hod-pick-rt.bad{color:#fff;background:var(--red);}
 .hod-action-zone{min-height:230px;display:flex;flex-direction:column;justify-content:center;position:relative;}
 #hod-roster-slot{margin-top:6px;}
 .hod-chem-mini{display:inline-flex;align-items:center;gap:6px;margin-top:6px;
@@ -1218,10 +1222,35 @@ function revealWild(p){
 // če ima igralec več dovoljenih pozicij, vprašaj kam; sicer takoj dodaj
 function choosePlayerPos(p){
   const allPos=playerPositions(p);
-  // med draftom NE sprašujemo za pozicijo — dodamo s prvo dovoljeno (max 3/poz).
-  // končno razporeditev igralec naredi na igrišču.
   const takable=allPos.filter(pos=>posCount(pos)<MAX_PER_POS);
-  takePlayer(p, takable[0]||allPos[0]);
+  if(takable.length<=1){ takePlayer(p, takable[0]||allPos[0]); return; }
+  // izbirnik z rating-namigom na vsaki poziciji
+  const btns=takable.map(pos=>{
+    const c=posCount(pos);
+    const r=ratingAtPos(p,pos);
+    const pen=penaltyAtPos(p,pos);
+    const cls=pen===0?'good':pen<=5?'mid':'bad';
+    return `<button class="hod-btn hod-pos-pick" data-pos="${pos}">
+      <span style="font-family:'Anton';font-size:22px">${pos}</span>
+      <span class="hod-pick-rt ${cls}">${r}${pen>0?` <span class="hod-pen">-${pen}</span>`:''}</span>
+      <span style="display:block;font-size:10px;letter-spacing:1px;opacity:.8">${c}/3</span>
+    </button>`;
+  }).join('');
+  const a=document.getElementById('hod-action');
+  const overlay=document.createElement('div');
+  overlay.className='hod-pos-overlay';
+  overlay.innerHTML=`
+    <div class="hod-pos-modal hod-pop">
+      <div class="hod-stage-label" style="text-align:center">${p.name}</div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px">Kam ga postaviš? <span style="color:var(--gold-deep)">(lahko spremeniš na koncu)</span></div>
+      <div class="hod-pos-pick-row">${btns}</div>
+      <button class="hod-btn secondary" id="hod-pos-cancel" style="margin-top:12px">Prekliči</button>
+    </div>`;
+  a.appendChild(overlay);
+  overlay.querySelectorAll('.hod-pos-pick').forEach(b=>{
+    b.onclick=()=>{overlay.remove();takePlayer(p,b.dataset.pos);};
+  });
+  overlay.querySelector('#hod-pos-cancel').onclick=()=>overlay.remove();
 }
 
 function takePlayer(p, assignedPos){
