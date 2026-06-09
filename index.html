@@ -219,6 +219,19 @@
 .hod-bench-chip:hover{border-color:var(--gold);}
 .hod-bench-chip.sel{border-color:#fff;box-shadow:0 0 8px var(--gold);}
 .hod-bench-unassigned{border-color:var(--gold)!important;background:rgba(255,182,39,.06)!important;margin-bottom:8px;}
+.hod-unassigned-box{border:1px solid var(--gold);border-radius:12px;padding:10px;margin:0 auto 12px;
+  max-width:460px;background:rgba(255,182,39,.05);}
+.hod-unassigned-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:7px;margin-top:8px;}
+.hod-uacard{background:#1a1a28;border:1px solid var(--line);border-radius:10px;padding:7px 9px;cursor:pointer;transition:.12s;text-align:left;}
+.hod-uacard:hover{border-color:var(--gold);}
+.hod-uacard.sel{border-color:#fff;box-shadow:0 0 10px var(--gold);background:rgba(255,182,39,.15);}
+.hod-ua-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.hod-ua-pos{font-family:'Bebas Neue';font-size:11px;color:#0a0a0f;border-radius:4px;padding:1px 5px;white-space:nowrap;}
+.hod-ua-rt{font-family:'Anton';font-size:18px;color:var(--gold);}
+.hod-ua-name{font-size:12px;font-weight:600;line-height:1.15;}
+.hod-ua-season{font-size:10px;color:var(--muted);margin-bottom:4px;}
+.hod-ua-stats{display:flex;gap:7px;font-size:10px;color:var(--muted);}
+.hod-ua-stats b{color:var(--ink);font-size:11px;}
 /* lestvica */
 .hod-leaderboard,#hod-leaderboard{max-width:420px;margin:18px auto 0;}
 .hod-lb-title{font-family:'Bebas Neue';font-size:18px;letter-spacing:1px;color:#4cc9f0;margin-bottom:8px;}
@@ -1971,9 +1984,8 @@ function monteCarlo(myStr, full, myConf, runs){
 
 function showRoleAssign(){
   phase="roles";
-  autoAssignRoles(roster);
-  // dodeli starterjem mesto na igrišču glede na njihovo trenutno pozicijo
-  assignCourtSpots();
+  // začni prazno — vsi igralci v "Nerazvrščeno", igralec sam razporedi (gumb Auto na voljo)
+  roster.forEach(p=>{ p.role=null; p.spot=null; p.assignedPos=playerPositions(p)[0]; });
   renderCourt();
 }
 // vsak starter dobi 'spot' (PG/SG/SF/PF/C). Poskusi po njihovi assignedPos/primarni.
@@ -2070,14 +2082,18 @@ function renderCourt(){
 
   const unassigned=roster.filter(p=>!p.role);
   const unassignedHtml=unassigned.length?`
-    <div class="hod-bench-row hod-bench-unassigned" data-bench="pool">
-      <span class="hod-bench-label" style="color:var(--gold)">Nerazporejeni (${unassigned.length}) — postavi jih</span>
-      <div class="hod-bench-chips">${unassigned.map(p=>{
+    <div class="hod-unassigned-box" data-bench="pool">
+      <div class="hod-bench-label" style="color:var(--gold)">Nerazvrščeni (${unassigned.length}) — klikni igralca, nato mesto na igrišču ali klop</div>
+      <div class="hod-unassigned-grid">${unassigned.map(p=>{
         const sel=_courtSel===p?'sel':'';
-        return `<div class="hod-bench-chip ${sel}" data-key="${playerKey(p)}" draggable="true">
-          <span class="hod-role-pos hod-pos-${playerPositions(p)[0]}">${playerPositions(p)[0]}</span>
-          <span class="hod-role-nm">${lastNameCap(p)} <span style="color:var(--muted);font-size:10px">${shortSeason(p)}</span></span>
-          <span class="hod-role-rt">${p.rating}</span>
+        return `<div class="hod-uacard ${sel}" data-key="${playerKey(p)}" draggable="true">
+          <div class="hod-ua-top">
+            <span class="hod-ua-pos hod-pos-${playerPositions(p)[0]}">${playerPositions(p).join('/')}</span>
+            <span class="hod-ua-rt">${p.rating}</span>
+          </div>
+          <div class="hod-ua-name">${p.name}</div>
+          <div class="hod-ua-season">${p.season}</div>
+          <div class="hod-ua-stats"><span><b>${p.pts}</b> pts</span><span><b>${p.reb}</b> reb</span><span><b>${p.ast}</b> ast</span></div>
         </div>`;
       }).join('')}</div>
     </div>`:'';
@@ -2189,6 +2205,17 @@ function wireCourt(){
     const p=roster.find(x=>playerKey(x)===c.dataset.key);
     c.onclick=(e)=>{ e.stopPropagation(); selectPlayer(p); };
     c.ondragstart=e=>{_courtSel=p; e.dataTransfer.setData('text','x');};
+  });
+  // nerazvrščene kartice (večje)
+  screen.querySelectorAll('.hod-uacard').forEach(c=>{
+    const p=roster.find(x=>playerKey(x)===c.dataset.key);
+    c.onclick=(e)=>{ e.stopPropagation(); selectPlayer(p); };
+    c.ondragstart=e=>{_courtSel=p; e.dataTransfer.setData('text','x');};
+  });
+  // spust nazaj v nerazvrščeno
+  screen.querySelectorAll('.hod-unassigned-box').forEach(b=>{
+    b.ondragover=e=>e.preventDefault();
+    b.ondrop=e=>{e.preventDefault(); placeOnBench('pool');};
   });
   screen.querySelectorAll('.hod-bench-row').forEach(b=>{
     b.ondragover=e=>e.preventDefault();
