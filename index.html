@@ -855,14 +855,14 @@ function simSeason(myStr, league){
 }
 function monteCarlo(myStr, full, myConf, runs){
   const confTeams=full.league.filter(t=>t.conf===myConf);
-  const confStr=confTeams.map(t=>t.strength).sort((a,b)=>a-b);
+  const confStr=confTeams.filter(t=>!t.mine).map(t=>t.strength).sort((a,b)=>a-b);
   const qStr=p=>confStr[Math.floor(confStr.length*p)]||confStr[confStr.length-1];
   let winsSum=0, winsArr=[], playoff=0, top1=0, finals=0, titles=0;
   const avgStr=full.league.reduce((s,t)=>s+t.strength,0)/full.league.length;
   for(let r=0;r<runs;r++){
     const myWins=simSeason(myStr, full.league);
     winsSum+=myWins; winsArr.push(myWins);
-    const standings=confTeams.map(t=>{
+    const standings=confTeams.filter(t=>!t.mine).map(t=>{
       return {abbr:t.abbr, wins:41+(t.strength-avgStr)*1.6 + (Math.random()-0.5)*10};
     });
     standings.push({abbr:"__ME__", wins:myWins});
@@ -1021,10 +1021,13 @@ function showSimResult(res, replaced, conf, myStr, full){
   else if(res.playoffPct>=70) verdict="Trdna playoff ekipa.";
   else if(res.playoffPct>=35) verdict="Boj za play-in.";
   else verdict="Lottery. Sezona za pozabit.";
-  // konferenčna lestvica (povprečje)
+  // konferenčna lestvica (povprečje) — tvoja ekipa je že v confTeams (mine:true)
   const avgStr=full.league.reduce((s,t)=>s+t.strength,0)/full.league.length;
-  const table=[...res.confTeams.map(t=>({name:t.name,wins:Math.round(41+(t.strength-avgStr)*1.6),mine:false})),
-               {name:"TVOJA EKIPA",wins:res.avgWins,mine:true}]
+  const table=res.confTeams.map(t=>({
+      name:t.mine?"TVOJA EKIPA":t.name,
+      wins:t.mine?res.avgWins:Math.round(41+(t.strength-avgStr)*1.6),
+      mine:!!t.mine
+    }))
     .sort((a,b)=>b.wins-a.wins);
   const rows=table.map((t,i)=>`<div class="hod-stand-row ${t.mine?'mine':''}">
     <span>${i+1}. ${t.name}</span><span>${t.wins}-${82-t.wins}</span></div>`).join('');
