@@ -147,6 +147,22 @@
 .hod-era-chip.on .hod-era-name{color:var(--gold);}
 .hod-era-count{font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
 #hod-draft-frame{display:flex;flex-direction:column;}
+.hod-mode-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:460px;margin:0 auto;}
+.hod-mode-chip{background:var(--panel);border:2px solid var(--line);border-radius:12px;
+  padding:9px 14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:92px;}
+.hod-mode-chip:hover{border-color:var(--gold);transform:translateY(-2px);}
+.hod-mode-chip.on{border-color:var(--gold);background:linear-gradient(180deg,rgba(255,182,39,.18),rgba(255,182,39,.05));}
+.hod-mode-name{font-family:'Bebas Neue';font-size:17px;letter-spacing:.5px;}
+.hod-mode-chip.on .hod-mode-name{color:var(--gold);}
+.hod-mode-sub{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+.hod-pright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;}
+.hod-price{font-family:'Bebas Neue';font-size:15px;letter-spacing:.5px;color:var(--gold);
+  background:rgba(255,182,39,.12);border:1px solid rgba(255,182,39,.4);border-radius:8px;padding:1px 8px;}
+.hod-budget-bar{max-width:380px;margin:0 auto 12px;}
+.hod-budget-row{display:flex;justify-content:space-between;font-size:12px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
+.hod-budget-row b{color:var(--gold);font-family:'Bebas Neue';font-size:16px;}
+.hod-budget-track{height:7px;background:var(--line);border-radius:4px;overflow:hidden;}
+.hod-budget-fill{height:100%;background:linear-gradient(90deg,var(--gold-deep),var(--gold));border-radius:4px;transition:width .3s;}
 .hod-action-zone{min-height:230px;display:flex;flex-direction:column;justify-content:center;}
 #hod-roster-slot{margin-top:6px;}
 .hod-chem-mini{display:inline-flex;align-items:center;gap:6px;margin-top:6px;
@@ -509,6 +525,16 @@ let seasonChoices=[];
 let chosenSeason=null;
 let currentOffer=[];
 let selectedEras=new Set(); // izbrane dekade za filter
+let budgetMode=false;       // ali igramo z omejenim budgetom
+let budgetTotal=0;          // skupni budget
+let budgetSpent=0;          // porabljeno
+const BUDGET_LEVELS={lahka:650, srednja:500, težka:380};
+
+// cena igralca iz ratinga: eksponentno, rating<=50 je zastonj (fringe minimum)
+function playerCost(p){
+  return Math.max(0, Math.round(Math.pow(Math.max(0,p.rating-50)/5,2)));
+}
+function budgetLeft(){ return budgetTotal-budgetSpent; }
 
 const ERA_ORDER=["80s","90s","2000s","2010s","2020s"];
 function availableEras(){
@@ -600,15 +626,14 @@ function showIntro(){
         players.json še ni na GitHubu — igra teče na vgrajenih 10 sezonah. Ko objaviš poln dataset, se naloži samodejno.
       </div>`:''}
     </div>`;
-  document.getElementById('hod-start').onclick=()=>{
-    if(availableEras().length>1) showDecadePicker(); else startSpin();
-  };
+  document.getElementById('hod-start').onclick=()=>{ showDecadePicker(); };
   renderProgress();
 }
 
 function showDecadePicker(){
   phase="decades";
   const eras=availableEras();
+  const multiEra=eras.length>1;
   const chips=eras.map(e=>{
     const n=POOL.filter(s=>s.era===e).length;
     const on=selectedEras.has(e);
@@ -617,19 +642,37 @@ function showDecadePicker(){
       <span class="hod-era-count">${n} sezon</span>
     </div>`;
   }).join('');
+  const budgetChips=`
+    <div class="hod-mode-row">
+      <div class="hod-mode-chip ${!budgetMode?'on':''}" data-mode="unlimited">
+        <span class="hod-mode-name">Neomejeno</span><span class="hod-mode-sub">grabi kar hočeš</span>
+      </div>
+      <div class="hod-mode-chip ${budgetMode&&budgetTotal===650?'on':''}" data-mode="lahka">
+        <span class="hod-mode-name">Budget 650</span><span class="hod-mode-sub">lahka</span>
+      </div>
+      <div class="hod-mode-chip ${budgetMode&&budgetTotal===500?'on':''}" data-mode="srednja">
+        <span class="hod-mode-name">Budget 500</span><span class="hod-mode-sub">srednja</span>
+      </div>
+      <div class="hod-mode-chip ${budgetMode&&budgetTotal===380?'on':''}" data-mode="težka">
+        <span class="hod-mode-name">Budget 380</span><span class="hod-mode-sub">težka</span>
+      </div>
+    </div>`;
   screen.innerHTML=`
     <div class="hod-slot-stage hod-fade">
-      <div class="hod-stage-label">Izberi obdobja</div>
-      <div class="hod-verdict" style="margin:0 auto 16px;max-width:420px">
-        Iz katerih dekad naj vleče kolut? Izberi eno ali več — ali pusti prazno za vse.
-      </div>
+      <div class="hod-stage-label">Nastavitve igre</div>
+      ${multiEra?`
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Obdobja</div>
       <div class="hod-era-grid">${chips}</div>
-      <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="hod-btn" id="hod-era-go">Zavrti izbrano</button>
-        <button class="hod-btn secondary" id="hod-era-all">Vse sezone</button>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:12px" id="hod-era-hint">
+      <div style="font-size:11px;color:var(--muted);margin:8px 0 4px" id="hod-era-hint">
         ${selectedEras.size===0?'nič izbrano = vse dekade':`izbrano: ${[...selectedEras].join(', ')}`}
+      </div>`:''}
+      <div style="font-size:12px;color:var(--muted);margin:16px 0 8px;letter-spacing:1px;text-transform:uppercase">Način</div>
+      ${budgetChips}
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.5">
+        Z budgetom dražji igralci (višji rating) stanejo več — casino ti ponudi le tiste, ki si jih še lahko privoščiš.
+      </div>
+      <div style="margin-top:18px">
+        <button class="hod-btn" id="hod-era-go">Začni draft</button>
       </div>
     </div>`;
   screen.querySelectorAll('.hod-era-chip').forEach(c=>{
@@ -637,12 +680,20 @@ function showDecadePicker(){
       const e=c.dataset.era;
       if(selectedEras.has(e)) selectedEras.delete(e); else selectedEras.add(e);
       c.classList.toggle('on');
-      document.getElementById('hod-era-hint').textContent=
-        selectedEras.size===0?'nič izbrano = vse dekade':`izbrano: ${[...selectedEras].join(', ')}`;
+      const h=document.getElementById('hod-era-hint');
+      if(h) h.textContent=selectedEras.size===0?'nič izbrano = vse dekade':`izbrano: ${[...selectedEras].join(', ')}`;
     };
   });
-  document.getElementById('hod-era-go').onclick=startSpin;
-  document.getElementById('hod-era-all').onclick=()=>{selectedEras.clear();startSpin();};
+  screen.querySelectorAll('.hod-mode-chip').forEach(c=>{
+    c.onclick=()=>{
+      screen.querySelectorAll('.hod-mode-chip').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+      const m=c.dataset.mode;
+      if(m==="unlimited"){ budgetMode=false; budgetTotal=0; }
+      else { budgetMode=true; budgetTotal=BUDGET_LEVELS[m]; }
+    };
+  });
+  document.getElementById('hod-era-go').onclick=()=>{ budgetSpent=0; startSpin(); };
 }
 
 function pickRandomSeasons(){
@@ -707,16 +758,24 @@ function showSeasonChoices(){
 function makeOffer(){
   phase="offer";
   const allowed=forcedPositions();
-  // one random player per allowed position from chosen season
+  const left=budgetLeft();
   currentOffer=[];
   allowed.forEach(pos=>{
-    const cands=chosenSeason.players.filter(p=>p.pos===pos);
+    let cands=chosenSeason.players.filter(p=>p.pos===pos);
+    // budget: ponudi le igralce, ki si jih še lahko privoščiš
+    if(budgetMode){
+      const afford=cands.filter(p=>playerCost(p)<=left);
+      if(afford.length) cands=afford;
+      else {
+        // če si na tej poziciji ne moreš nič privoščiti, vzemi najcenejšega (fallback)
+        cands=[...cands].sort((a,b)=>playerCost(a)-playerCost(b)).slice(0,1);
+      }
+    }
     if(cands.length){
       const pick=cands[Math.floor(Math.random()*cands.length)];
       currentOffer.push(pick);
     }
   });
-  // if for some reason a position has no candidate in this season, fall back to any allowed
   if(currentOffer.length===0){
     chosenSeason.players.forEach(p=>{if(allowed.includes(p.pos))currentOffer.push(p);});
     currentOffer=currentOffer.slice(0,5);
@@ -733,6 +792,9 @@ function makeOffer(){
            ${cd.reason?`<span class="hod-chem-why">${cd.reason}</span>`:''}
          </div>`
       : '';
+    const cost=playerCost(p);
+    const priceBadge=budgetMode
+      ? `<div class="hod-price">${cost===0?'FREE':'$'+cost}</div>` : '';
     return `
     <div class="hod-pcard ${canTake?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.07}s">
       <div class="hod-pos-badge hod-pos-${p.pos}">${p.pos}</div>
@@ -746,14 +808,26 @@ function makeOffer(){
         </div>
         ${chemBadge}
       </div>
-      <div class="hod-prating ${ratingClass(p.rating)}">${p.rating}</div>
+      <div class="hod-pright">
+        <div class="hod-prating ${ratingClass(p.rating)}">${p.rating}</div>
+        ${priceBadge}
+      </div>
     </div>`;
   }).join('');
+  const budgetBar=budgetMode?`
+    <div class="hod-budget-bar">
+      <div class="hod-budget-row">
+        <span>BUDGET</span>
+        <span><b>$${budgetLeft()}</b> / $${budgetTotal}</span>
+      </div>
+      <div class="hod-budget-track"><div class="hod-budget-fill" style="width:${Math.max(0,budgetLeft()/budgetTotal*100)}%"></div></div>
+    </div>`:'';
   setAction(`
     <div class="hod-fade">
       <div class="hod-stage-label" style="text-align:center">
         ${chosenSeason.year} · ${chosenSeason.era}${forced?' · <span style="color:var(--red)">zapolni manjkajoče pozicije</span>':''}
       </div>
+      ${budgetBar}
       <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">Izberi enega igralca</div>
       <div class="hod-offer-grid">${cards}</div>
     </div>`);
@@ -763,6 +837,7 @@ function makeOffer(){
 }
 
 function takePlayer(p){
+  if(budgetMode) budgetSpent+=playerCost(p);
   roster.push(p);
   renderProgress();
   updateRosterSlot();
@@ -1029,6 +1104,9 @@ function showResult(){
       <div style="font-size:12px;color:var(--muted);letter-spacing:1px">
         prva peterka ⌀ ${ev.starterAvg} · cela ekipa ⌀ ${ev.fullAvg}
       </div>
+      ${budgetMode?`<div style="font-size:12px;color:var(--gold);letter-spacing:1px;margin-top:4px">
+        porabljeno $${budgetSpent} / $${budgetTotal} (ostalo $${budgetLeft()})
+      </div>`:''}
       <div class="hod-final-roster">${cards}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn" id="hod-sim">Simuliraj sezono 🏆</button>
@@ -1037,7 +1115,7 @@ function showResult(){
     </div>`;
   document.getElementById('hod-sim').onclick=showTeamPicker;
   document.getElementById('hod-replay').onclick=()=>{
-    roster=[];chosenSeason=null;currentOffer=[];renderProgress();showIntro();
+    roster=[];chosenSeason=null;currentOffer=[];budgetSpent=0;renderProgress();showIntro();
   };
 }
 
@@ -1137,7 +1215,7 @@ function showSimResult(res, replaced, conf, myStr, full){
     </div>`;
   document.getElementById('hod-sim-again').onclick=showTeamPicker;
   document.getElementById('hod-replay2').onclick=()=>{
-    roster=[];chosenSeason=null;currentOffer=[];_cachedLeague=null;renderProgress();showIntro();
+    roster=[];chosenSeason=null;currentOffer=[];_cachedLeague=null;budgetSpent=0;renderProgress();showIntro();
   };
 }
 
