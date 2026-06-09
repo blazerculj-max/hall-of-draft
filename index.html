@@ -163,6 +163,35 @@
 .hod-budget-row b{color:var(--gold);font-family:'Bebas Neue';font-size:16px;}
 .hod-budget-track{height:7px;background:var(--line);border-radius:4px;overflow:hidden;}
 .hod-budget-fill{height:100%;background:linear-gradient(90deg,var(--gold-deep),var(--gold));border-radius:4px;transition:width .3s;}
+/* multiplayer */
+.hod-mpname-list{display:flex;flex-direction:column;gap:8px;max-width:300px;margin:0 auto;}
+.hod-mpname-row{display:flex;align-items:center;gap:10px;}
+.hod-mpname-dot{width:14px;height:14px;border-radius:50%;flex:none;}
+.hod-mpname-input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:9px 12px;color:var(--ink);font-family:'Oswald';font-size:15px;}
+.hod-mpname-input:focus{outline:none;border-color:var(--gold);}
+.hod-mp-turn{font-size:14px;margin:8px 0;color:var(--ink);}
+.hod-mp-turn b{color:var(--tc);font-size:18px;}
+.hod-order-strip{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;}
+.hod-order-tag{font-size:11px;padding:2px 9px;border-radius:20px;border:1px solid var(--tc);color:var(--tc);opacity:.45;}
+.hod-order-tag.active{opacity:1;background:var(--tc);color:#0a0a0f;font-weight:600;}
+.hod-mp-grid{max-height:none;}
+.hod-mp-team{border:1px solid var(--line);border-left:3px solid var(--tc);border-radius:8px;padding:7px 10px;margin-bottom:6px;background:var(--panel);}
+.hod-mp-team-head{display:flex;justify-content:space-between;font-family:'Bebas Neue';font-size:14px;letter-spacing:1px;margin-bottom:4px;}
+.hod-mp-team-head span:first-child{color:var(--tc);}
+.hod-mp-team-chips{display:flex;flex-wrap:wrap;gap:4px;}
+.hod-mp-results{display:flex;flex-direction:column;gap:8px;max-width:440px;margin:16px auto;}
+.hod-mp-result-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);
+  border-left:4px solid var(--tc);border-radius:12px;padding:12px 14px;text-align:left;}
+.hod-mp-result-card.winner{box-shadow:0 0 18px rgba(255,182,39,.25);border-color:var(--gold);}
+.hod-mp-rc-rank{font-size:22px;width:30px;text-align:center;flex:none;}
+.hod-mp-rc-body{flex:1;}
+.hod-mp-rc-name{font-size:16px;font-weight:600;color:var(--tc);}
+.hod-mp-rc-sub{font-size:11px;color:var(--muted);}
+.hod-mp-rc-grade{font-family:'Anton';font-size:34px;flex:none;}
+.hod-mp-detail-wrap{display:flex;flex-direction:column;gap:14px;max-width:440px;margin:0 auto;}
+.hod-mp-detail-block{border:1px solid var(--line);border-left:3px solid var(--tc);border-radius:10px;padding:10px;}
+.hod-mp-detail-block .hod-mp-team-head span:first-child{color:var(--tc);}
 .hod-action-zone{min-height:230px;display:flex;flex-direction:column;justify-content:center;}
 #hod-roster-slot{margin-top:6px;}
 .hod-chem-mini{display:inline-flex;align-items:center;gap:6px;margin-top:6px;
@@ -529,6 +558,10 @@ let budgetMode=false;       // ali igramo z omejenim budgetom
 let budgetTotal=0;          // skupni budget
 let budgetSpent=0;          // porabljeno
 const BUDGET_LEVELS={lahka:650, srednja:500, težka:380};
+let numPlayers=1;           // 1 = solo, 2-4 = multiplayer snake draft
+
+// multiplayer state
+let mp=null; // {teams:[{name,roster,spent}], order:[...], pickIdx, round, pool, spinSeason}
 
 // cena igralca iz ratinga: eksponentno, rating<=50 je zastonj (fringe minimum)
 function playerCost(p){
@@ -614,11 +647,19 @@ function showIntro(){
   screen.innerHTML=`
     <div class="hod-slot-stage hod-fade">
       <div class="hod-stage-label">Pravila</div>
-      <div class="hod-verdict" style="margin:0 auto 18px">
-        Zavrti kolut in izberi eno od treh naključnih sezon. Iz nje dobiš 5 igralcev — po enega na vsako pozicijo. Izberi enega in ga dodaj ekipi.<br><br>
-        Sestavi <b style="color:var(--gold)">12 igralcev</b>: največ 3 na pozicijo, vsaj 1 na vsako. Na koncu dobiš oceno ekipe.
+      <div class="hod-verdict" style="margin:0 auto 14px">
+        Zavrti kolut, izberi sezono in draftaj igralce. Sestavi <b style="color:var(--gold)">12 igralcev</b>: največ 3 na pozicijo, vsaj 1 na vsako. Na koncu dobiš oceno ekipe.
       </div>
-      <button class="hod-btn" id="hod-start">Začni draft</button>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Koliko igralcev?</div>
+      <div class="hod-mode-row" id="hod-nplayers">
+        <div class="hod-mode-chip on" data-n="1"><span class="hod-mode-name">Solo</span><span class="hod-mode-sub">1 igralec</span></div>
+        <div class="hod-mode-chip" data-n="2"><span class="hod-mode-name">2</span><span class="hod-mode-sub">snake draft</span></div>
+        <div class="hod-mode-chip" data-n="3"><span class="hod-mode-name">3</span><span class="hod-mode-sub">snake draft</span></div>
+        <div class="hod-mode-chip" data-n="4"><span class="hod-mode-name">4</span><span class="hod-mode-sub">snake draft</span></div>
+      </div>
+      <div style="margin-top:18px">
+        <button class="hod-btn" id="hod-start">Naprej</button>
+      </div>
       <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:1px">
         vir: ${DATA_SOURCE}
       </div>
@@ -626,6 +667,13 @@ function showIntro(){
         players.json še ni na GitHubu — igra teče na vgrajenih 10 sezonah. Ko objaviš poln dataset, se naloži samodejno.
       </div>`:''}
     </div>`;
+  screen.querySelectorAll('#hod-nplayers .hod-mode-chip').forEach(c=>{
+    c.onclick=()=>{
+      screen.querySelectorAll('#hod-nplayers .hod-mode-chip').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+      numPlayers=+c.dataset.n;
+    };
+  });
   document.getElementById('hod-start').onclick=()=>{ showDecadePicker(); };
   renderProgress();
 }
@@ -693,7 +741,11 @@ function showDecadePicker(){
       else { budgetMode=true; budgetTotal=BUDGET_LEVELS[m]; }
     };
   });
-  document.getElementById('hod-era-go').onclick=()=>{ budgetSpent=0; startSpin(); };
+  document.getElementById('hod-era-go').onclick=()=>{
+    budgetSpent=0;
+    if(numPlayers===1){ startSpin(); }
+    else { showMpNames(); }
+  };
 }
 
 function pickRandomSeasons(){
@@ -980,6 +1032,256 @@ function gradeFor(o){
   if(o>=72)return{g:"D",c:"#ff8500",v:"Lottery ekipa. Sreča pri vlekih te ni ravno mazala."};
   return{g:"F",c:"#e63946",v:"Tank mode. Ampak hej — vsaj imaš zgodbo za pripovedovati."};
 }
+
+// ================= MULTIPLAYER (snake draft, hot-seat) =================
+const MP_COLORS=["#ffb627","#4cc9f0","#f72585","#2ec4b6"];
+
+function showMpNames(){
+  phase="mp-names";
+  const inputs=Array.from({length:numPlayers}).map((_,i)=>`
+    <div class="hod-mpname-row">
+      <span class="hod-mpname-dot" style="background:${MP_COLORS[i]}"></span>
+      <input class="hod-mpname-input" data-i="${i}" maxlength="14" placeholder="Ekipa ${i+1}" value="Ekipa ${i+1}">
+    </div>`).join('');
+  screen.innerHTML=`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">Imena ekip (${numPlayers} igralci)</div>
+      <div class="hod-verdict" style="max-width:420px;margin:0 auto 14px">
+        Snake draft: vsako rundo se zavrti sezona in ponudi 10 igralcev. Izbirate po vrsti, nato se vrstni red zarotira za eno mesto.
+      </div>
+      <div class="hod-mpname-list">${inputs}</div>
+      <div style="margin-top:18px"><button class="hod-btn" id="hod-mp-go">Začni snake draft</button></div>
+    </div>`;
+  document.getElementById('hod-mp-go').onclick=()=>{
+    const names=[...screen.querySelectorAll('.hod-mpname-input')].map((inp,i)=>inp.value.trim()||`Ekipa ${i+1}`);
+    mp={
+      teams:names.map(n=>({name:n,roster:[],spent:0})),
+      order:Array.from({length:numPlayers},(_,i)=>i),
+      pickIdx:0, round:0, pool:[], spinSeason:null
+    };
+    mpStartRound();
+  };
+}
+
+function mpTeamPosCount(team,pos){return team.roster.filter(p=>p.pos===pos).length;}
+function mpAllFull(){return mp.teams.every(t=>t.roster.length>=MAX_TEAM);}
+// pozicije, ki jih ekipa še sme dodati (z upoštevanjem min 1/poz proti koncu)
+function mpAllowedPos(team){
+  const slotsLeft=MAX_TEAM-team.roster.length;
+  const missing=POSITIONS.filter(p=>mpTeamPosCount(team,p)<1);
+  if(slotsLeft<=missing.length && missing.length>0) return missing;
+  return POSITIONS.filter(p=>mpTeamPosCount(team,p)<MAX_PER_POS);
+}
+
+function mpStartRound(){
+  phase="mp-spin";
+  // izberi naključno sezono iz filtriranega bazena
+  const pool=filteredPool();
+  mp.spinSeason=pool[Math.floor(Math.random()*pool.length)];
+  // slot machine animacija (en kolut), nato sestavi bazen 10 igralcev
+  setMpFrame();
+  setMpAction(`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">Runda ${mp.round+1} · vrti se sezona…</div>
+      <div class="hod-reels"><div class="hod-reel spinning" id="hod-mp-reel"><div class="hod-reel-strip">
+        ${Array.from({length:8}).map(()=>{const s=pool[Math.floor(Math.random()*pool.length)];
+          return `<div class="hod-reel-item"><div class="hod-reel-year">${s.year.split('-')[0]}</div><div class="hod-reel-era">${s.era}</div></div>`;}).join('')}
+      </div></div></div>
+    </div>`);
+  setTimeout(()=>{
+    const reel=document.getElementById('hod-mp-reel');
+    if(reel){reel.classList.remove('spinning');reel.classList.add('locked');
+      const s=mp.spinSeason;
+      reel.querySelector('.hod-reel-strip').innerHTML=
+        `<div class="hod-reel-item"><div class="hod-reel-year">${s.year.split('-')[0]}</div><div class="hod-reel-era">${s.era}</div></div>`;
+      reel.querySelector('.hod-reel-strip').style.transform='translateY(0)';}
+    mpBuildPool();
+    setTimeout(mpShowPick,500);
+  },1400);
+}
+
+// bazen 10 igralcev: po 2 na vsako pozicijo (uravnoteženo), naključno iz sezone
+function mpBuildPool(){
+  const s=mp.spinSeason; const pool=[];
+  POSITIONS.forEach(pos=>{
+    const cands=s.players.filter(p=>p.pos===pos);
+    // premešaj in vzemi do 2
+    for(let k=cands.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[cands[k],cands[j]]=[cands[j],cands[k]];}
+    pool.push(...cands.slice(0,2));
+  });
+  // če katera pozicija nima 2, dopolni z naključnimi iz sezone
+  if(pool.length<10){
+    const extra=s.players.filter(p=>!pool.includes(p));
+    for(let k=extra.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[extra[k],extra[j]]=[extra[j],extra[k]];}
+    pool.push(...extra.slice(0,10-pool.length));
+  }
+  mp.pool=pool;
+  mp.pickIdx=0;
+}
+
+function mpShowPick(){
+  phase="mp-pick";
+  // če so vse ekipe polne -> rezultat
+  if(mpAllFull()){ mpShowResults(); return; }
+  // poišči naslednjo ekipo v tej rundi, ki še ni polna
+  while(mp.pickIdx<mp.order.length){
+    const t=mp.teams[mp.order[mp.pickIdx]];
+    if(t.roster.length<MAX_TEAM) break;
+    mp.pickIdx++;
+  }
+  if(mp.pickIdx>=mp.order.length){ mpNextRound(); return; }
+  const teamI=mp.order[mp.pickIdx];
+  const team=mp.teams[teamI];
+  const allowed=mpAllowedPos(team);
+  const forced = (MAX_TEAM-team.roster.length)<=POSITIONS.filter(p=>mpTeamPosCount(team,p)<1).length
+                 && POSITIONS.filter(p=>mpTeamPosCount(team,p)<1).length>0;
+  // kartice iz bazena; onemogočene tiste, ki jih ta ekipa ne sme/zmore
+  const cards=mp.pool.map((p,i)=>{
+    const posOk=allowed.includes(p.pos);
+    const cost=budgetMode?playerCost(p):0;
+    const affordOk=!budgetMode || cost<=(budgetTotal-team.spent);
+    const ok=posOk&&affordOk;
+    const why=!posOk?(mpTeamPosCount(team,p.pos)>=MAX_PER_POS?'pozicija polna':'zapolni druge'):(!affordOk?'predrag':'');
+    return `
+    <div class="hod-pcard ${ok?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.04}s">
+      <div class="hod-pos-badge hod-pos-${p.pos}">${p.pos}</div>
+      <div class="hod-pinfo">
+        <div class="hod-pname">${p.name}</div>
+        <div class="hod-pseason">${p.season}${why?' · '+why:''}</div>
+        <div class="hod-pstats">
+          <div><b>${p.pts}</b><span>PPG</span></div>
+          <div><b>${p.reb}</b><span>RPG</span></div>
+          <div><b>${p.ast}</b><span>APG</span></div>
+        </div>
+      </div>
+      <div class="hod-pright">
+        <div class="hod-prating ${ratingClass(p.rating)}">${p.rating}</div>
+        ${budgetMode?`<div class="hod-price">${cost===0?'FREE':'$'+cost}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  // vrstni red runde (vizualno)
+  const orderTags=mp.order.map((ti,idx)=>`<span class="hod-order-tag ${idx===mp.pickIdx?'active':''}" style="--tc:${MP_COLORS[ti]}">${mp.teams[ti].name}</span>`).join('');
+  setMpFrame();
+  setMpAction(`
+    <div class="hod-fade">
+      <div class="hod-stage-label" style="text-align:center">
+        Runda ${mp.round+1} · ${mp.spinSeason.year}${forced?' · <span style="color:var(--red)">zapolni manjkajoče</span>':''}
+      </div>
+      <div class="hod-mp-turn" style="--tc:${MP_COLORS[teamI]}">
+        Na potezi: <b>${team.name}</b> &nbsp;(${team.roster.length}/12)${budgetMode?` · $${budgetTotal-team.spent}`:''}
+      </div>
+      <div class="hod-order-strip">${orderTags}</div>
+      <div class="hod-offer-grid hod-mp-grid">${cards}</div>
+    </div>`);
+  document.querySelectorAll('#hod-action .hod-pcard:not(.disabled)').forEach(c=>{
+    c.onclick=()=>mpPick(+c.dataset.i);
+  });
+  mpRenderTeams();
+}
+
+function mpPick(poolIdx){
+  const teamI=mp.order[mp.pickIdx];
+  const team=mp.teams[teamI];
+  const p=mp.pool[poolIdx];
+  team.roster.push(p);
+  if(budgetMode) team.spent+=playerCost(p);
+  mp.pool.splice(poolIdx,1);   // izbrani izgine iz bazena
+  mp.pickIdx++;
+  mpShowPick();
+}
+
+function mpNextRound(){
+  // rotacija reda za eno mesto: [a,b,c,d] -> [b,c,d,a]
+  mp.order.push(mp.order.shift());
+  mp.round++;
+  mp.pickIdx=0;
+  if(mpAllFull()){ mpShowResults(); return; }
+  mpStartRound();
+}
+
+function mpRenderTeams(){
+  const slot=document.getElementById('hod-roster-slot');
+  if(!slot) return;
+  slot.innerHTML=mp.teams.map((t,ti)=>{
+    const chips=POSITIONS.map(pos=>{
+      const ps=t.roster.filter(p=>p.pos===pos);
+      return ps.map(p=>`<span class="hod-chip">${lastName(p.name)} <b style="color:var(--gold)">${p.rating}</b></span>`).join('');
+    }).join('');
+    return `<div class="hod-mp-team" style="--tc:${MP_COLORS[ti]}">
+      <div class="hod-mp-team-head"><span>${t.name}</span><span>${t.roster.length}/12</span></div>
+      <div class="hod-mp-team-chips">${chips||'<span class="hod-chip empty">prazno</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function mpShowResults(){
+  phase="mp-result";
+  // oceni vsako ekipo prek obstoječe evaluateTeam (zacasno nastavi global roster)
+  const savedRoster=roster, savedBudget=[budgetSpent];
+  const ranked=mp.teams.map((t,ti)=>{
+    roster=t.roster;
+    const ev=evaluateTeam();
+    return {ti,name:t.name,ev,overall:ev.overall,spent:t.spent};
+  }).sort((a,b)=>b.overall-a.overall);
+  roster=savedRoster; budgetSpent=savedBudget[0];
+
+  const cards=ranked.map((r,idx)=>{
+    const gr=gradeFor(r.overall);
+    const medals=["🥇","🥈","🥉",""];
+    return `
+    <div class="hod-mp-result-card ${idx===0?'winner':''}" style="--tc:${MP_COLORS[r.ti]}">
+      <div class="hod-mp-rc-rank">${medals[idx]||(idx+1)}</div>
+      <div class="hod-mp-rc-body">
+        <div class="hod-mp-rc-name">${r.name}</div>
+        <div class="hod-mp-rc-sub">OVERALL ${r.overall} · kemija ${r.ev.chem.chem>0?'+':''}${r.ev.chem.chem}${budgetMode?` · porabljeno $${r.spent}`:''}</div>
+      </div>
+      <div class="hod-mp-rc-grade" style="color:${gr.c}">${gr.g}</div>
+    </div>`;
+  }).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Končni rezultat</div>
+      <div class="hod-grade hod-pop" style="font-size:48px;color:${MP_COLORS[ranked[0].ti]}">${ranked[0].name}</div>
+      <div class="hod-overall">zmagovalec · OVERALL ${ranked[0].overall}</div>
+      <div class="hod-mp-results">${cards}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+        <button class="hod-btn" id="hod-mp-detail">Podrobnosti ekip</button>
+        <button class="hod-btn secondary" id="hod-mp-again">Nova igra</button>
+      </div>
+    </div>`;
+  document.getElementById('hod-mp-again').onclick=()=>{ mp=null; numPlayers=1; showIntro(); };
+  document.getElementById('hod-mp-detail').onclick=()=>mpShowDetail(ranked);
+}
+
+function mpShowDetail(ranked){
+  const blocks=ranked.map(r=>{
+    const t=mp.teams[r.ti];
+    const sorted=[...t.roster].sort((a,b)=>b.rating-a.rating);
+    const rows=sorted.map(p=>`<div class="hod-stand-row"><span>${p.pos} ${p.name} <span style="color:var(--muted)">${p.season}</span></span><span style="color:var(--gold)">${p.rating}</span></div>`).join('');
+    return `<div class="hod-mp-detail-block" style="--tc:${MP_COLORS[r.ti]}">
+      <div class="hod-mp-team-head"><span>${r.name}</span><span>OVERALL ${r.overall}</span></div>
+      <div class="hod-standings">${rows}</div>
+    </div>`;
+  }).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Sestava ekip</div>
+      <div class="hod-mp-detail-wrap">${blocks}</div>
+      <button class="hod-btn secondary" id="hod-mp-back" style="margin-top:14px">Nazaj</button>
+    </div>`;
+  document.getElementById('hod-mp-back').onclick=()=>mpShowResults();
+}
+
+// stabilni okvir za multiplayer (action + roster slot, kot solo)
+function setMpFrame(){
+  if(document.getElementById('hod-action')) return;
+  screen.innerHTML=`<div id="hod-draft-frame">
+    <div id="hod-action" class="hod-action-zone"></div>
+    <div id="hod-roster-slot"></div>
+  </div>`;
+}
+function setMpAction(html){ setMpFrame(); document.getElementById('hod-action').innerHTML=html; }
 
 // ---- SIMULACIJA ----
 function userTeamStrength(){
