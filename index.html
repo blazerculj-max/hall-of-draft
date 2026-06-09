@@ -651,6 +651,15 @@ function dailyGoal(){
   const seed=todaySeed();
   return DAILY_GOALS[seed%DAILY_GOALS.length];
 }
+// dnevni budget (seeded): vsak ~2. dan ima budget omejitev, sicer neomejeno
+// uporabimo drug "odmik" seeda, da ni vezan na cilj
+function dailyBudget(){
+  const seed=todaySeed();
+  const opts=[null, null, "lahka", "srednja", "težka"];  // ~40% dni neomejeno
+  // pomešaj seed (sicer zaporedni datumi dajo isti rezultat)
+  let h=seed; h=(h^61)^(h>>>16); h=h+(h<<3); h=h^(h>>>4); h=h*0x27d4eb2d; h=h^(h>>>15);
+  return opts[Math.abs(h)%opts.length];
+}
 // trajni shramba (localStorage z fallbackom na pomnilnik)
 const _memStore={};
 function storeGet(k){ try{const v=localStorage.getItem(k);return v;}catch(e){return _memStore[k]||null;} }
@@ -1052,7 +1061,9 @@ function dailyStatusLine(){
   const today=rec[todayKey()];
   const streak=rec._streak||0;
   const g=dailyGoal();
+  const db=dailyBudget();
   let line=`<div style="font-size:12px;color:#4cc9f0;margin-top:10px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.5">Današnji cilj: ${g.label}`;
+  line+=`<br><span style="color:var(--gold-deep)">Budget: ${db?`${db} ($${BUDGET_LEVELS[db]})`:'neomejen'}</span>`;
   if(today) line+=`<br><span style="color:var(--muted)">danes že igrano · najboljši: ${today.score} ${today.done?'✓':''}</span>`;
   if(streak>0) line+=`<br><span style="color:var(--gold)">🔥 niz: ${streak} dni</span>`;
   line+=`</div>`;
@@ -1063,7 +1074,10 @@ function startDaily(){
   dailyMode=true;
   setSeed(todaySeed());
   numPlayers=1; mp=null;
-  budgetMode=false; budgetTotal=0; budgetSpent=0;
+  // seeded budget: nekateri dnevi imajo omejitev
+  const db=dailyBudget();
+  if(db){ budgetMode=true; budgetTotal=BUDGET_LEVELS[db]; budgetSpent=0; }
+  else { budgetMode=false; budgetTotal=0; budgetSpent=0; }
   selectedEras=new Set();   // dnevni = vse dekade
   roster=[]; chosenSeason=null; currentOffer=[];
   renderProgress();
@@ -2438,6 +2452,7 @@ async function postToLeaderboard(ev, sim, btn){
     goal_id:g?g.id:null, goal_done:g?!!g.test(ev,sim):false,
     overall:ev.overall, chem:ev.chem.chem,
     sim_wins: sim?sim.avgWins:null, sim_title: sim?sim.titlePct:null,
+    daily_budget: dailyMode?(dailyBudget()||"neomejen"):null,
     roster: rosterForSave()
   };
   try{
