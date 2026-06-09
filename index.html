@@ -191,6 +191,10 @@
 .hod-daily-banner{max-width:420px;margin:12px auto;padding:12px 16px;border-radius:14px;text-align:center;}
 .hod-daily-banner.done{background:linear-gradient(135deg,rgba(46,196,182,.18),rgba(46,196,182,.05));border:1px solid var(--green);}
 .hod-daily-banner.pending{background:rgba(255,182,39,.08);border:1px solid var(--gold-deep);}
+.hod-daily-goalbar{background:linear-gradient(90deg,rgba(76,201,240,.15),rgba(76,201,240,.04));
+  border:1px solid rgba(76,201,240,.4);border-radius:10px;padding:7px 12px;margin-bottom:10px;
+  font-size:13px;color:#4cc9f0;text-align:center;}
+.hod-daily-goalbar b{color:#fff;}
 .hod-spot{position:absolute;transform:translate(-50%,-50%);width:74px;
   display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:.12s;}
 .hod-spot-pos{font-family:'Bebas Neue';font-size:12px;letter-spacing:1px;color:var(--gold);}
@@ -809,6 +813,7 @@ function ensureDraftFrame(){
   if(document.getElementById('hod-action')) return; // že obstaja
   screen.innerHTML=`
     <div id="hod-draft-frame">
+      ${dailyMode?`<div class="hod-daily-goalbar">🏆 Dnevni cilj: <b>${dailyGoal().label}</b></div>`:''}
       <div id="hod-action" class="hod-action-zone"></div>
       <div id="hod-roster-slot"></div>
     </div>`;
@@ -1939,6 +1944,7 @@ function renderCourt(){
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">Postavi peterko na igrišče</div>
+      ${dailyMode?`<div class="hod-daily-goalbar" style="max-width:340px;margin:0 auto 10px">🏆 ${dailyGoal().label}</div>`:''}
       <div style="font-size:12px;color:var(--muted);max-width:420px;margin:0 auto 10px">
         ${isMobileView()?'Tapni igralca, nato mesto.':'Povleci igralca na mesto (ali tapni → mesto).'} Mesto določa pozicijo — igralec izven svoje pozicije dobi kazen.
       </div>
