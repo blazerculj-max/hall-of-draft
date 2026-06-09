@@ -618,7 +618,7 @@ const POSITIONS=["PG","SG","SF","PF","C"];
 
 // ===== SEEDED RNG (za dnevni izziv) =====
 // mulberry32 — deterministični generator. Ko je dailyMode aktiven, rng() = seeded.
-let _seed=0, dailyMode=false;
+let _seed=0, dailyMode=false, quickMode=false;
 function setSeed(s){ _seed=s>>>0; }
 function rng(){
   if(!dailyMode) return Math.random();
@@ -688,8 +688,8 @@ async function supaSubmit(row){
 // preberi lestvico. mode="daily" -> dnevni izziv za določen dan; sicer budget način (all-time)
 async function supaLeaderboard(mode, day){
   let url;
-  if(mode==="daily"){
-    url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.daily&challenge_day=eq.${encodeURIComponent(day)}&order=overall.desc,created_at.asc&limit=300`;
+  if(mode==="daily" || mode==="quickfire"){
+    url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${mode}&challenge_day=eq.${encodeURIComponent(day)}&order=overall.desc,created_at.asc&limit=300`;
   } else {
     url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${encodeURIComponent(mode)}&order=overall.desc,created_at.asc&limit=300`;
   }
@@ -698,6 +698,8 @@ async function supaLeaderboard(mode, day){
   return await res.json();
 }
 const MAX_TEAM=12, MAX_PER_POS=3;
+const QUICK_PICKS=8;  // quickfire: 8 izborov -> peterka + 3 odveč
+function teamSize(){ return quickMode?QUICK_PICKS:MAX_TEAM; }
 
 // ---- LOAD EXTERNAL DATASET (players.json) IF PRESENT ----
 // Fetcha z absolutnega raw GitHub URL-ja -> deluje od koderkoli (Pages, lokalno prek serverja, vgneteno).
@@ -907,13 +909,13 @@ function isDrafted(p){
   if(mp&&mp.teams) return mp.teams.some(t=>t.roster.some(x=>playerKey(x)===k));
   return roster.some(x=>playerKey(x)===k);
 }
-function teamFull(){return roster.length>=MAX_TEAM;}
+function teamFull(){return roster.length>=teamSize();}
 function missingPositions(){return POSITIONS.filter(p=>posCount(p)<1);}
 // positions we can still add to (under max per pos)
 function openPositions(){return POSITIONS.filter(p=>posCount(p)<MAX_PER_POS);}
 // when remaining slots == missing positions count, force only missing positions
 function forcedPositions(){
-  const slotsLeft=MAX_TEAM-roster.length;
+  const slotsLeft=teamSize()-roster.length;
   const miss=missingPositions();
   if(slotsLeft<=miss.length && miss.length>0) return miss;
   return openPositions();
@@ -921,10 +923,11 @@ function forcedPositions(){
 
 function renderProgress(){
   let html="";
-  for(let i=0;i<MAX_TEAM;i++){
+  const sz=teamSize();
+  for(let i=0;i<sz;i++){
     html+=`<div class="hod-dot ${i<roster.length?'filled':''}"></div>`;
   }
-  html+=`<span class="hod-counter">${roster.length}/12</span>`;
+  html+=`<span class="hod-counter">${roster.length}/${sz}</span>`;
   progress.innerHTML=html;
 }
 
@@ -968,7 +971,7 @@ function leaveDraftFrame(){ /* naslednji full-screen render sam prepiše screen 
 
 // ---- SCREENS ----
 function goHome(){
-  dailyMode=false; mp=null; numPlayers=1;
+  dailyMode=false; quickMode=false; mp=null; numPlayers=1;
   roster=[]; chosenSeason=null; currentOffer=[];
   budgetMode=false; budgetTotal=0; budgetSpent=0;
   _cachedLeague=null; _courtSel=null; _myLastPost=null;
@@ -994,7 +997,8 @@ function showIntro(){
         <button class="hod-btn" id="hod-start">Naprej</button>
         <button class="hod-btn" id="hod-daily" style="background:linear-gradient(180deg,#4cc9f0,#3a9fc4);box-shadow:0 5px 0 #2a7a99,0 8px 20px rgba(0,0,0,.4)">🏆 Dnevni izziv</button>
       </div>
-      <div style="margin-top:10px">
+      <div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="hod-btn" id="hod-quick" style="background:linear-gradient(180deg,#f0843a,#c46524);box-shadow:0 5px 0 #994e1c">⚡ Quickfire (peterka)</button>
         <button class="hod-btn secondary" id="hod-leaders">🏅 Lestvice</button>
       </div>
       ${dailyStatusLine()}
@@ -1014,6 +1018,7 @@ function showIntro(){
   });
   document.getElementById('hod-start').onclick=()=>{ dailyMode=false; showDecadePicker(); };
   document.getElementById('hod-daily').onclick=()=>{ startDaily(); };
+  document.getElementById('hod-quick').onclick=()=>{ startQuickfire(); };
   document.getElementById('hod-leaders').onclick=()=>{ showLeadersPage("daily"); };
   renderProgress();
 }
@@ -1022,7 +1027,7 @@ function showIntro(){
 let _leadersRows=[];
 async function showLeadersPage(mode){
   phase="leaders";
-  const modes=[["daily","Dnevni"],["lahka","Lahka"],["srednja","Srednja"],["težka","Težka"],["neomejeno","Neomejeno"]];
+  const modes=[["daily","Dnevni"],["quickfire","Quickfire"],["lahka","Lahka"],["srednja","Srednja"],["težka","Težka"],["neomejeno","Neomejeno"]];
   const tabs=modes.map(([m,lbl])=>`<button class="hod-ltab ${m===mode?'on':''}" data-m="${m}">${lbl}</button>`).join('');
   screen.innerHTML=`
     <div class="hod-result hod-fade">
@@ -1070,8 +1075,21 @@ function dailyStatusLine(){
   return line;
 }
 
+function startQuickfire(){
+  dailyMode=true; quickMode=true;
+  setSeed(todaySeed()+777);   // drug seed kot navadni dnevni (drugačni izbori)
+  numPlayers=1; mp=null;
+  const db=dailyBudget();
+  if(db){ budgetMode=true; budgetTotal=BUDGET_LEVELS[db]; budgetSpent=0; }
+  else { budgetMode=false; budgetTotal=0; budgetSpent=0; }
+  selectedEras=new Set();
+  roster=[]; chosenSeason=null; currentOffer=[];
+  renderProgress();
+  startSpin();
+}
+
 function startDaily(){
-  dailyMode=true;
+  dailyMode=true; quickMode=false;
   setSeed(todaySeed());
   numPlayers=1; mp=null;
   // seeded budget: nekateri dnevi imajo omejitev
@@ -1245,7 +1263,7 @@ function makeOffer(){
     chosenSeason.players.forEach(p=>{if(allowed.includes(p.pos)&&!isDrafted(p))currentOffer.push(p);});
     currentOffer=currentOffer.slice(0,5);
   }
-  const forced = (MAX_TEAM-roster.length)<=missingPositions().length && missingPositions().length>0;
+  const forced = (teamSize()-roster.length)<=missingPositions().length && missingPositions().length>0;
   const cards=currentOffer.map((p,i)=>{
     const allPos=playerPositions(p);
     const canTake=allPos.some(pos=>posCount(pos)<MAX_PER_POS);
@@ -1472,7 +1490,10 @@ function chemFor(arr){
           rivalScore:Math.round(rivalScore*10)/10,
           dominant,eraSpread,eras,mateCount,duoList,rivalList};
 }
-function computeChemistry(){ return chemFor(roster); }
+function computeChemistry(){
+  if(quickMode){ return chemFor(roster.filter(p=>p.role==="U1")); }
+  return chemFor(roster);
+}
 
 // Δ-kemija: kako kandidat p vpliva na kemijo glede na trenutno ekipo.
 // Temelji na ODNOSIH (soigralci, duoji, rivalstva) + solo-pritisku pozicije,
@@ -1592,12 +1613,17 @@ function autoAssignRoles(arr){
     for(const p of byRating){ if(five.length>=5)break; if(!used.has(p)){five.push(p);used.add(p);} }
     return five;
   }
+  if(quickMode){
+    // quickfire: samo peterka (U1), ostali "odveč" (X)
+    arr.forEach(p=>{p.role="X"; p.spot=null; p.assignedPos=playerPositions(p)[0];});
+    const u1=pickFive(); u1.forEach(p=>{p.role="U1"; p.spot=playerPositions(p)[0]; p.assignedPos=p.spot;});
+    fixUnitSpots("U1");
+    return arr;
+  }
   arr.forEach(p=>{p.role="B"; p.spot=null;});
   const u1=pickFive(); u1.forEach(p=>{p.role="U1"; p.spot=playerPositions(p)[0]; p.assignedPos=p.spot;});
   const u2=pickFive(); u2.forEach(p=>{p.role="U2"; p.spot=playerPositions(p)[0]; p.assignedPos=p.spot;});
-  // rezervi obdržijo primarno pozicijo
   arr.filter(p=>p.role==="B").forEach(p=>{p.assignedPos=playerPositions(p)[0];});
-  // popravi morebitne podvojene spote znotraj enote
   fixUnitSpots("U1"); fixUnitSpots("U2");
   return arr;
 }
@@ -1611,12 +1637,24 @@ function fixUnitSpots(role){
 
 function evaluateTeam(){
   if(!roster.some(p=>p.role)) autoAssignRoles(roster);
+  if(quickMode){
+    // quickfire: ocena temelji SAMO na peterki (U1)
+    const u1=roster.filter(p=>p.role==="U1");
+    const u1Avg=u1.length?u1.reduce((s,p)=>s+effRating(p),0)/u1.length:0;
+    const posSpread=POS_LADDER.filter(s=>u1.some(p=>p.spot===s)).length;
+    const stars=u1.filter(p=>p.rating>=92).length;
+    const starBonus=Math.min(stars*1.5,6);
+    const chemObj=computeChemistry();
+    let overall=u1Avg*0.78 + 60*0.15 + starBonus + chemObj.chem*0.9;
+    overall=Math.max(40,Math.min(99,Math.round(overall)));
+    return {overall, starterAvg:Math.round(u1Avg*10)/10, fullAvg:Math.round(u1Avg*10)/10,
+            u2Avg:0, stars, posSpread, top5:u1, chem:chemObj};
+  }
   const u1=roster.filter(p=>p.role==="U1");
   const u2=roster.filter(p=>p.role==="U2");
   const bench=roster.filter(p=>p.role==="B");
   const avg=arr=>arr.length?arr.reduce((s,p)=>s+effRating(p),0)/arr.length:0;
   const u1Avg=avg(u1), u2Avg=avg(u2), benchAvg=avg(bench);
-  // prva enota šteje največ, druga podpora, rezervi malo
   const starterAvg=u1Avg;
   const fullAvg = u1.length||u2.length ? (u1Avg*0.6 + u2Avg*0.3 + benchAvg*0.1) : avg(roster);
   const posSpread=POSITIONS.filter(p=>posCount(p)>=1).length;
@@ -2011,8 +2049,9 @@ function setMpAction(html){ setMpFrame(); document.getElementById('hod-action').
 // ---- SIMULACIJA ----
 function userTeamStrength(){
   const ev=evaluateTeam();
-  // uporabi EFEKTIVNE ratinge (vloga + pozicijska kazen), uteženo top 8
-  const sorted=[...roster].map(p=>effRating(p)).sort((a,b)=>b-a).slice(0,8);
+  // quickfire: samo peterka šteje
+  const pool=quickMode?roster.filter(p=>p.role==="U1"):roster;
+  const sorted=[...pool].map(p=>effRating(p)).sort((a,b)=>b-a).slice(0,8);
   const w=[0.22,0.18,0.15,0.12,0.1,0.09,0.08,0.06];
   let str=0,wsum=0;
   sorted.forEach((er,i)=>{const wi=w[i]||0.05;str+=er*wi;wsum+=wi;});
@@ -2150,7 +2189,53 @@ function renderUnitCourt(role){
   </div>`;
 }
 
+function renderQuickCourt(){
+  const u1f=roster.filter(p=>p.role==="U1"&&p.spot).length;
+  // "odveč" = vsi, ki niso v peterki (role X ali nerazvrščeni)
+  const leftover=roster.filter(p=>p.role!=="U1");
+  const leftoverHtml=`
+    <div class="hod-unassigned-box" data-bench="pool">
+      <div class="hod-bench-label" style="color:var(--gold)">Klop / odveč (${leftover.length}) — klikni igralca, nato mesto v peterki</div>
+      <div class="hod-unassigned-grid">${leftover.map(p=>{
+        const sel=_courtSel===p?'sel':'';
+        return `<div class="hod-uacard ${sel}" data-key="${playerKey(p)}" draggable="true">
+          <div class="hod-ua-top"><span class="hod-ua-pos hod-pos-${playerPositions(p)[0]}">${playerPositions(p).join('/')}</span><span class="hod-ua-rt">${p.rating}</span></div>
+          <div class="hod-ua-name">${p.name}</div>
+          <div class="hod-ua-season">${p.season}</div>
+          <div class="hod-ua-stats"><span><b>${p.pts}</b> pts</span><span><b>${p.reb}</b> reb</span><span><b>${p.ast}</b> ast</span></div>
+        </div>`;
+      }).join('')||'<span class="hod-chip empty">vsi v peterki</span>'}</div>
+    </div>`;
+  const allPlaced = u1f===5;
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Sestavi peterko (quickfire)</div>
+      ${dailyMode?`<div class="hod-daily-goalbar" style="max-width:340px;margin:0 auto 10px">🏆 ${dailyGoal().label}</div>`:''}
+      <div style="font-size:12px;color:var(--muted);max-width:440px;margin:0 auto 10px">
+        Iz ${QUICK_PICKS} izborov sestavi najboljšo peterko (5). Ostali ostanejo odveč. ${isMobileView()?'Tapni igralca, nato mesto.':'Povleci ali tapni na mesto.'}
+      </div>
+      ${_courtSel?`<div style="font-size:12px;color:var(--gold);margin-bottom:6px">Izbran: ${lastNameCap(_courtSel)} — izberi mesto</div>`:''}
+      <div class="hod-units-wrap" style="justify-content:center">
+        ${renderUnitCourt("U1")}
+      </div>
+      <div class="hod-chem-legend">
+        <span><i style="background:#2ec4b6"></i> kemija</span>
+        <span><i style="background:#c9a23a"></i> nevtralno</span>
+        <span><i style="background:#e63946"></i> trenje</span>
+      </div>
+      ${leftoverHtml}
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px">
+        <button class="hod-btn ${allPlaced?'':'disabled'}" id="hod-court-done">Potrdi peterko</button>
+        <button class="hod-btn secondary" id="hod-court-auto">Auto</button>
+        <button class="hod-btn secondary" id="hod-court-clear">Počisti</button>
+      </div>
+      ${!allPlaced?`<div style="font-size:11px;color:var(--red);margin-top:8px">Zapolni vseh 5 mest (${u1f}/5)</div>`:''}
+    </div>`;
+  wireCourt();
+}
+
 function renderCourt(){
+  if(quickMode) return renderQuickCourt();
   const u1f=roster.filter(p=>p.role==="U1"&&p.spot).length;
   const u2f=roster.filter(p=>p.role==="U2"&&p.spot).length;
   const benchPlayers=roster.filter(p=>p.role==="B");
@@ -2430,9 +2515,9 @@ function rosterForSave(){
 
 // trenutni način igre za lestvico: dnevni -> "daily", sicer budget level ali "neomejeno"
 function currentMode(){
+  if(quickMode) return "quickfire";
   if(dailyMode) return "daily";
   if(!budgetMode) return "neomejeno";
-  // ugotovi budget raven iz budgetTotal
   for(const k in BUDGET_LEVELS){ if(BUDGET_LEVELS[k]===budgetTotal) return k; }
   return "neomejeno";
 }
@@ -2472,6 +2557,7 @@ async function showLeaderboard(){
   if(!box) return;
   const mode=currentMode();
   const title=mode==="daily"?`Dnevna lestvica · ${todayKey()}`
+    :mode==="quickfire"?`Quickfire · ${todayKey()}`
     :`Lestvica · ${mode==="neomejeno"?"neomejen budget":"budget "+mode}`;
   box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
   let rows;
@@ -2549,14 +2635,15 @@ function showUserTeam(r){
   const benchHtml=bench.length?`<div class="hod-bench-row"><span class="hod-bench-label">Rezerva</span><div class="hod-bench-chips">${
     bench.map(p=>`<span class="hod-bench-chip"><span class="hod-role-pos hod-pos-${p.assignedPos||p.pos}">${p.assignedPos||p.pos}</span> ${lastNameCap(p)} <b style="color:var(--gold)">${p.rating}</b></span>`).join('')
   }</div></div>`:'';
+  const hasU2=rs.some(p=>p.role==="U2");
   const ov=document.createElement('div');
   ov.className='hod-pos-overlay'; ov.style.position='fixed'; ov.style.zIndex='100';
-  ov.innerHTML=`<div class="hod-pos-modal hod-pop" style="max-width:680px;max-height:90vh;overflow-y:auto">
+  ov.innerHTML=`<div class="hod-pos-modal hod-pop" style="max-width:${hasU2?680:360}px;max-height:90vh;overflow-y:auto">
     <div class="hod-stage-label" style="text-align:center">${escapeHtml(r.nickname)} · OVERALL ${r.overall}</div>
-    <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px">kemija ${r.chem>0?'+':''}${r.chem}${r.sim_wins!=null?` · ${r.sim_wins} zmag`:''}</div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px">kemija ${r.chem>0?'+':''}${r.chem}${r.sim_wins!=null?` · ${r.sim_wins} zmag`:''}${hasU2?'':' · quickfire'}</div>
     <div class="hod-units-wrap">
-      ${miniCourt("U1","Prva peterka","var(--gold)")}
-      ${miniCourt("U2","Druga peterka","#4cc9f0")}
+      ${miniCourt("U1",hasU2?"Prva peterka":"Peterka","var(--gold)")}
+      ${hasU2?miniCourt("U2","Druga peterka","#4cc9f0"):''}
     </div>
     <div class="hod-bench" style="margin-top:10px">${benchHtml}</div>
     <button class="hod-btn secondary" id="hod-ut-close" style="margin-top:12px;width:100%">Zapri</button>
