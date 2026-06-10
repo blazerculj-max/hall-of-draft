@@ -1086,8 +1086,6 @@ function showIntro(){
   document.getElementById('hod-leaders').onclick=()=>{ showLeadersPage("daily"); };
   document.getElementById('hod-howto').onclick=()=>{ showHowTo(); };
   renderProgress();
-  // ob prvem obisku samodejno pokaži pravila
-  if(!storeGet("hod-seen-howto")){ storeSet("hod-seen-howto","1"); showHowTo(); }
 }
 
 function showHowTo(){
