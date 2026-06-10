@@ -144,6 +144,8 @@
 .hod-bond.lvl3{background:rgba(255,182,39,.15);border-color:var(--gold);color:var(--gold);
   box-shadow:0 0 10px rgba(255,182,39,.25);}
 .hod-bond.lvl2{background:rgba(76,201,240,.12);border-color:#4cc9f0;color:#4cc9f0;}
+.hod-bond.style{background:rgba(168,130,255,.13);border-color:#a882ff;color:#c4adff;}
+.hod-bond.lvl-1{background:rgba(230,57,70,.13);border-color:#e63946;color:#ff8a93;}
 .hod-live-ovr{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:var(--ink);
   margin:4px auto 8px;}
 .hod-live-ovr b{font-family:'Anton';font-size:22px;color:var(--gold);}
@@ -731,6 +733,7 @@ async function loadDataset(){
         players:s.players.map(p=>({
           pos:p.pos,name:p.name,season:p.season,
           pts:p.pts,reb:p.reb,ast:p.ast,rating:p.rating,
+          fg3a:p.fg3a||0,blk:p.blk||0,mpg:p.mpg||0,
           era:s.era,gp:p.gp,team:p.team||"",pid:p.pid||0,
           positions:(p.positions&&p.positions.length)?p.positions:[p.pos]
         }))
@@ -1479,7 +1482,7 @@ function chemFor(arr){
   const soloScore=-soloPress;
 
   // 3) SOIGRALCI + DUOJI
-  let mateBonus=0, duoBonus=0, mateCount=0, duoList=[], bondList=[];
+  let mateBonus=0, duoBonus=0, mateCount=0, duoList=[], bondList=[], styleScore=0;
   for(let i=0;i<arr.length;i++){
     for(let j=i+1;j<arr.length;j++){
       const a=arr[i], b=arr[j];
@@ -1491,12 +1494,18 @@ function chemFor(arr){
       }
       const duo=duoInfo(a.name,b.name);
       if(duo){ duoBonus+=1.6; duoList.push(duo.name); }
-      // zberi vse pozitivne poimenovane vezi (za vidne značke)
-      if(pc.level>0 && pc.label){ bondList.push({label:pc.label, emoji:pc.emoji||'', level:pc.level, a:lastName(a.name), b:lastName(b.name)}); }
+      if(pc.level>0 && pc.label){ bondList.push({label:pc.label, level:pc.level, a:lastName(a.name), b:lastName(b.name)}); }
+      // STILSKA kemija (P&R, spacing, trenja ...) — doda se k skupni in v značke
+      const sc=styleChem(a,b);
+      if(sc){
+        styleScore += sc.str;
+        bondList.push({label:sc.label, level:sc.level, style:true, a:lastName(a.name), b:lastName(b.name)});
+      }
     }
   }
   mateBonus=Math.min(mateBonus,5);
   duoBonus=Math.min(duoBonus,4);
+  styleScore=Math.max(-5,Math.min(6,styleScore));   // omeji stilski prispevek
 
   // 4) RIVALSTVA
   let rivalPenalty=0, rivalList=[];
@@ -1509,7 +1518,7 @@ function chemFor(arr){
   }
   const rivalScore=-Math.min(rivalPenalty,6);
 
-  let chem=eraScore+fitScore+soloScore+mateBonus+duoBonus+rivalScore;
+  let chem=eraScore+fitScore+soloScore+mateBonus+duoBonus+rivalScore+styleScore;
   const chemRaw=chem;
   chem=Math.max(-12,Math.min(12,Math.round(chem)));
   return {chem, chemRaw,
@@ -1609,7 +1618,62 @@ function ratingAtPos(p, pos){
 //  ++  isti tim, druga sezona (franšizna vez)
 //  +   ista doba (era) — sočasna generacija
 //  −   rivalstvo
-// poišči slavni duo (vrne [imenovani,emoji] ali null)
+// ===== STILSKI ARHETIPI (izpeljani iz statistike) =====
+function playerStyles(p){
+  const s=new Set();
+  const pos=playerPositions(p)[0];
+  const big=(pos==="C"||pos==="PF"), guard=(pos==="PG"||pos==="SG");
+  const pts=p.pts||0, reb=p.reb||0, ast=p.ast||0, fg3a=p.fg3a||0, blk=p.blk||0;
+  if(ast>=6.5) s.add("playmaker");
+  if(ast>=9) s.add("elite_playmaker");
+  if(pts>=24) s.add("scorer");
+  if(pts>=28) s.add("alpha");
+  if(big && reb>=8.5 && blk>=1.0 && fg3a<1.5) s.add("rim_runner");
+  if(big && blk>=1.2 && fg3a<1.0) s.add("lob_threat");
+  if(big && fg3a>=2.5) s.add("stretch_big");
+  if(fg3a>=4 && ast<4) s.add("shooter");
+  if((pos==="SF"||pos==="SG") && fg3a>=3 && ast<3.5) s.add("threeandd");
+  if(blk>=1.8) s.add("rim_protector");
+  if(reb>=11) s.add("glass");
+  if((guard||pos==="SF") && pts>=18 && fg3a<3) s.add("slasher");
+  if((pos==="SF"||pos==="PF") && ast>=5) s.add("point_forward");
+  if(pts>=18 && reb>=6 && ast>=5) s.add("two_way_star");
+  return s;
+}
+const STYLE_FITS=[
+  ["playmaker","lob_threat","Pick & Roll",2.2],
+  ["playmaker","rim_runner","Pick & Roll",2.0],
+  ["elite_playmaker","stretch_big","Pick & Pop",1.8],
+  ["playmaker","shooter","Drive & Kick",1.6],
+  ["slasher","stretch_big","Spacing",1.6],
+  ["alpha","shooter","Spacing okoli zvezde",1.4],
+  ["alpha","threeandd","Zvezda + 3&D",1.7],
+  ["scorer","rim_protector","Napad + obramba",1.3],
+  ["glass","shooter","Skoki + met",1.0],
+  ["point_forward","rim_runner","Forward P&R",1.5],
+  ["two_way_star","shooter","Vsestranskost + met",1.2],
+  ["elite_playmaker","slasher","Tempo napad",1.3],
+];
+const STYLE_CLASH=[
+  ["alpha","alpha","Preveč žoge",-2.2],
+  ["elite_playmaker","elite_playmaker","Kdo vodi?",-1.2],
+  ["rim_runner","rim_runner","Natrpan koš",-1.0],
+  ["lob_threat","lob_threat","Natrpan koš",-1.0],
+];
+// stilska kemija med dvema -> {str,label,level} ali null (najmočnejše ujemanje)
+function styleChem(a,b){
+  const sa=playerStyles(a), sb=playerStyles(b);
+  let best=null;
+  const check=(list)=>list.forEach(([x,y,label,v])=>{
+    if((sa.has(x)&&sb.has(y))||(sa.has(y)&&sb.has(x))){
+      if(!best || Math.abs(v)>Math.abs(best.str)) best={str:v, label, level:v>0?2:-1};
+    }
+  });
+  check(STYLE_FITS); check(STYLE_CLASH);
+  return best;
+}
+
+// poišči slavni duo (vrne {name} ali null)
 function duoInfo(a,b){
   const la=lastName(a),lb=lastName(b);
   const d=DUOS.find(([x,y])=>(la===x&&lb===y)||(la===y&&lb===x));
@@ -1632,7 +1696,10 @@ function playerChemAdj(p){
   if(p.role!=="U1") return 0;
   const mates=roster.filter(x=>x.role==="U1" && x!==p);
   let adj=0;
-  mates.forEach(o=>{ const c=pairChem(p,o); adj += (c.level<0?-1:1)*c.str; });
+  mates.forEach(o=>{
+    const c=pairChem(p,o); adj += (c.level<0?-1:1)*c.str;
+    const sc=styleChem(p,o); if(sc) adj += sc.str;   // stilska kemija se DODA
+  });
   return Math.max(-8, Math.min(8, adj));
 }
 // efektivni rating = (rating - pozicijska kazen + kemija) × utež. Klop ×0.5 le za interni avg.
@@ -2339,7 +2406,7 @@ function renderCourt(){
   const liveEv = u1f===5 ? evaluateTeam() : null;
   const liveBar = liveEv
     ? `<div class="hod-live-ovr">Trenutni OVERALL: <b>${liveEv.overall}</b> · kemija ${liveEv.chem.chem>0?'+':''}${liveEv.chem.chem}${liveEv.depth?` · globina ${liveEv.depth>0?'+':''}${liveEv.depth}`:''}</div>
-       ${(liveEv.chem.bondList&&liveEv.chem.bondList.length)?`<div class="hod-bonds">${liveEv.chem.bondList.sort((a,b)=>b.level-a.level).map(bd=>`<span class="hod-bond lvl${bd.level}">${bd.emoji} ${bd.label}</span>`).join('')}</div>`:''}`
+       ${(liveEv.chem.bondList&&liveEv.chem.bondList.length)?`<div class="hod-bonds">${liveEv.chem.bondList.sort((a,b)=>b.level-a.level).map(bd=>`<span class="hod-bond lvl${bd.level} ${bd.style?'style':''}">${bd.style?'▸ ':''}${bd.label}</span>`).join('')}</div>`:''}`
     : `<div class="hod-live-ovr" style="color:var(--muted)">Postavi peterko za oceno (${u1f}/5)</div>`;
 
   screen.innerHTML=`
@@ -2486,7 +2553,7 @@ function showResult(){
       ${(ev.chem.bondList&&ev.chem.bondList.length)?`
       <div class="hod-bonds">
         ${ev.chem.bondList.sort((a,b)=>b.level-a.level).map(bd=>`
-          <span class="hod-bond lvl${bd.level}">${bd.emoji} ${bd.label}</span>`).join('')}
+          <span class="hod-bond lvl${bd.level} ${bd.style?'style':''}">${bd.style?'▸ ':''}${bd.label}</span>`).join('')}
       </div>`:''}
       ${ev.chem.rivalList.length?`<div style="font-size:11px;color:var(--red);margin-bottom:4px">⚔️ Trenja: ${ev.chem.rivalList.join(', ')}</div>`:''}
       <div style="font-size:12px;color:var(--muted);letter-spacing:1px">
