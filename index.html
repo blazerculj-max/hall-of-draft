@@ -138,6 +138,15 @@
 .hod-fade{animation:hod-fade .4s ease;}
 .hod-chem-tag{font-family:'Bebas Neue';font-size:14px;letter-spacing:1px;
   border:1px solid var(--cc);color:var(--cc);border-radius:20px;padding:4px 12px;}
+.hod-bonds{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:460px;margin:8px auto;}
+.hod-bond{font-family:'Oswald';font-size:12px;font-weight:600;border-radius:14px;padding:4px 11px;
+  background:rgba(46,196,182,.12);border:1px solid #2ec4b6;color:#2ec4b6;white-space:nowrap;}
+.hod-bond.lvl3{background:rgba(255,182,39,.15);border-color:var(--gold);color:var(--gold);
+  box-shadow:0 0 10px rgba(255,182,39,.25);}
+.hod-bond.lvl2{background:rgba(76,201,240,.12);border-color:#4cc9f0;color:#4cc9f0;}
+.hod-live-ovr{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:var(--ink);
+  margin:4px auto 8px;}
+.hod-live-ovr b{font-family:'Anton';font-size:22px;color:var(--gold);}
 .hod-era-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:440px;margin:0 auto;}
 .hod-era-chip{background:var(--panel);border:2px solid var(--line);border-radius:14px;
   padding:12px 18px;cursor:pointer;transition:.15s;min-width:96px;display:flex;
@@ -750,13 +759,28 @@ const RIVALRIES=[
   ["garnett","anthony"],
   ["shaq","barkley"],
 ];
-// SLAVNI DUOJI -> dodaten bonus poleg team-overlapa (za ikonične pare).
+// SLAVNI DUOJI z imeni -> poimenovana vidna vez + bonus. [priimek1, priimek2, ime, emoji]
 const DUOS=[
-  ["jordan","pippen"],["bryant","o'neal"],["stockton","malone"],
-  ["curry","thompson"],["james","wade"],["james","irving"],
-  ["nash","stoudemire"],["garnett","pierce"],["duncan","parker"],
-  ["paul","griffin"],["durant","curry"],["kidd","carter"],
+  ["jordan","pippen","Bulls Dynasty","🐂"],
+  ["bryant","o'neal","Shaq & Kobe","💜💛"],
+  ["stockton","malone","Pick & Roll","🎯"],
+  ["curry","thompson","Splash Brothers","💦"],
+  ["james","wade","Heatles","🔥"],
+  ["james","irving","Cleveland Comeback","🗲"],
+  ["nash","stoudemire","Seven Seconds","⏱️"],
+  ["garnett","pierce","Boston Big 3","☘️"],
+  ["duncan","parker","Spurs Core","⚙️"],
+  ["paul","griffin","Lob City","🌴"],
+  ["durant","curry","Hampton 5","🌊"],
+  ["kidd","carter","NJ Highlights","✈️"],
+  ["johnson","abdul-jabbar","Showtime","🎬"],
+  ["bird","mchale","Celtics Frontcourt","🍀"],
+  ["bryant","gasol","Lakers Repeat","🏆"],
+  ["nowitzki","terry","Dallas 2011","🐴"],
+  ["thomas","dumars","Bad Boys","😈"],
+  ["olajuwon","drexler","Clutch City","🚀"],
 ];
+// arhetipski/ime za team-mate vezi brez slavnega imena se generira sproti
 function lastName(n){return (n||"").trim().toLowerCase().split(/\s+/).pop();}
 function pairMatch(a,b,list){
   const la=lastName(a),lb=lastName(b);
@@ -1455,18 +1479,20 @@ function chemFor(arr){
   const soloScore=-soloPress;
 
   // 3) SOIGRALCI + DUOJI
-  let mateBonus=0, duoBonus=0, mateCount=0, duoList=[];
+  let mateBonus=0, duoBonus=0, mateCount=0, duoList=[], bondList=[];
   for(let i=0;i<arr.length;i++){
     for(let j=i+1;j<arr.length;j++){
       const a=arr[i], b=arr[j];
+      const pc=pairChem(a,b);
       if(a.team&&b.team&&a.team===b.team&&a.season===b.season){
         mateBonus+=1.1; mateCount++;
       } else if(a.team&&b.team&&a.team===b.team){
         mateBonus+=0.4; mateCount++;
       }
-      if(pairMatch(a.name,b.name,DUOS)){
-        duoBonus+=1.6; duoList.push(`${lastName(a.name)}–${lastName(b.name)}`);
-      }
+      const duo=duoInfo(a.name,b.name);
+      if(duo){ duoBonus+=1.6; duoList.push(duo.name); }
+      // zberi vse pozitivne poimenovane vezi (za vidne značke)
+      if(pc.level>0 && pc.label){ bondList.push({label:pc.label, emoji:pc.emoji||'', level:pc.level, a:lastName(a.name), b:lastName(b.name)}); }
     }
   }
   mateBonus=Math.min(mateBonus,5);
@@ -1493,7 +1519,7 @@ function chemFor(arr){
           mateBonus:Math.round(mateBonus*10)/10,
           duoBonus:Math.round(duoBonus*10)/10,
           rivalScore:Math.round(rivalScore*10)/10,
-          dominant,eraSpread,eras,mateCount,duoList,rivalList};
+          dominant,eraSpread,eras,mateCount,duoList,rivalList,bondList};
 }
 function computeChemistry(){
   if(quickMode){ return chemFor(roster.filter(p=>p.role==="U1")); }
@@ -1583,12 +1609,22 @@ function ratingAtPos(p, pos){
 //  ++  isti tim, druga sezona (franšizna vez)
 //  +   ista doba (era) — sočasna generacija
 //  −   rivalstvo
+// poišči slavni duo (vrne [imenovani,emoji] ali null)
+function duoInfo(a,b){
+  const la=lastName(a),lb=lastName(b);
+  const d=DUOS.find(([x,y])=>(la===x&&lb===y)||(la===y&&lb===x));
+  return d?{name:d[2],emoji:d[3]}:null;
+}
 function pairChem(a,b){
-  if(pairMatch(a.name,b.name,RIVALRIES)) return {level:-1, str:3, tier:"rival"};
-  if(pairMatch(a.name,b.name,DUOS)) return {level:3, str:4, tier:"duo"};
-  if(a.team&&b.team&&a.team===b.team&&a.season===b.season) return {level:3, str:3.5, tier:"mates"};
-  if(a.team&&b.team&&a.team===b.team) return {level:2, str:1.8, tier:"franchise"};
-  if(a.era&&b.era&&a.era===b.era) return {level:1, str:0.7, tier:"era"};
+  if(pairMatch(a.name,b.name,RIVALRIES)) return {level:-1, str:3, tier:"rival", label:"Rivalstvo", emoji:"⚔️"};
+  const duo=duoInfo(a.name,b.name);
+  if(duo) return {level:3, str:4, tier:"duo", label:duo.name, emoji:duo.emoji};
+  if(a.team&&b.team&&a.team===b.team&&a.season===b.season)
+    return {level:3, str:3.5, tier:"mates", label:`${a.team} ${shortSeason(a)}`, emoji:"🤝"};
+  if(a.team&&b.team&&a.team===b.team)
+    return {level:2, str:1.8, tier:"franchise", label:`${a.team} legenda`, emoji:"🏛️"};
+  if(a.era&&b.era&&a.era===b.era)
+    return {level:1, str:0.7, tier:"era", label:"Ista doba", emoji:"📅"};
   return {level:0, str:0, tier:"none"};
 }
 // kemija prilagoditev igralca = vsota par-učinkov ZNOTRAJ peterke (U1). Klop je nevtralen.
@@ -2302,7 +2338,8 @@ function renderCourt(){
   // live ocena (le ko je peterka polna, sicer pokaži napredek)
   const liveEv = u1f===5 ? evaluateTeam() : null;
   const liveBar = liveEv
-    ? `<div class="hod-live-ovr">Trenutni OVERALL: <b>${liveEv.overall}</b> · kemija ${liveEv.chem.chem>0?'+':''}${liveEv.chem.chem}${liveEv.depth?` · globina ${liveEv.depth>0?'+':''}${liveEv.depth}`:''}</div>`
+    ? `<div class="hod-live-ovr">Trenutni OVERALL: <b>${liveEv.overall}</b> · kemija ${liveEv.chem.chem>0?'+':''}${liveEv.chem.chem}${liveEv.depth?` · globina ${liveEv.depth>0?'+':''}${liveEv.depth}`:''}</div>
+       ${(liveEv.chem.bondList&&liveEv.chem.bondList.length)?`<div class="hod-bonds">${liveEv.chem.bondList.sort((a,b)=>b.level-a.level).map(bd=>`<span class="hod-bond lvl${bd.level}">${bd.emoji} ${bd.label}</span>`).join('')}</div>`:''}`
     : `<div class="hod-live-ovr" style="color:var(--muted)">Postavi peterko za oceno (${u1f}/5)</div>`;
 
   screen.innerHTML=`
@@ -2442,19 +2479,18 @@ function showResult(){
         <div class="hod-chem-tag" style="--cc:${ev.chem.chem>=3?'var(--green)':ev.chem.chem<=-3?'var(--red)':'var(--muted)'}">
           KEMIJA ${ev.chem.chem>0?'+':''}${ev.chem.chem}
         </div>
-        <div class="hod-chem-tag" style="--cc:${ev.chem.duoBonus>0?'var(--green)':'var(--muted)'}">
-          DUOJI +${ev.chem.duoBonus}
-        </div>
         <div class="hod-chem-tag" style="--cc:${ev.chem.rivalScore<0?'var(--red)':'var(--muted)'}">
           RIVALSTVA ${ev.chem.rivalScore}
         </div>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">
-        ${ev.chem.duoList.length?`Slavni duo: ${ev.chem.duoList.join(', ')}. `:''}${
-          ev.chem.rivalList.length?`Trenja: ${ev.chem.rivalList.join(', ')}. `:''}
-      </div>
+      ${(ev.chem.bondList&&ev.chem.bondList.length)?`
+      <div class="hod-bonds">
+        ${ev.chem.bondList.sort((a,b)=>b.level-a.level).map(bd=>`
+          <span class="hod-bond lvl${bd.level}">${bd.emoji} ${bd.label}</span>`).join('')}
+      </div>`:''}
+      ${ev.chem.rivalList.length?`<div style="font-size:11px;color:var(--red);margin-bottom:4px">⚔️ Trenja: ${ev.chem.rivalList.join(', ')}</div>`:''}
       <div style="font-size:12px;color:var(--muted);letter-spacing:1px">
-        prva peterka ⌀ ${ev.starterAvg} · cela ekipa ⌀ ${ev.fullAvg}${res?` · nadomeščaš ${sim.replaced.name}`:''}
+        peterka ⌀ ${ev.starterAvg} · cela ekipa ⌀ ${ev.fullAvg}${ev.benchHoles&&ev.benchHoles.length?` · klop ne pokriva: ${ev.benchHoles.join(', ')}`:''}${res?` · nadomeščaš ${sim.replaced.name}`:''}
       </div>
       ${simBlock}
       ${budgetMode?`<div style="font-size:12px;color:var(--gold);letter-spacing:1px;margin-top:4px">
