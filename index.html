@@ -1545,10 +1545,10 @@ function chemDelta(p){
 // ===== VLOGE (starter/bench) + out-of-position kazen =====
 const POS_LADDER=["PG","SG","SF","PF","C"];
 // utež po vlogi: S=starter, 6=sixth man, R=role player, F=fringe
-const ROLE_WEIGHT={U1:1.0, U2:0.78, B:0.5};
-const ROLE_SLOTS={U1:5, U2:5, B:2};
-const ROLE_LABEL={U1:"Prva peterka", U2:"Druga peterka", B:"Rezerva"};
-const ROLE_ORDER=["U1","U2","B"];
+const ROLE_WEIGHT={U1:1.0, B:0.5};   // peterka šteje polno, klop nevtralno (glej oceno)
+const ROLE_SLOTS={U1:5, B:7};
+const ROLE_LABEL={U1:"Peterka", B:"Klop"};
+const ROLE_ORDER=["U1","B"];
 
 // kazen za igro izven primarne pozicije
 function posPenalty(p){
@@ -1591,21 +1591,45 @@ function pairChem(a,b){
   if(a.era&&b.era&&a.era===b.era) return {level:1, str:0.7, tier:"era"};
   return {level:0, str:0, tier:"none"};
 }
-// kemija prilagoditev igralca = vsota par-učinkov ZNOTRAJ iste enote (U1 ali U2)
+// kemija prilagoditev igralca = vsota par-učinkov ZNOTRAJ peterke (U1). Klop je nevtralen.
 function playerChemAdj(p){
-  if(p.role!=="U1" && p.role!=="U2") return 0;
-  const mates=roster.filter(x=>x.role===p.role && x!==p);
+  if(p.role!=="U1") return 0;
+  const mates=roster.filter(x=>x.role==="U1" && x!==p);
   let adj=0;
   mates.forEach(o=>{ const c=pairChem(p,o); adj += (c.level<0?-1:1)*c.str; });
   return Math.max(-8, Math.min(8, adj));
 }
-// efektivni rating = (rating - pozicijska kazen + kemija) × utež enote
+// efektivni rating = (rating - pozicijska kazen + kemija) × utež. Klop ×0.5 le za interni avg.
 function effRating(p){
   const base=p.rating - posPenalty(p) + playerChemAdj(p);
   const w=ROLE_WEIGHT[p.role||"U1"]||1.0;
   return Math.max(20, base*w);
 }
-// avto-razporeditev: prva peterka = najboljših 5 (pokrij pozicije), druga = naslednjih 5, 2 rezervi
+// surovi rating klopca (brez uteži, brez kemije) — klop je nevtralen po ratingu
+function benchRating(p){ return Math.max(20, p.rating - posPenalty(p)); }
+
+// POKRITOST KLOPI: vsaka pozicija (PG..C) naj ima na klopi rezervo, ki jo zna igrati.
+// Kazen je stopnjevana: če pozicijo pokriva le oddaljen igralec (npr. PG pokriva C),
+// je kazen večja kot pri sosednji poziciji (PG<-SG). Vrne {penalty, holes:[...]}.
+function benchCoverage(){
+  const bench=roster.filter(p=>p.role==="B");
+  let penalty=0; const holes=[];
+  POS_LADDER.forEach((pos,pi)=>{
+    // najmanjša "razdalja", s katero klop pokriva to pozicijo
+    let best=99;
+    bench.forEach(p=>{
+      playerPositions(p).forEach(pp=>{
+        const d=Math.abs(POS_LADDER.indexOf(pp)-pi);
+        if(d<best) best=d;
+      });
+    });
+    if(best===0) return;                 // pokrito naravnost — brez kazni
+    if(best===99){ penalty+=2.2; holes.push(pos); return; }  // sploh nepokrito
+    penalty += best*0.9;                 // pokrito le z razdaljo -> sorazmerna kazen
+  });
+  return {penalty:Math.min(penalty,7), holes};
+}
+// avto-razporeditev: peterka = najboljših 5 (pokrij pozicije), ostalih 7 na klop
 function autoAssignRoles(arr){
   const byRating=[...arr].sort((a,b)=>b.rating-a.rating);
   const used=new Set();
@@ -1627,9 +1651,8 @@ function autoAssignRoles(arr){
   }
   arr.forEach(p=>{p.role="B"; p.spot=null;});
   const u1=pickFive(); u1.forEach(p=>{p.role="U1"; p.spot=playerPositions(p)[0]; p.assignedPos=p.spot;});
-  const u2=pickFive(); u2.forEach(p=>{p.role="U2"; p.spot=playerPositions(p)[0]; p.assignedPos=p.spot;});
   arr.filter(p=>p.role==="B").forEach(p=>{p.assignedPos=playerPositions(p)[0];});
-  fixUnitSpots("U1"); fixUnitSpots("U2");
+  fixUnitSpots("U1");
   return arr;
 }
 // zagotovi, da ima vsaka enota vsak spot enkrat (PG-SG-SF-PF-C)
@@ -1656,21 +1679,24 @@ function evaluateTeam(){
             u2Avg:0, stars, posSpread, top5:u1, chem:chemObj};
   }
   const u1=roster.filter(p=>p.role==="U1");
-  const u2=roster.filter(p=>p.role==="U2");
   const bench=roster.filter(p=>p.role==="B");
-  const avg=arr=>arr.length?arr.reduce((s,p)=>s+effRating(p),0)/arr.length:0;
-  const u1Avg=avg(u1), u2Avg=avg(u2), benchAvg=avg(bench);
+  const avg=(arr,fn)=>arr.length?arr.reduce((s,p)=>s+fn(p),0)/arr.length:0;
+  const u1Avg=avg(u1, effRating);
+  const benchAvg=avg(bench, benchRating);   // klop nevtralno po surovem ratingu
   const starterAvg=u1Avg;
-  const fullAvg = u1.length||u2.length ? (u1Avg*0.6 + u2Avg*0.3 + benchAvg*0.1) : avg(roster);
+  // globina: rep, ki dvigne oceno le malo. Močna peterka + nekaj globine > vse povprečno.
+  const depth = bench.length ? (benchAvg-60)*0.12 : 0;   // klop nad 60 doda rahel +, pod 60 rahel −
+  const cov=benchCoverage();
   const posSpread=POSITIONS.filter(p=>posCount(p)>=1).length;
   const stars=roster.filter(p=>p.rating>=92).length;
   const starBonus=Math.min(stars*1.3,5);
   const chemObj=computeChemistry();
-  let overall = starterAvg*0.50 + fullAvg*0.30 + 60*0.15
-              + starBonus + chemObj.chem*0.9;
+  let overall = starterAvg*0.74 + 60*0.15 + depth
+              + starBonus + chemObj.chem*0.9 - cov.penalty;
   overall=Math.max(40,Math.min(99,Math.round(overall)));
+  const fullAvg=Math.round((u1Avg*0.78+benchAvg*0.22)*10)/10;
   return {overall, starterAvg:Math.round(u1Avg*10)/10,
-          fullAvg:Math.round(fullAvg*10)/10, u2Avg:Math.round(u2Avg*10)/10,
+          fullAvg, u2Avg:0, depth:Math.round(depth*10)/10, benchHoles:cov.holes,
           stars, posSpread, top5:u1.length?u1:roster.slice(0,5), chem:chemObj};
 }
 
@@ -2242,48 +2268,54 @@ function renderQuickCourt(){
 function renderCourt(){
   if(quickMode) return renderQuickCourt();
   const u1f=roster.filter(p=>p.role==="U1"&&p.spot).length;
-  const u2f=roster.filter(p=>p.role==="U2"&&p.spot).length;
   const benchPlayers=roster.filter(p=>p.role==="B");
   const unassigned=roster.filter(p=>!p.role);
+  const cov=benchCoverage();
 
   const benchHtml=`<div class="hod-bench-row" data-bench="B">
-      <span class="hod-bench-label">${ROLE_LABEL.B} (${benchPlayers.length}/2) <span style="opacity:.6">×${ROLE_WEIGHT.B}</span></span>
+      <span class="hod-bench-label">${ROLE_LABEL.B} (${benchPlayers.length}/7) ${cov.holes.length?`<span style="color:var(--red)">· manjka pokritost: ${cov.holes.join(', ')}</span>`:'<span style="color:var(--green)">· vse pozicije pokrite</span>'}</span>
       <div class="hod-bench-chips">${benchPlayers.map(p=>{
         const sel=_courtSel===p?'sel':'';
         return `<div class="hod-bench-chip ${sel}" data-key="${playerKey(p)}" draggable="true">
           <span class="hod-role-pos hod-pos-${effPos(p)}">${playerPositions(p)[0]}</span>
           <span class="hod-role-nm">${lastNameCap(p)} <span style="color:var(--muted);font-size:10px">${shortSeason(p)}</span></span>
-          <span class="hod-role-rt">${Math.round(effRating(p))}</span>
+          <span class="hod-role-rt">${Math.round(benchRating(p))}</span>
         </div>`;
       }).join('')||'<span class="hod-chip empty">—</span>'}</div>
     </div>`;
 
   const unassignedHtml=unassigned.length?`
     <div class="hod-unassigned-box" data-bench="pool">
-      <div class="hod-bench-label" style="color:var(--gold)">Nerazvrščeni (${unassigned.length}) — klikni igralca, nato mesto na igrišču ali rezervo</div>
+      <div class="hod-bench-label" style="color:var(--gold)">Nerazvrščeni (${unassigned.length}) — klikni igralca, nato mesto v peterki ali na klop</div>
       <div class="hod-unassigned-grid">${unassigned.map(p=>{
         const sel=_courtSel===p?'sel':'';
         return `<div class="hod-uacard ${sel}" data-key="${playerKey(p)}" draggable="true">
           <div class="hod-ua-top"><span class="hod-ua-pos hod-pos-${playerPositions(p)[0]}">${playerPositions(p).join('/')}</span><span class="hod-ua-rt">${p.rating}</span></div>
           <div class="hod-ua-name">${p.name}</div>
-          <div class="hod-ua-season">${p.season}</div>
+          <div class="hod-ua-season">${p.team?p.team+' · ':''}${p.season}</div>
           <div class="hod-ua-stats"><span><b>${p.pts}</b> pts</span><span><b>${p.reb}</b> reb</span><span><b>${p.ast}</b> ast</span></div>
         </div>`;
       }).join('')}</div>
     </div>`:'';
 
-  const allPlaced = u1f===5 && u2f===5 && unassigned.length===0;
+  const allPlaced = u1f===5 && unassigned.length===0;
+  // live ocena (le ko je peterka polna, sicer pokaži napredek)
+  const liveEv = u1f===5 ? evaluateTeam() : null;
+  const liveBar = liveEv
+    ? `<div class="hod-live-ovr">Trenutni OVERALL: <b>${liveEv.overall}</b> · kemija ${liveEv.chem.chem>0?'+':''}${liveEv.chem.chem}${liveEv.depth?` · globina ${liveEv.depth>0?'+':''}${liveEv.depth}`:''}</div>`
+    : `<div class="hod-live-ovr" style="color:var(--muted)">Postavi peterko za oceno (${u1f}/5)</div>`;
+
   screen.innerHTML=`
     <div class="hod-result hod-fade">
-      <div class="hod-stage-label">Sestavi obe peterki</div>
+      <div class="hod-stage-label">Sestavi peterko in klop</div>
       ${dailyMode?`<div class="hod-daily-goalbar" style="max-width:340px;margin:0 auto 10px">🏆 ${dailyGoal().label}</div>`:''}
-      <div style="font-size:12px;color:var(--muted);max-width:440px;margin:0 auto 10px">
-        ${isMobileView()?'Tapni igralca, nato mesto.':'Povleci ali tapni igralca na mesto.'} Prva peterka šteje največ, druga je podpora. Kemija znotraj enote dviga rating (zelene vezi).
+      <div style="font-size:12px;color:var(--muted);max-width:440px;margin:0 auto 8px">
+        ${isMobileView()?'Tapni igralca, nato mesto.':'Povleci ali tapni igralca na mesto.'} Peterka šteje največ, kemija znotraj nje dviga rating. Klop daj tako, da pokrije vse pozicije.
       </div>
-      ${_courtSel?`<div style="font-size:12px;color:var(--gold);margin-bottom:6px">Izbran: ${lastNameCap(_courtSel)} — izberi mesto ali rezervo</div>`:''}
-      <div class="hod-units-wrap">
+      ${liveBar}
+      ${_courtSel?`<div style="font-size:12px;color:var(--gold);margin-bottom:6px">Izbran: ${lastNameCap(_courtSel)} — izberi mesto ali klop</div>`:''}
+      <div class="hod-units-wrap" style="justify-content:center">
         ${renderUnitCourt("U1")}
-        ${renderUnitCourt("U2")}
       </div>
       <div class="hod-chem-legend">
         <span><i style="background:#2ec4b6"></i> kemija</span>
@@ -2297,7 +2329,7 @@ function renderCourt(){
         <button class="hod-btn secondary" id="hod-court-auto">Auto</button>
         <button class="hod-btn secondary" id="hod-court-clear">Počisti</button>
       </div>
-      ${!allPlaced?`<div style="font-size:11px;color:var(--red);margin-top:8px">Zapolni obe peterki (${u1f}/5, ${u2f}/5) in razvrsti vse igralce</div>`:''}
+      ${!allPlaced?`<div style="font-size:11px;color:var(--red);margin-top:8px">Zapolni peterko (${u1f}/5) in razvrsti vse igralce na klop</div>`:''}
     </div>`;
   wireCourt();
 }
