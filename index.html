@@ -636,29 +636,34 @@ function todayKey(){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 // dnevni cilji (seeded izbira) — mešani: sestava + simulacija
+// minBudget = najtežji budget, pri katerem je cilj še realno dosegljiv.
+//   "težka"=ok tudi z $380 | "srednja"=rabi vsaj srednji | null=rabi lahek/neomejen
 const DAILY_GOALS=[
-  {id:"ovr88", type:"build", label:"Sestavi ekipo z OVERALL 88+", test:ev=>ev.overall>=88, fmt:ev=>`OVERALL ${ev.overall}`},
-  {id:"ovr92", type:"build", label:"Sestavi ekipo z OVERALL 92+", test:ev=>ev.overall>=92, fmt:ev=>`OVERALL ${ev.overall}`},
-  {id:"chem6", type:"build", label:"Doseži kemijo +6 ali več", test:ev=>ev.chem.chem>=6, fmt:ev=>`kemija +${ev.chem.chem}`},
-  {id:"chem8", type:"build", label:"Doseži kemijo +8 ali več", test:ev=>ev.chem.chem>=8, fmt:ev=>`kemija +${ev.chem.chem}`},
-  {id:"stars3", type:"build", label:"Ekipa s 3+ zvezdami (92+)", test:ev=>ev.stars>=3, fmt:ev=>`${ev.stars} zvezd`},
-  {id:"win55", type:"sim", label:"Doseži 55+ zmag v sezoni", test:(ev,sim)=>sim&&sim.avgWins>=55, fmt:(ev,sim)=>sim?`${sim.avgWins} zmag`:`— zmag`},
-  {id:"win60", type:"sim", label:"Doseži 60+ zmag v sezoni", test:(ev,sim)=>sim&&sim.avgWins>=60, fmt:(ev,sim)=>sim?`${sim.avgWins} zmag`:`— zmag`},
-  {id:"playoff", type:"sim", label:"Playoff verjetnost 80%+", test:(ev,sim)=>sim&&sim.playoffPct>=80, fmt:(ev,sim)=>sim?`${sim.playoffPct}% playoff`:`— % playoff`},
-  {id:"title15", type:"sim", label:"Verjetnost naslova 15%+", test:(ev,sim)=>sim&&sim.titlePct>=15, fmt:(ev,sim)=>sim?`${sim.titlePct}% naslov`:`— % naslov`},
+  {id:"ovr88", type:"build", minBudget:"težka", label:"Sestavi ekipo z OVERALL 88+", test:ev=>ev.overall>=88, fmt:ev=>`OVERALL ${ev.overall}`},
+  {id:"ovr92", type:"build", minBudget:null, label:"Sestavi ekipo z OVERALL 92+", test:ev=>ev.overall>=92, fmt:ev=>`OVERALL ${ev.overall}`},
+  {id:"chem6", type:"build", minBudget:"težka", label:"Doseži kemijo +6 ali več", test:ev=>ev.chem.chem>=6, fmt:ev=>`kemija +${ev.chem.chem}`},
+  {id:"chem8", type:"build", minBudget:"srednja", label:"Doseži kemijo +8 ali več", test:ev=>ev.chem.chem>=8, fmt:ev=>`kemija +${ev.chem.chem}`},
+  {id:"stars3", type:"build", minBudget:"srednja", label:"Ekipa s 3+ zvezdami (92+)", test:ev=>ev.stars>=3, fmt:ev=>`${ev.stars} zvezd`},
+  {id:"win55", type:"sim", minBudget:"srednja", label:"Doseži 55+ zmag v sezoni", test:(ev,sim)=>sim&&sim.avgWins>=55, fmt:(ev,sim)=>sim?`${sim.avgWins} zmag`:`— zmag`},
+  {id:"win60", type:"sim", minBudget:null, label:"Doseži 60+ zmag v sezoni", test:(ev,sim)=>sim&&sim.avgWins>=60, fmt:(ev,sim)=>sim?`${sim.avgWins} zmag`:`— zmag`},
+  {id:"playoff", type:"sim", minBudget:"srednja", label:"Playoff verjetnost 80%+", test:(ev,sim)=>sim&&sim.playoffPct>=80, fmt:(ev,sim)=>sim?`${sim.playoffPct}% playoff`:`— % playoff`},
+  {id:"title15", type:"sim", minBudget:null, label:"Verjetnost naslova 15%+", test:(ev,sim)=>sim&&sim.titlePct>=15, fmt:(ev,sim)=>sim?`${sim.titlePct}% naslov`:`— % naslov`},
 ];
 function dailyGoal(){
   const seed=todaySeed();
   return DAILY_GOALS[seed%DAILY_GOALS.length];
 }
-// dnevni budget (seeded): vsak ~2. dan ima budget omejitev, sicer neomejeno
-// uporabimo drug "odmik" seeda, da ni vezan na cilj
+// dnevni budget (seeded), a NIKOLI težji, kot dovoljuje cilj dneva -> vsak dan rešljiv
 function dailyBudget(){
   const seed=todaySeed();
-  const opts=[null, null, "lahka", "srednja", "težka"];  // ~40% dni neomejeno
-  // pomešaj seed (sicer zaporedni datumi dajo isti rezultat)
+  const g=dailyGoal();
+  // bazen budgetov glede na zahtevnost cilja (null = neomejen)
+  let pool;
+  if(g.minBudget==="težka")        pool=["težka","srednja","lahka",null,null]; // vse, ~40% neomejen
+  else if(g.minBudget==="srednja") pool=["srednja","lahka",null,null];          // srednji navzgor
+  else                             pool=["lahka",null,null];                    // le lahek/neomejen
   let h=seed; h=(h^61)^(h>>>16); h=h+(h<<3); h=h^(h>>>4); h=h*0x27d4eb2d; h=h^(h>>>15);
-  return opts[Math.abs(h)%opts.length];
+  return pool[Math.abs(h)%pool.length];
 }
 // trajni shramba (localStorage z fallbackom na pomnilnik)
 const _memStore={};
