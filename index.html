@@ -1291,7 +1291,7 @@ function makeOffer(){
       <div class="hod-pos-badge hod-pos-${p.pos}">${allPos.join('/')}</div>
       <div class="hod-pinfo">
         <div class="hod-pname">${p.name}</div>
-        <div class="hod-pseason">${p.season}${canTake?'':' · pozicije polne'}</div>
+        <div class="hod-pseason">${p.team?`${p.team} · `:''}${p.season}${canTake?'':' · pozicije polne'}</div>
         <div class="hod-pstats">
           <div><b>${p.pts}</b><span>PPG</span></div>
           <div><b>${p.reb}</b><span>RPG</span></div>
