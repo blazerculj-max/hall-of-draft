@@ -146,6 +146,37 @@
 .hod-bond.lvl2{background:rgba(76,201,240,.12);border-color:#4cc9f0;color:#4cc9f0;}
 .hod-bond.style{background:rgba(168,130,255,.13);border-color:#a882ff;color:#c4adff;}
 .hod-bond.lvl-1{background:rgba(230,57,70,.13);border-color:#e63946;color:#ff8a93;}
+
+/* ===== KAKO IGRATI ===== */
+.hod-howto-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;
+  padding:16px;background:rgba(6,6,12,.88);backdrop-filter:blur(4px);}
+.hod-howto-card{position:relative;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;
+  background:linear-gradient(165deg,#1e1e2c 0%,#16161f 100%);
+  border:1px solid rgba(255,182,39,.35);border-radius:20px;padding:0 0 22px;
+  box-shadow:0 24px 60px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03) inset;}
+.hod-howto-head{text-align:center;padding:26px 24px 18px;
+  background:linear-gradient(180deg,rgba(255,182,39,.10),transparent);
+  border-bottom:1px solid rgba(255,255,255,.06);border-radius:20px 20px 0 0;margin-bottom:18px;}
+.hod-howto-title{font-family:'Anton',sans-serif;font-size:34px;letter-spacing:2px;
+  background:linear-gradient(180deg,#ffe08a,#ffb627);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;line-height:1;}
+.hod-howto-sub{font-family:'Oswald';font-size:13px;color:#9a9ab0;letter-spacing:.5px;margin-top:7px;}
+.hod-howto-body{padding:0 22px;}
+.hod-ht-step{display:flex;gap:14px;margin-bottom:16px;align-items:flex-start;
+  background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);
+  border-radius:13px;padding:13px 14px;transition:.15s;}
+.hod-ht-step:hover{border-color:rgba(255,182,39,.3);background:rgba(255,182,39,.04);}
+.hod-ht-n{flex:none;width:32px;height:32px;border-radius:10px;
+  background:linear-gradient(165deg,#ffd166,#ffb627);color:#14140c;
+  font-family:'Anton',sans-serif;font-size:17px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 10px rgba(255,182,39,.3);}
+.hod-ht-n.star{background:linear-gradient(165deg,#7ad7f0,#4cc9f0);color:#06222b;box-shadow:0 3px 10px rgba(76,201,240,.35);}
+.hod-ht-title{font-family:'Bebas Neue';font-size:18px;letter-spacing:1px;color:#ffffff;line-height:1.1;margin-bottom:3px;}
+.hod-ht-desc{font-family:'Oswald';font-weight:300;font-size:12.5px;color:#cfcfe0;line-height:1.55;}
+.hod-ht-desc b{font-weight:600;color:#ffd166;}
+.hod-ht-desc b.neg{color:#ff8a93;}
+.hod-howto-btn{margin:6px 22px 0;width:calc(100% - 44px);font-family:'Bebas Neue';
+  font-size:18px;letter-spacing:1.5px;}
 .hod-live-ovr{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:var(--ink);
   margin:4px auto 8px;}
 .hod-live-ovr b{font-family:'Anton';font-size:22px;color:var(--gold);}
@@ -1032,6 +1063,7 @@ function showIntro(){
       <div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn" id="hod-quick" style="background:linear-gradient(180deg,#f0843a,#c46524);box-shadow:0 5px 0 #994e1c">⚡ Quickfire (peterka)</button>
         <button class="hod-btn secondary" id="hod-leaders">🏅 Lestvice</button>
+        <button class="hod-btn secondary" id="hod-howto">❓ Kako igrati</button>
       </div>
       ${dailyStatusLine()}
       <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:1px">
@@ -1052,7 +1084,41 @@ function showIntro(){
   document.getElementById('hod-daily').onclick=()=>{ startDaily(); };
   document.getElementById('hod-quick').onclick=()=>{ startQuickfire(); };
   document.getElementById('hod-leaders').onclick=()=>{ showLeadersPage("daily"); };
+  document.getElementById('hod-howto').onclick=()=>{ showHowTo(); };
   renderProgress();
+  // ob prvem obisku samodejno pokaži pravila
+  if(!storeGet("hod-seen-howto")){ storeSet("hod-seen-howto","1"); showHowTo(); }
+}
+
+function showHowTo(){
+  const steps=[
+    ["1","Zavrti & izberi sezono","Slot zavrti tri sezone. Izbereš eno — iz nje dobiš ponudbo igralcev, po enega na pozicijo."],
+    ["2","Draftaj igralce","Vsak krog izbereš enega. Pri večpozicijskih izbereš, kam ga postaviš — rating namig pokaže, kje je najboljši. Karta <b>??</b> je hazard: plačaš, šele nato vidiš, koga dobiš — in ga obdržiš."],
+    ["3","Budget","Boljši igralci stanejo več. Težji način = manj denarja = več kompromisov. Igralci pod ratingom 50 so zastonj. Budget nikoli ne pade pod nič."],
+    ["4","Peterka + klop","Peterka šteje največ. Klop (7) te ne kaznuje po ratingu, a <b>mora pokriti vse pozicije</b> — če nobena rezerva ne igra neke pozicije, izgubiš točke."],
+    ["5","Kemija","Igralci v peterki se ujamejo ali ne.<br><b>Zgodovinske vezi:</b> pravi soigralci, slavni duoji (Showtime, Splash Brothers), ista doba.<br><b>Stilske vezi:</b> Pick &amp; Roll, Spacing, Drive &amp; Kick.<br><b class='neg'>Trenja:</b> dva ego-strelca = preveč žoge; rivali se ne marajo."],
+    ["6","Ocena & simulacija","Dobiš OVERALL in oceno (S+ do F), nato simulacijo sezone: rekord, playoff %, naslov %. Tvoja ekipa zamenja najšibkejšo v ligi."],
+    ["★","Dnevni izziv & Quickfire","Dnevni izziv je vsak dan enak za vse — isti cilj in budget, svoja lestvica. Quickfire je hitra varianta: 8 izborov, samo peterka. Objavi rezultat in se primerjaj z drugimi."],
+  ];
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-howto-card hod-pop">
+    <div class="hod-howto-head">
+      <div class="hod-howto-title">KAKO IGRATI</div>
+      <div class="hod-howto-sub">Sestavi najboljšo ekipo vseh časov</div>
+    </div>
+    <div class="hod-howto-body">
+      ${steps.map(([n,t,d])=>`
+        <div class="hod-ht-step">
+          <span class="hod-ht-n ${n==='★'?'star':''}">${n}</span>
+          <div class="hod-ht-text"><div class="hod-ht-title">${t}</div><div class="hod-ht-desc">${d}</div></div>
+        </div>`).join('')}
+    </div>
+    <button class="hod-btn hod-howto-btn" id="hod-ht-close">RAZUMEM, IGRAJMO!</button>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#hod-ht-close').onclick=()=>ov.remove();
+  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
 }
 
 // samostojna stran z lestvicami (izbira načina)
