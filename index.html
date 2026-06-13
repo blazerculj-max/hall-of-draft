@@ -191,7 +191,8 @@
 .hod-pk-card{position:relative;flex:1 1 100px;max-width:108px;min-width:92px;background:var(--panel);
   border:2px solid var(--line);border-radius:14px;padding:12px 7px 10px;cursor:pointer;transition:.15s;overflow:hidden;}
 .hod-pk-card:hover{border-color:var(--gold);transform:translateY(-3px);}
-.hod-pk-card.held{border-color:var(--gold);background:rgba(255,182,39,.1);box-shadow:0 0 14px rgba(255,182,39,.3);}
+.hod-pk-card.held{border-color:var(--gold);background:rgba(255,182,39,.1);box-shadow:0 0 14px rgba(255,182,39,.3);cursor:default;}
+.hod-pk-card.held:hover{transform:none;}
 .hod-pk-card.spinning{animation:pkspin .32s ease;}
 @keyframes pkspin{0%{transform:rotateY(0) scale(1);opacity:1;}50%{transform:rotateY(90deg) scale(.9);opacity:.3;}100%{transform:rotateY(0) scale(1);opacity:1;}}
 .hod-pk-lock{position:absolute;top:5px;right:6px;font-size:13px;}
@@ -2217,7 +2218,7 @@ function renderPoker(finished){
       <div class="hod-pk-meta">${escapeHtml(c.team||'')} · ${c.season} · ${c.pos||''}</div>
       <div class="hod-pk-rating">${c.rating||0}</div>
       <div class="hod-pk-stats">${(c.pts||0).toFixed(1)} <span>PTS</span> · ${(c.reb||0).toFixed(1)} <span>REB</span> · ${(c.ast||0).toFixed(1)} <span>AST</span></div>
-      ${!finished?`<div class="hod-pk-hold">${held?'ZAKLENJEN':'tapni za HOLD'}</div>`:''}
+      ${!finished?`<div class="hod-pk-hold">${held?'🔒 ZAKLENJEN':'tapni za LOCK'}</div>`:''}
     </div>`;
   }).join('');
   screen.innerHTML=`
@@ -2228,7 +2229,7 @@ function renderPoker(finished){
         <span>Povprečje: ${avg}</span>
         <span>Vrtljaji: ${'●'.repeat(st.spinsLeft)}${'○'.repeat(5-st.spinsLeft)}</span>
       </div>
-      <div class="hod-pk-hint">Zakleni dobre karte (tap), ostale zavrti. Cilj: čim višji skupni overall.</div>
+      <div class="hod-pk-hint">Zakleni dobre karte — <b style="color:var(--gold)">lock je dokončen!</b> Nezaklenjene zavrtiš. Cilj: čim višji skupni overall.</div>
       <div class="hod-pk-grid">${cards}</div>
       ${finished
         ? `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
@@ -2251,7 +2252,10 @@ function renderPoker(finished){
   screen.querySelectorAll('.hod-pk-card').forEach(el=>{
     el.onclick=()=>{
       const i=+el.dataset.i;
-      st.held[i]=!st.held[i];
+      if(st.held[i]) return; // že zaklenjen - lock je dokončen (gamble!)
+      st.held[i]=true;
+      // če so zdaj vse zaklenjene, je igra konec
+      if(st.held.every(h=>h)){ endPoker(); return; }
       renderPoker(false);
     };
   });
