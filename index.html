@@ -307,6 +307,18 @@
 .hod-help span{font-family:'Oswald';font-size:9px;font-weight:300;letter-spacing:0;color:var(--muted);}
 .hod-help:hover:not(:disabled){background:rgba(168,130,255,.22);}
 .hod-help.used{opacity:.3;text-decoration:line-through;pointer-events:none;}
+/* razlaga po odgovoru (milijonar) */
+.hod-exp{max-width:440px;margin:16px auto 0;background:rgba(255,255,255,.04);border:1px solid var(--line);
+  border-radius:12px;padding:13px 16px;text-align:left;}
+.hod-exp-correct{font-family:'Oswald';font-size:14px;color:var(--green);margin-bottom:5px;}
+.hod-exp-correct b{color:#fff;}
+.hod-exp-text{font-family:'Oswald';font-weight:300;font-size:13px;color:var(--ink);line-height:1.5;}
+/* težavnost (daily climb) */
+.hod-climb-diff{max-width:440px;margin:0 auto 12px;font-family:'Bebas Neue';letter-spacing:1px;font-size:15px;
+  padding:5px 12px;border-radius:8px;display:inline-block;transition:.2s;}
+.hod-climb-diff.easy{color:#2ec4b6;background:rgba(46,196,182,.12);}
+.hod-climb-diff.mid{color:#ffb627;background:rgba(255,182,39,.12);}
+.hod-climb-diff.hard{color:#ff7a8a;background:rgba(230,57,70,.15);}
 /* milijonar lestvica */
 .hod-mil-layout{display:flex;gap:20px;justify-content:center;align-items:flex-start;max-width:760px;margin:0 auto;}
 .hod-mil-main{flex:1 1 auto;min-width:0;}
@@ -1755,23 +1767,46 @@ function useSwap(){
   st.hidden=[];
   renderMillionaire();
 }
+function correctText(cur){
+  const o=cur.opts.find(x=>x.correct);
+  return o?o.text:'';
+}
+function explainHtml(cur){
+  const qd=cur.qd;
+  const ans=correctText(cur);
+  const exp = qd.exp ? `<div class="hod-exp-text">${qd.exp}</div>` : '';
+  return `<div class="hod-exp">
+    <div class="hod-exp-correct">Pravilen odgovor: <b>${ans}</b></div>
+    ${exp}
+  </div>`;
+}
 function answerMillionaire(i, btn){
   const st=quizState; const cur=st.qs[st.idx];
   const correct=cur.opts[i].correct;
-  st.qs.forEach(()=>{});
   // pokaži pravilnega/napačnega
   screen.querySelectorAll('.hod-quiz-opt').forEach(b=>{
     const bi=+b.dataset.i; b.disabled=true;
     if(cur.opts[bi].correct) b.classList.add('right');
     else if(bi===i) b.classList.add('wrong');
   });
-  setTimeout(()=>{
-    if(!correct){ endMillionaire(false, true); return; }  // napaka
-    st.idx++;
-    if(st.idx>=QUIZ_PRIZES){ endMillionaire(true); return; }
-    st.hidden=[];
-    renderMillionaire();
-  }, 1100);
+  // skrij pomoči in gumb za predajo, pokaži razlago + Naprej
+  const helps=screen.querySelector('.hod-quiz-helps'); if(helps) helps.style.display='none';
+  const quit=document.getElementById('hod-quiz-quit'); if(quit) quit.style.display='none';
+  const opts=screen.querySelector('.hod-quiz-opts');
+  if(opts){
+    const wrap=document.createElement('div');
+    const last = correct && st.idx>=QUIZ_PRIZES-1;
+    wrap.innerHTML = explainHtml(cur) +
+      `<button class="hod-btn" id="hod-mil-next" style="margin-top:14px">${correct?(last?'Zaključi':'Naprej →'):'Poglej rezultat'}</button>`;
+    opts.parentNode.insertBefore(wrap, opts.nextSibling);
+    document.getElementById('hod-mil-next').onclick=()=>{
+      if(!correct){ endMillionaire(false, true); return; }
+      st.idx++;
+      if(st.idx>=QUIZ_PRIZES){ endMillionaire(true); return; }
+      st.hidden=[];
+      renderMillionaire();
+    };
+  }
 }
 function endMillionaire(won, wrong){
   const st=quizState;
@@ -1833,14 +1868,27 @@ function nextClimb(){
     else updateClimbTimer();
   },100);
 }
+function diffLabel(d){
+  // 1-5 lahko, 6-10 srednje, 11-15 težko
+  if(d<=5) return {txt:'Lahko', cls:'easy', stars:1};
+  if(d<=10) return {txt:'Srednje', cls:'mid', stars:2};
+  return {txt:'Težko', cls:'hard', stars:3};
+}
+function climbPoints(d, speed){
+  // osnova + hitrostni bonus, vse pomnoženo z množiteljem težavnosti
+  const mult = d<=5 ? 1 : d<=10 ? 1.5 : 2.2;
+  return Math.round((40 + speed*8) * mult);
+}
 function renderClimb(){
   const st=quizState; const cur=st.cur; const qd=cur.qd;
+  const dl=diffLabel(qd.d);
   const optBtns=cur.opts.map((o,i)=>`<button class="hod-quiz-opt" data-i="${i}"><span class="hod-quiz-letter">${String.fromCharCode(65+i)}</span><span>${o.text}</span></button>`).join('');
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">Daily Climb</div>
       <div class="hod-climb-bar"><span>Točke: <b>${st.score}</b></span><span>${'❤'.repeat(st.lives)}</span><span>#${st.answered+1}</span></div>
       <div class="hod-climb-timer-wrap"><div class="hod-climb-timer" id="hod-climb-timer"></div></div>
+      <div class="hod-climb-diff ${dl.cls}">${'★'.repeat(dl.stars)} ${dl.txt} · do ${climbPoints(qd.d,10)} točk</div>
       <div class="hod-quiz-q">${qd.q}</div>
       <div class="hod-quiz-opts">${optBtns}</div>
     </div>`;
@@ -1856,20 +1904,24 @@ function updateClimbTimer(){
 function answerClimb(i, btn){
   const st=quizState; if(!st.timer) return;
   clearInterval(st.timer); st.timer=null;
-  const cur=st.cur; const correct=cur.opts[i].correct;
+  const cur=st.cur; const qd=cur.qd; const correct=cur.opts[i].correct;
   const speed=Math.max(0, st.timeLeft);
   screen.querySelectorAll('.hod-quiz-opt').forEach(b=>{
     const bi=+b.dataset.i; b.disabled=true;
     if(cur.opts[bi].correct) b.classList.add('right');
     else if(bi===i) b.classList.add('wrong');
   });
-  if(correct){ st.score += 50 + Math.round(speed*10); }
-  else { st.lives--; }
+  if(correct){
+    const gain=climbPoints(qd.d, speed);
+    st.score += gain;
+    const bar=screen.querySelector('.hod-climb-diff');
+    if(bar) bar.innerHTML=`+${gain} točk! 🔥`;
+  } else { st.lives--; }
   st.answered++;
   setTimeout(()=>{
     if(st.lives<=0){ endClimb(); return; }
     nextClimb();
-  }, 900);
+  }, 950);
 }
 function climbTimeout(){
   const st=quizState; st.lives--; st.answered++;
