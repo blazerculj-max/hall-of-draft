@@ -157,6 +157,21 @@
 .hod-mode-name{font-family:'Bebas Neue';font-size:17px;letter-spacing:.5px;}
 .hod-mode-chip.on .hod-mode-name{color:var(--gold);}
 .hod-mode-sub{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+/* landing / izbirne kartice */
+.hod-landing-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:8px;}
+.hod-landing-card{background:var(--panel);border:2px solid var(--line);border-radius:18px;
+  padding:26px 22px;cursor:pointer;transition:.18s;display:flex;flex-direction:column;align-items:center;gap:6px;
+  min-width:170px;flex:0 1 200px;color:inherit;font-family:inherit;}
+.hod-landing-card:hover{border-color:var(--gold);transform:translateY(-4px);box-shadow:0 10px 26px rgba(0,0,0,.4);}
+.hod-landing-emoji{font-size:46px;line-height:1;}
+.hod-landing-name{font-family:'Bebas Neue';font-size:30px;letter-spacing:1px;color:var(--gold);}
+.hod-landing-sub{font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+.hod-landing-quiz:hover{border-color:#a882ff;}
+.hod-landing-quiz .hod-landing-name{color:#c4a8ff;}
+.hod-landing-mil:hover{border-color:#a882ff;}
+.hod-landing-mil .hod-landing-name{color:#c4a8ff;}
+.hod-landing-climb:hover{border-color:#2ec4b6;}
+.hod-landing-climb .hod-landing-name{color:#5fe0d2;}
 .hod-pright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;}
 .hod-price{font-family:'Bebas Neue';font-size:15px;letter-spacing:.5px;color:var(--gold);
   background:rgba(255,182,39,.12);border:1px solid rgba(255,182,39,.4);border-radius:8px;padding:1px 8px;}
@@ -269,6 +284,59 @@
   color:var(--muted);font-family:'Oswald';font-size:13px;cursor:pointer;transition:.12s;}
 .hod-ltab:hover{border-color:var(--gold);}
 .hod-ltab.on{background:var(--gold);color:#0a0a0f;border-color:var(--gold);font-weight:600;}
+
+/* KVIZI */
+.hod-quiz-progress{font-family:'Bebas Neue';font-size:14px;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
+.hod-quiz-q{font-family:'Oswald';font-weight:600;font-size:18px;color:#fff;max-width:480px;margin:0 auto 16px;line-height:1.4;}
+.hod-quiz-opts{display:flex;flex-direction:column;gap:9px;max-width:440px;margin:0 auto;}
+.hod-quiz-opt{display:flex;align-items:center;gap:12px;background:#1a1a28;border:1px solid var(--line);
+  border-radius:12px;padding:13px 15px;cursor:pointer;transition:.13s;text-align:left;font-family:'Oswald';
+  font-size:15px;color:var(--ink);width:100%;}
+.hod-quiz-opt:hover:not(:disabled){border-color:var(--gold);background:#22222f;}
+.hod-quiz-letter{flex:none;width:26px;height:26px;border-radius:7px;background:var(--panel);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-family:'Anton';font-size:13px;color:var(--gold);}
+.hod-quiz-opt.right{border-color:var(--green);background:rgba(46,196,182,.18);color:#fff;}
+.hod-quiz-opt.right .hod-quiz-letter{background:var(--green);color:#0a0a0f;}
+.hod-quiz-opt.wrong{border-color:var(--red);background:rgba(230,57,70,.18);color:#fff;}
+.hod-quiz-opt.wrong .hod-quiz-letter{background:var(--red);color:#fff;}
+.hod-quiz-opt.gone{opacity:.25;pointer-events:none;}
+.hod-quiz-helps{display:flex;gap:8px;justify-content:center;margin-top:16px;}
+.hod-help{display:flex;flex-direction:column;align-items:center;background:rgba(168,130,255,.12);
+  border:1px solid #a882ff;border-radius:12px;padding:8px 14px;cursor:pointer;transition:.13s;
+  font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:#c4adff;}
+.hod-help span{font-family:'Oswald';font-size:9px;font-weight:300;letter-spacing:0;color:var(--muted);}
+.hod-help:hover:not(:disabled){background:rgba(168,130,255,.22);}
+.hod-help.used{opacity:.3;text-decoration:line-through;pointer-events:none;}
+/* milijonar lestvica */
+.hod-mil-layout{display:flex;gap:20px;justify-content:center;align-items:flex-start;max-width:760px;margin:0 auto;}
+.hod-mil-main{flex:1 1 auto;min-width:0;}
+.hod-ladder{flex:none;width:170px;display:flex;flex-direction:column;gap:3px;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px;padding:8px;}
+.hod-rung{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;
+  font-family:'Bebas Neue';letter-spacing:.5px;font-size:14px;color:var(--muted);transition:.18s;}
+.hod-rung-n{font-size:11px;opacity:.6;width:20px;text-align:right;}
+.hod-rung-v{flex:1;text-align:right;}
+.hod-rung.safe{color:#c9c9d4;}
+.hod-rung.safe .hod-rung-v{border-bottom:1px dotted rgba(255,255,255,.25);}
+.hod-rung.past{color:var(--green);}
+.hod-rung.cur{background:linear-gradient(90deg,rgba(255,182,39,.15),rgba(255,182,39,.35));
+  color:#0a0a0f;font-size:16px;box-shadow:0 0 16px rgba(255,182,39,.5);transform:scale(1.04);}
+.hod-rung.cur .hod-rung-n{color:#0a0a0f;opacity:.8;}
+.hod-rung.cur .hod-rung-v{color:#0a0a0f;font-family:'Anton';}
+@media(max-width:620px){
+  .hod-mil-layout{flex-direction:column-reverse;align-items:stretch;gap:12px;}
+  .hod-ladder{width:auto;flex-direction:row;flex-wrap:wrap;gap:4px;justify-content:center;}
+  .hod-rung{flex:0 0 auto;font-size:11px;padding:3px 7px;}
+  .hod-rung-n{display:none;}
+  .hod-rung.cur{font-size:12px;}
+  .hod-rung.safe .hod-rung-v{border-bottom:none;}
+}
+.hod-climb-bar{display:flex;justify-content:space-between;align-items:center;max-width:440px;margin:0 auto 10px;
+  font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:var(--ink);}
+.hod-climb-bar b{color:var(--gold);font-family:'Anton';}
+.hod-climb-timer-wrap{max-width:440px;margin:0 auto 16px;height:8px;background:var(--panel);border-radius:4px;overflow:hidden;}
+.hod-climb-timer{height:100%;width:100%;background:#2ec4b6;transition:width .1s linear,background .3s;}
+.hod-lb-title{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:var(--gold);margin:16px 0 8px;}
 .hod-bench{margin-top:14px;display:flex;flex-direction:column;gap:6px;max-width:440px;margin-left:auto;margin-right:auto;}
 .hod-bench-row{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 10px;text-align:left;}
 .hod-bench-label{font-family:'Bebas Neue';font-size:13px;letter-spacing:1px;color:var(--muted);display:block;margin-bottom:4px;}
@@ -676,6 +744,291 @@ function todayKey(){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 // dnevni cilji (seeded izbira) — mešani: sestava + simulacija
+// NBA kviz vprašanja. Vsako: {q, a:[4 odgovori], c:index pravilnega, d:težavnost 1-15}
+// Pisana konservativno - samo trdna, znana dejstva.
+// NBA kviz vprašanja. Vsako: {q, a:[4 odgovori], c:index pravilnega, d:težavnost 1-15}
+// Pisana konservativno - samo trdna, znana dejstva.
+const QUIZ_QUESTIONS=[
+{q:"Koliko igralcev ima ekipa na igrišču naenkrat?",a:["4","5","6","7"],c:1,d:1},
+{q:"Koliko točk je vreden met izza črte za tri točke?",a:["2","3","4","1"],c:1,d:1},
+{q:"Katera liga je največja profesionalna košarkarska liga v ZDA?",a:["NFL","NBA","MLB","NHL"],c:1,d:1},
+{q:"Kateri igralec ima vzdevek 'King James'?",a:["Kevin Durant","LeBron James","James Harden","Kyrie Irving"],c:1,d:1},
+{q:"Koliko točk je vreden uspešen prosti met?",a:["1","2","3","0"],c:0,d:1},
+{q:"Za katero ekipo je Michael Jordan osvojil 6 naslovov?",a:["LA Lakers","Chicago Bulls","Boston Celtics","Miami Heat"],c:1,d:1},
+{q:"Kako se imenuje prvenstvena serija NBA?",a:["NBA Finals","World Series","Super Bowl","Stanley Cup"],c:0,d:1},
+{q:"Kateri igralec je znan kot 'Black Mamba'?",a:["Kobe Bryant","Shaquille O'Neal","Tim Duncan","Allen Iverson"],c:0,d:2},
+{q:"Koliko časa traja ena četrtina v NBA?",a:["10 minut","12 minut","15 minut","20 minut"],c:1,d:2},
+{q:"Katera ekipa igra domače tekme v mestu Boston?",a:["Celtics","Lakers","Knicks","Heat"],c:0,d:2},
+{q:"Stephen Curry je znan predvsem po čem?",a:["Zabijanju","Metu za tri","Blokadah","Skokih"],c:1,d:2},
+{q:"Koliko osebnih napak diskvalificira igralca v NBA?",a:["5","6","4","7"],c:1,d:2},
+{q:"Kateri igralec je vodil 'Showtime' Lakerse v 80-ih kot organizator?",a:["Magic Johnson","Larry Bird","Isiah Thomas","Kareem Abdul-Jabbar"],c:0,d:3},
+{q:"Shaquille O'Neal je igral predvsem na katerem položaju?",a:["Branilec","Krilo","Center","Organizator"],c:2,d:3},
+{q:"Katero mesto je domače za Golden State Warriors?",a:["Los Angeles","San Francisco / Bay Area","Seattle","Portland"],c:1,d:3},
+{q:"Kateri igralec je v NBA poznan kot 'The Greek Freak'?",a:["Luka Dončić","Giannis Antetokounmpo","Nikola Jokić","Joel Embiid"],c:1,d:3},
+{q:"Koliko naslovov je Michael Jordan skupno osvojil v NBA?",a:["3","5","6","8"],c:2,d:3},
+{q:"Kako se imenuje nagrada za najkoristnejšega igralca sezone?",a:["MVP","DPOY","ROY","FMVP"],c:0,d:3},
+{q:"Kateri center je za Lakerse in Bucks osvojil naslove in je najboljši strelec vseh časov do leta 2023?",a:["Wilt Chamberlain","Kareem Abdul-Jabbar","Bill Russell","Hakeem Olajuwon"],c:1,d:4},
+{q:"Kdo je leta 2023 prehitel Kareema kot najboljši strelec vseh časov?",a:["Kevin Durant","LeBron James","Stephen Curry","Carmelo Anthony"],c:1,d:4},
+{q:"Katera dva igralca sta tvorila 'Splash Brothers' pri Warriors?",a:["Curry in Durant","Curry in Thompson","Thompson in Green","Curry in Green"],c:1,d:4},
+{q:"Bill Russell je osvojil koliko naslovov z Boston Celtics?",a:["8","11","6","9"],c:1,d:5},
+{q:"Kateri igralec je imel vzdevek 'The Mailman'?",a:["John Stockton","Karl Malone","Charles Barkley","David Robinson"],c:1,d:5},
+{q:"Tim Duncan je celotno kariero igral za katero ekipo?",a:["Houston Rockets","San Antonio Spurs","Dallas Mavericks","Phoenix Suns"],c:1,d:5},
+{q:"Kateri organizator je rekorder NBA po skupnem številu asistenc?",a:["Magic Johnson","John Stockton","Jason Kidd","Chris Paul"],c:1,d:5},
+{q:"Allen Iverson je bil draftiran kot prvi izbor s strani katere ekipe?",a:["Philadelphia 76ers","Denver Nuggets","Detroit Pistons","Memphis Grizzlies"],c:0,d:6},
+{q:"Kateri igralec je znan po 'Dream Shake' potezi?",a:["Patrick Ewing","Hakeem Olajuwon","David Robinson","Shaquille O'Neal"],c:1,d:6},
+{q:"Dirk Nowitzki je celotno kariero igral za katero ekipo?",a:["Dallas Mavericks","Houston Rockets","Phoenix Suns","San Antonio Spurs"],c:0,d:6},
+{q:"Katera ekipa je leta 2011 premagala Miami Heat v finalu?",a:["Dallas Mavericks","Oklahoma City Thunder","Boston Celtics","Chicago Bulls"],c:0,d:6},
+{q:"Kateri igralec je dobil vzdevek 'The Answer'?",a:["Allen Iverson","Tracy McGrady","Vince Carter","Steve Francis"],c:0,d:6},
+{q:"Reggie Miller je celotno kariero igral za katero ekipo?",a:["New York Knicks","Indiana Pacers","Chicago Bulls","Detroit Pistons"],c:1,d:6},
+{q:"Koliko točk je Kobe Bryant dosegel v svoji znameniti tekmi leta 2006 proti Torontu?",a:["71","81","73","69"],c:1,d:7},
+{q:"Kateri igralec ima rekord NBA za največ točk na eni tekmi (100)?",a:["Wilt Chamberlain","Michael Jordan","Kobe Bryant","Elgin Baylor"],c:0,d:7},
+{q:"Katera ekipa je v sezoni 2015-16 postavila rekord 73 zmag?",a:["Chicago Bulls","Golden State Warriors","San Antonio Spurs","Cleveland Cavaliers"],c:1,d:7},
+{q:"Kateri ekipi je pripadal rekord 72 zmag pred Warriorsi?",a:["LA Lakers","Chicago Bulls","Boston Celtics","Philadelphia 76ers"],c:1,d:7},
+{q:"Kdo je bil MVP finala leta 2016, ko je Cleveland zaostajal 1-3?",a:["Kyrie Irving","LeBron James","Kevin Love","Draymond Green"],c:1,d:7},
+{q:"Kateri igralec je imel vzdevek 'The Dream'?",a:["Hakeem Olajuwon","Patrick Ewing","Alonzo Mourning","Dikembe Mutombo"],c:0,d:8},
+{q:"Larry Bird je celotno kariero igral za katero ekipo?",a:["Boston Celtics","Indiana Pacers","LA Lakers","Detroit Pistons"],c:0,d:8},
+{q:"Kateri trener je vodil Chicago Bulls do vseh 6 naslovov?",a:["Pat Riley","Phil Jackson","Gregg Popovich","Larry Brown"],c:1,d:8},
+{q:"Detroitove 'Bad Boys' ekipe so vodili kateri zvezdniki konec 80-ih?",a:["Isiah Thomas in Joe Dumars","Magic in Kareem","Bird in McHale","Jordan in Pippen"],c:0,d:8},
+{q:"Kateri igralec je rekorder NBA po skupnem številu ukradenih žog?",a:["Michael Jordan","John Stockton","Gary Payton","Jason Kidd"],c:1,d:9},
+{q:"Kateri center je rekorder NBA po skupnem številu blokad?",a:["Hakeem Olajuwon","Dikembe Mutombo","Kareem Abdul-Jabbar","Mark Eaton"],c:0,d:9},
+{q:"Vince Carter je zmagal tekmovanje v zabijanju katerega leta s slavnimi zabijanji?",a:["2000","2003","1998","2005"],c:0,d:9},
+{q:"Kateri igralec je dosegel 'The Shot' proti Cavaliersom leta 1989?",a:["Magic Johnson","Michael Jordan","Larry Bird","Isiah Thomas"],c:1,d:9},
+{q:"Koliko zaporednih naslovov so osvojili Boston Celtics med 1959 in 1966?",a:["6","8","10","5"],c:1,d:10},
+{q:"Wilt Chamberlain je v sezoni 1961-62 dosegal koliko točk na tekmo v povprečju?",a:["44.8","50.4","48.5","46.2"],c:1,d:10},
+{q:"Kateri igralec je edini dosegel quadruple-double, ki je uradno zabeležen z blokadami (Nate Thurmond je prvi)?",a:["Nate Thurmond","Hakeem Olajuwon","David Robinson","Alvin Robertson"],c:0,d:11},
+{q:"Katero leto je Magic Johnson kot novinec igral na položaju centra v odločilni finalni tekmi?",a:["1980","1982","1979","1985"],c:0,d:11},
+{q:"Kdo je bil MVP rednega dela sezone leta 2000, ko je vodil Lakerse?",a:["Kobe Bryant","Shaquille O'Neal","Tim Duncan","Allen Iverson"],c:1,d:11},
+{q:"Kateri igralec je dosegel trojni-dvojni povprečje čez celotno sezono 2016-17?",a:["James Harden","Russell Westbrook","LeBron James","Chris Paul"],c:1,d:11},
+{q:"Oscar Robertson je prvi dosegel trojni-dvojni povprečje v sezoni katerega leta?",a:["1961-62","1959-60","1963-64","1965-66"],c:0,d:12},
+{q:"Kateri igralec je v finalu 2001 sam premagal nepremagljivo izgledajočo serijo Lakersov za eno tekmo?",a:["Allen Iverson","Tracy McGrady","Vince Carter","Paul Pierce"],c:0,d:12},
+{q:"Ray Allen je zadel ključno trojko v finalu 2013 za katero ekipo?",a:["Boston Celtics","Miami Heat","Seattle Supersonics","Milwaukee Bucks"],c:1,d:12},
+{q:"Kateri igralec drži rekord za največ zadetih trojk v eni redni sezoni (do 2016 dalje večkrat popravljen)?",a:["Klay Thompson","Stephen Curry","James Harden","Ray Allen"],c:1,d:12},
+{q:"Kdo je zadel zmagoviti koš v 6. tekmi finala 1998 za Chicago proti Utahu?",a:["Scottie Pippen","Michael Jordan","Steve Kerr","Toni Kukoč"],c:1,d:13},
+{q:"Proti kateri ekipi je Kobe Bryant dosegel 81 točk?",a:["Toronto Raptors","Memphis Grizzlies","Utah Jazz","Dallas Mavericks"],c:0,d:13},
+{q:"Kateri igralec je leta 1995 prišel naravnost iz srednje šole in postal zvezdnik (Minnesota)?",a:["Kevin Garnett","Kobe Bryant","Tracy McGrady","Jermaine O'Neal"],c:0,d:14},
+{q:"Katero leto so San Antonio Spurs osvojili svoj prvi naslov?",a:["1999","2003","2005","1997"],c:0,d:13},
+{q:"Kateri organizator in center sta tvorila slavni pick-and-roll duo pri Utah Jazz?",a:["Stockton in Malone","Kidd in Carter","Nash in Stoudemire","Paul in Griffin"],c:0,d:13},
+{q:"Manu Ginobili, kasneje zvezdnik Spursov, je bil draftiran zelo pozno katerega leta?",a:["1999","2002","2001","2003"],c:0,d:15},
+{q:"Kateri igralec je v finalu 2014 vodil Spurse do prepričljive zmage nad Miamijem kot MVP finala?",a:["Tony Parker","Kawhi Leonard","Tim Duncan","Manu Ginobili"],c:1,d:14},
+{q:"Kateri igralec je nosil vzdevek 'The Glove' zaradi izjemne obrambe?",a:["Gary Payton","Scottie Pippen","Dennis Rodman","Bruce Bowen"],c:0,d:6},
+{q:"Kateri center je imel vzdevek 'The Big Fundamental'?",a:["David Robinson","Tim Duncan","Patrick Ewing","Alonzo Mourning"],c:1,d:5},
+{q:"Komu pripada vzdevek 'Round Mound of Rebound'?",a:["Charles Barkley","Shaquille O'Neal","Karl Malone","Dennis Rodman"],c:0,d:6},
+{q:"Dennis Rodman je bil znan pod vzdevkom...",a:["The Worm","The Glove","The Truth","The Answer"],c:0,d:5},
+{q:"Vinnie Johnson iz Detroitovih 'Bad Boys' je imel vzdevek 'The Microwave', ker...",a:["se je hitro 'segrel' s klopi","je bil počasen","je veliko jedel","je bil najvišji"],c:0,d:9},
+{q:"Kateri igralec je imel vzdevek 'The Admiral' (služil je v mornarici)?",a:["David Robinson","Patrick Ewing","Hakeem Olajuwon","Shaquille O'Neal"],c:0,d:7},
+{q:"Paul Pierce je nosil vzdevek, ki ga je dobil od Shaqa — kateri?",a:["The Truth","The Answer","The Doctor","The Big Shot"],c:0,d:8},
+{q:"Kateri igralec je dobil vzdevek 'Magic' že pri 15 letih po tekmi s 36 točkami, 16 skoki in 16 asistencami?",a:["Magic Johnson","Isiah Thomas","Oscar Robertson","Jason Kidd"],c:0,d:7},
+{q:"Julius Erving je bil bolj znan pod katerim vzdevkom?",a:["Dr. J","The Iceman","The Pearl","Clyde"],c:0,d:6},
+{q:"Wilt Chamberlain je imel vzdevek...",a:["Wilt the Stilt","The Big O","The Logo","The Hawk"],c:0,d:7},
+{q:"Earvin Johnson je nosil priimek-vzdevek na dresu kot...",a:["Magic","Air","Dr. J","Zeke"],c:0,d:4},
+{q:"Koliko trojk je Kobe zadel v svoji tekmi z 81 točkami (7 od 13)?",a:["5","7","9","4"],c:1,d:11},
+{q:"Koliko točk je Kobe dosegel v drugem polčasu tekme z 81 točkami?",a:["41","55","48","62"],c:1,d:12},
+{q:"S kakšnim izidom so Lakersi zmagali v Kobejevi tekmi z 81 točkami?",a:["122-104","118-99","110-90","125-112"],c:0,d:13},
+{q:"Koliko točk je Wilt Chamberlain dosegel v svoji rekordni tekmi leta 1962?",a:["100","81","78","92"],c:0,d:6},
+{q:"David Robinson je v zadnji tekmi sezone 1993-94 dosegel koliko točk, da je osvojil naslov najboljšega strelca?",a:["71","60","55","68"],c:0,d:13},
+{q:"Kateri trener ima največ zmag v zgodovini NBA (redni del)?",a:["Gregg Popovich","Phil Jackson","Don Nelson","Lenny Wilkens"],c:0,d:12},
+{q:"Magic Johnson je kot novinec leta 1980 v odločilni finalni tekmi igral na nenavadnem položaju — katerem?",a:["Center","Krilni center","Branilec","Ostal na klopi"],c:0,d:11},
+{q:"Reggie Miller je v 8 sekundah proti Knicksom leta 1995 dosegel koliko točk?",a:["8","6","10","5"],c:0,d:13},
+{q:"Koliko zaporednih naslovov so Boston Celtics osvojili med 1959 in 1966?",a:["8","6","5","10"],c:0,d:10},
+{q:"Steve Nash je osvojil koliko zaporednih MVP nagrad (2005, 2006)?",a:["2","1","3","0"],c:0,d:9},
+{q:"Hakeem Olajuwon je rekorder NBA po skupnem številu česa?",a:["blokad","trojk","asistenc","prostih metov"],c:0,d:10},
+{q:"Wilt Chamberlain je v sezoni 1961-62 v povprečju igral skoraj celo tekmo — koliko minut?",a:["48.5","42.0","45.3","40.1"],c:0,d:11},
+{q:"Kaj Wilt Chamberlain v 1045 tekmah rednega dela nikoli ni doživel?",a:["da bi bil izključen zaradi napak","da bi zadel trojko","da bi izgubil žogo","da bi sedel na klopi"],c:0,d:12},
+{q:"Draymond Green je 2017 dosegel nenavaden triple-double — s čim posebnim?",a:["s samo 4 točkami","brez skoka","v eni četrtini","z 0 asistencami"],c:0,d:13},
+{q:"Vince Carter je kot edini igralec nastopal v koliko različnih desetletjih?",a:["štirih","treh","petih","dveh"],c:0,d:11},
+{q:"Najkrajša kariera v zgodovini NBA (JamesOn Curry) je trajala koliko časa na igrišču?",a:["3.9 sekunde","2 minuti","11 sekund","pol tekme"],c:0,d:14},
+{q:"Pete Maravich je slovel po vzdevku...",a:["Pistol Pete","The Iceman","Dr. J","The Hawk"],c:0,d:9},
+{q:"V katero ligo so v 90-ih New Jersey Nets skoraj preimenovali ekipo?",a:["Swamp Dragons","Sea Dragons","Jersey Devils","Nets ostali isti"],c:0,d:14},
+{q:"Vsi igralci z imenom 'T.J.' v zgodovini NBA so igrali za katero ekipo?",a:["Indiana Pacers","New York Knicks","Boston Celtics","LA Lakers"],c:0,d:13},
+{q:"Wilt Chamberlain je leta 1962 postavil rekord z 100 točkami proti kateri ekipi?",a:["New York Knicks","Boston Celtics","LA Lakers","Detroit Pistons"],c:0,d:9},
+{q:"LeBron James je leta 2025-26 postavil rekord za najdaljšo kariero — koliko sezon?",a:["23","20","25","18"],c:0,d:12},
+{q:"Zakaj je Tim Duncan kot najstnik zamenjal plavanje za košarko?",a:["Orkan Hugo je uničil bazen, oceana pa se je bal zaradi morskih psov","Poškodba ramena","Družina se je preselila","Trener ga je odkril v šoli"],c:0,d:11},
+{q:"Kdo ima daleč največ tekem s 60+ točkami (kar 32)?",a:["Wilt Chamberlain","Michael Jordan","Kobe Bryant","Kareem Abdul-Jabbar"],c:0,d:9},
+{q:"Kateri igralec je drugi po številu tekem s 60+ točkami (6)?",a:["Kobe Bryant","Michael Jordan","James Harden","Elgin Baylor"],c:0,d:11},
+{q:"Pat Riley je leta 1988 zaščitil (trademark) kateri izraz?",a:["Three-Peat","Showtime","Clutch","Dynasty"],c:0,d:12},
+{q:"Zakaj so domače ekipe v zgodnjih dneh NBA nosile bele drese?",a:["gostje niso imeli pralnic in so nosili temno, da skrijejo umazanijo","bela je bila cenejša","pravilo lige","televizijski razlog"],c:0,d:13},
+{q:"David Robinson ima vzdevek 'The Admiral', ker je bil pred NBA v kateri veji vojske?",a:["mornarica","letalstvo","kopenska vojska","marinci"],c:0,d:8},
+{q:"Latrell Sprewell je zavrnil 21 milijonov $ pogodbe z znamenito izjavo, da...",a:["s tem ne more nahraniti družine","želi v drugo ekipo","se upokoji","hoče več"],c:0,d:13},
+{q:"Kobejevi starši so morali sopodpisati njegovo prvo NBA pogodbo, ker je bil star šele...",a:["17 let","16 let","18 let","15 let"],c:0,d:11},
+{q:"Leta 1948 je ekipa Harlem Globetrotters premagala katero takratno prvaško moštvo NBA (oz. BAA/NBL)?",a:["Minneapolis Lakers","Boston Celtics","New York Knicks","Philadelphia Warriors"],c:0,d:14},
+{q:"Po čem slovi statistika Alexa Englisha v 80-ih?",a:["največ točk v celotnem desetletju","največ skokov","največ asistenc","največ blokad"],c:0,d:13},
+{q:"Pete Maravich je umrl pri 40 letih — kako je to povezano z njegovo napovedjo?",a:["napovedal je 10-letno kariero in smrt pri 40 zaradi srca","ni nobene povezave","napovedal je naslov","napovedal je menjavo"],c:0,d:12},
+{q:"V kateri dvorani igrajo New York Knicks?",a:["Madison Square Garden","TD Garden","United Center","Barclays Center"],c:0,d:4},
+{q:"V kateri dvorani igrajo Boston Celtics?",a:["TD Garden","Madison Square Garden","Wells Fargo Center","Rocket Arena"],c:0,d:5},
+{q:"V kateri dvorani igrajo Chicago Bulls?",a:["United Center","Chase Center","Toyota Center","Footprint Center"],c:0,d:5},
+{q:"V kateri dvorani igrajo Golden State Warriors (od 2019)?",a:["Chase Center","Oracle Arena","Crypto.com Arena","Delta Center"],c:0,d:6},
+{q:"V kateri dvorani igrata oba losangeleška kluba (Lakers in Clippers do nedavna)?",a:["Crypto.com Arena","Chase Center","Staples Center","Kaseya Center"],c:0,d:6},
+{q:"Katera NBA dvorana je edina, ki ni poimenovana po korporativnem sponzorju?",a:["Madison Square Garden","United Center","TD Garden","Chase Center"],c:0,d:9},
+{q:"Katera je najstarejša še delujoča NBA dvorana (od sezone 1967-68)?",a:["Madison Square Garden","TD Garden","United Center","Delta Center"],c:0,d:10},
+{q:"Katera NBA dvorana ima največjo kapaciteto (okoli 20.900)?",a:["United Center","Madison Square Garden","Chase Center","Toyota Center"],c:0,d:11},
+{q:"V kateri dvorani igrajo Miami Heat (prej American Airlines Arena)?",a:["Kaseya Center","Chase Center","Footprint Center","Scotiabank Arena"],c:0,d:8},
+{q:"Domača dvorana Houston Rockets se imenuje...",a:["Toyota Center","American Airlines Center","Chase Center","Footprint Center"],c:0,d:7},
+{q:"V kateri dvorani igrajo Toronto Raptors?",a:["Scotiabank Arena","Air Canada Centre","Rogers Arena","Bell Centre"],c:0,d:8},
+{q:"Kako se je prej imenovala Crypto.com Arena (dom Lakersov)?",a:["Staples Center","Great Western Forum","Oracle Arena","The Spectrum"],c:0,d:7},
+{q:"Kako se je imenovala legendarna dvorana Lakersov v času 'Showtime' (80-ta)?",a:["The Forum","Staples Center","Great Western Stadium","The Garden"],c:0,d:11},
+{q:"V kateri zgodovinski dvorani so Boston Celtics osvojili večino svojih naslovov (do 1995)?",a:["Boston Garden","TD Garden","Fleet Center","The Spectrum"],c:0,d:10},
+{q:"Domača dvorana Dallas Mavericks se imenuje...",a:["American Airlines Center","Toyota Center","Chase Center","Ball Arena"],c:0,d:8},
+{q:"V kateri dvorani igrajo Utah Jazz?",a:["Delta Center","Footprint Center","Vivint Arena","Toyota Center"],c:0,d:9},
+{q:"Michael Jordan je bil na draftu 1984 izbran kot kateri po vrsti?",a:["tretji","prvi","drugi","peti"],c:0,d:7},
+{q:"Kdo je bil izbran prvi na draftu 1984, pred Jordanom?",a:["Hakeem Olajuwon","Sam Bowie","Charles Barkley","John Stockton"],c:0,d:9},
+{q:"Kdo je prvi v zgodovini NBA dosegel povprečje trojnega-dvojčka čez celo sezono (1961-62)?",a:["Oscar Robertson","Magic Johnson","Jason Kidd","Larry Bird"],c:0,d:9},
+{q:"Russell Westbrook je dosegel povprečje trojnega-dvojčka v sezoni kolikokrat?",a:["štirikrat","enkrat","dvakrat","trikrat"],c:0,d:10},
+{q:"Kateri center je v sezonah 2024-25 in 2025-26 dosegel povprečje trojnega-dvojčka?",a:["Nikola Jokić","Joel Embiid","Giannis Antetokounmpo","Domantas Sabonis"],c:0,d:11},
+{q:"Kdo drži rekord za največ asistenc v eni tekmi (30)?",a:["Scott Skiles","John Stockton","Magic Johnson","Rajon Rondo"],c:0,d:13},
+{q:"Kobe Bryant je bil na draftu 1996 izbran kot kateri po vrsti?",a:["13.","5.","8.","1."],c:0,d:8},
+{q:"Kdo drži rekord za največ skokov v eni tekmi (55)?",a:["Wilt Chamberlain","Bill Russell","Dennis Rodman","Moses Malone"],c:0,d:11},
+{q:"Kateri trofeji je ime po nekdanjem komisarju — podeljena prvakom NBA?",a:["Larry O'Brien","Naismith","Walter Brown","Maurice Podoloff"],c:0,d:8},
+{q:"Koliko zaporednih zmag je v nizu 1971-72 dosegel rekordni LA Lakers?",a:["33","27","21","40"],c:0,d:10},
+{q:"Kdo je bil prvi soglasno izglasovani MVP v zgodovini NBA (2016)?",a:["Stephen Curry","LeBron James","Kevin Durant","Derrick Rose"],c:0,d:11},
+{q:"Kdo je bil prvi dobitnik nagrade za MVP finala (1969), čeprav je njegova ekipa izgubila?",a:["Jerry West","Bill Russell","Wilt Chamberlain","Oscar Robertson"],c:0,d:13},
+{q:"Kdo je najmlajši MVP finala (star 20 let, 1980)?",a:["Magic Johnson","Kobe Bryant","Tony Parker","Kyrie Irving"],c:0,d:11},
+{q:"Kdo je bil prvi Evropejec z nagrado MVP finala (2007)?",a:["Tony Parker","Dirk Nowitzki","Pau Gasol","Manu Ginobili"],c:0,d:12},
+{q:"Kdo je bil prvi Evropejec z nagrado MVP rednega dela (2007)?",a:["Dirk Nowitzki","Tony Parker","Steve Nash","Pau Gasol"],c:0,d:12},
+{q:"A.C. Green drži rekord za največ česa v zgodovini NBA?",a:["zaporednih odigranih tekem (1192)","blokad","trojk","tehničnih napak"],c:0,d:13},
+{q:"Kdo je dosegel rekordnih 63 točk v eni playoff tekmi (1986, proti Bostonu)?",a:["Michael Jordan","Elgin Baylor","Wilt Chamberlain","Kobe Bryant"],c:0,d:11},
+{q:"Tri-točkovni met izvira iz katere lige, preden ga je NBA prevzela 1979?",a:["ABA","NCAA","FIBA","NBL"],c:0,d:10},
+{q:"Wilt Chamberlain je bil edini novinec, ki je v isti sezoni postal tudi kaj posebnega — kaj?",a:["vodilni strelec lige","najboljši branilec","MVP finala","trener-igralec"],c:0,d:11},
+{q:"Oklahoma City Thunder ima v zgodovini en naslov — pod katerim imenom ga je osvojila ekipa (1979)?",a:["Seattle SuperSonics","Seattle Thunder","Oklahoma Sonics","Portland Sonics"],c:0,d:12},
+{q:"Kateri trener je edini z naslovom tako v koledžu (NCAA) kot v NBA?",a:["Larry Brown","Phil Jackson","Gregg Popovich","Pat Riley"],c:0,d:14},
+{q:"Kateri dve ekipi sta edini originalni franšizi, ki se nikoli nista preselili?",a:["Celtics in Knicks","Lakers in Celtics","Knicks in Warriors","Celtics in Hawks"],c:0,d:13},
+{q:"Muggsy Bogues je najnižji igralec v zgodovini NBA — kako visok?",a:["160 cm (5'3\")","170 cm","165 cm","175 cm"],c:0,d:9},
+{q:"Kareem Abdul-Jabbar je bil draftiran 1969 pod katerim imenom?",a:["Lew Alcindor","Kareem Jabbar","Ferdinand Lewis","Karim Abdul"],c:0,d:11},
+{q:"Chris Webber je bil prvi izbor 1993 (Orlando), a takoj zamenjan v katero ekipo?",a:["Golden State Warriors","Washington Bullets","Sacramento Kings","Philadelphia 76ers"],c:0,d:12},
+{q:"Katera franšiza je leta 2024 odprla novo dvorano Intuit Dome?",a:["Los Angeles Clippers","Los Angeles Lakers","Phoenix Suns","Sacramento Kings"],c:0,d:7},
+{q:"Iz katere države prihaja center Joel Embiid?",a:["Kamerun","Senegal","Nigerija","Kongo"],c:0,d:6},
+{q:"Kdo je dosegel rekordnih 37 točk v eni sami četrtini?",a:["Klay Thompson","Kevin Love","Stephen Curry","Carmelo Anthony"],c:0,d:11},
+{q:"Kdo je bil prvi zmagovalec NBA tekmovanja v zabijanju leta 1984?",a:["Larry Nance","Julius Erving","Michael Jordan","Dominique Wilkins"],c:0,d:12},
+{q:"Kateri igralec drži rekord za največ blokad na eni tekmi (17)?",a:["Elmore Smith","Hakeem Olajuwon","Dikembe Mutombo","Manute Bol"],c:0,d:14},
+{q:"Kateri igralec je v 35 sekundah dosegel 13 točk za preobrat proti San Antoniu (2004)?",a:["Tracy McGrady","Reggie Miller","Kobe Bryant","Vince Carter"],c:0,d:13},
+{q:"Katera ekipa je izbrala Luko Dončića kot 3. po vrsti na naboru 2018?",a:["Atlanta Hawks","Sacramento Kings","Phoenix Suns","Memphis Grizzlies"],c:0,d:9},
+{q:"Kako se imenuje turnir sredi sezone, ki ga je NBA uvedla 2023?",a:["Emirates NBA Cup","NBA Midseason Classic","All-Star Tournament","Commissioner's Cup"],c:0,d:7},
+{q:"Kateri igralec je dosegel 60 točk na zadnji tekmi svoje kariere (2016)?",a:["Kobe Bryant","Michael Jordan","Dwyane Wade","Vince Carter"],c:0,d:8},
+{q:"Kateri igralec je zbral največ izborov na All-Star tekmo v zgodovini?",a:["LeBron James","Kobe Bryant","Kareem Abdul-Jabbar","Tim Duncan"],c:0,d:9},
+{q:"Kako se imenuje pokal za zmagovalca NBA finala?",a:["Larry O'Brien Trophy","Walter Brown Trophy","Maurice Podoloff Trophy","Bill Russell Trophy"],c:0,d:5},
+{q:"Kako se imenuje nagrada za najboljšega novinca sezone?",a:["Eddie Gottlieb Trophy","Wilt Chamberlain Trophy","Kobe Bryant Trophy","Jordan Trophy"],c:0,d:13},
+{q:"Kateri igralec je dosegel 50,4 točke na tekmo v povprečju sezone 1961-62?",a:["Wilt Chamberlain","Elgin Baylor","Oscar Robertson","Jerry West"],c:0,d:8},
+{q:"Kateri igralec je bil najmlajši MVP rednega dela (2011)?",a:["Derrick Rose","LeBron James","Wes Unseld","Kevin Durant"],c:0,d:10},
+{q:"Kateri center je leta 1996 izbral Kobeja kot 13. izbor in ga zamenjal v Lakerse?",a:["Charlotte Hornets","New Jersey Nets","Sacramento Kings","Los Angeles Lakers"],c:0,d:9},
+{q:"Koliko skupaj naslovov imata Boston Celtics (po sezoni 2023/24)?",a:["18","17","16","19"],c:0,d:9},
+{q:"S koliko igralci na vsaki strani se igra košarka?",a:["5","6","4","7"],c:0,d:1},
+{q:"Kako se imenuje, ko igralec vrže žogo skozi obroč z eno ali obema rokama od zgoraj?",a:["zabijanje (dunk)","trojka","prosti met","blokada"],c:0,d:1},
+{q:"Katera barva je tradicionalno na domačih dresih NBA ekip?",a:["bela","črna","modra","rdeča"],c:0,d:2},
+{q:"Koliko košev je vredna trojka?",a:["3","2","1","4"],c:0,d:1},
+{q:"Kako imenujemo, ko igralec ujame žogo po neuspešnem metu?",a:["skok (rebound)","asistenca","blokada","kraja"],c:0,d:2},
+{q:"Kako imenujemo podajo, ki vodi neposredno do koša soigralca?",a:["asistenca","skok","blokada","faul"],c:0,d:2},
+{q:"V katerem mestu igrajo Los Angeles Lakers?",a:["Los Angeles","New York","Chicago","Boston"],c:0,d:1},
+{q:"Kako imenujemo, ko branilec ustavi nasprotnikov met tako, da se dotakne žoge v zraku?",a:["blokada","asistenca","trojka","skok"],c:0,d:2},
+{q:"Kakšne barve je bila prvotno košarkarska žoga, preden so jo sredi 50-ih spremenili v oranžno?",a:["rjava","rumena","rdeča","bela"],c:0,d:8},
+{q:"Kdo je bil prvi novinec, ki je v eni sezoni zbral več kot 250 blokad in 100 trojk (2023/24)?",a:["Victor Wembanyama","Chet Holmgren","Yao Ming","Shaquille O'Neal"],c:0,d:13},
+{q:"Po kom se imenuje trofeja za 'Šestega igralca leta'?",a:["John Havlicek","Manu Ginobili","Lou Williams","Jamal Crawford"],c:0,d:13},
+{q:"Kdo je edini trener, ki je bil prvak kot igralec (Bulls, Spurs) in nato trener (Warriors)?",a:["Steve Kerr","Tyronn Lue","Doc Rivers","Rick Carlisle"],c:0,d:11},
+{q:"Kateri igralec ima najvišji odstotek zadetih prostih metov v karieri (čez 91%)?",a:["Stephen Curry","Steve Nash","Mark Price","Ray Allen"],c:0,d:13},
+{q:"Katera ekipa je 1998 izbrala Vincea Carterja kot 5. izbor in ga zamenjala v Toronto?",a:["Golden State Warriors","Milwaukee Bucks","Dallas Mavericks","Denver Nuggets"],c:0,d:13},
+{q:"Kateri igralec je igral za rekordnih 13 različnih NBA franšiz?",a:["Ish Smith","Jim Jackson","Joe Smith","Vince Carter"],c:0,d:14},
+{q:"Kateri igralec drži rekord za največ zgrešenih prostih metov na eni tekmi (23 od 36)?",a:["Andre Drummond","Shaquille O'Neal","Wilt Chamberlain","DeAndre Jordan"],c:0,d:15},
+{q:"Kakšen je bil rezultat najbolj zabite tekme v zgodovini (Pistons proti Nuggets, 1983, 3 podaljški)?",a:["186-184","171-166","192-189","163-158"],c:0,d:13},
+{q:"Kdo je 1974 dosegel prvi uradno zabeležen quadruple-double?",a:["Nate Thurmond","Hakeem Olajuwon","Bill Russell","David Robinson"],c:0,d:14},
+{q:"Kateri igralec je v sezoni 2000/01 prejel rekordnih 41 tehničnih napak?",a:["Rasheed Wallace","Dennis Rodman","Ron Artest","Draymond Green"],c:0,d:14},
+{q:"Kateri igralec je odigral največ tekem rednega dela v zgodovini (1611)?",a:["Robert Parish","Kareem Abdul-Jabbar","Vince Carter","Dirk Nowitzki"],c:0,d:13},
+{q:"Spud Webb je leta 1986 presenetljivo zmagal na tekmovanju v zabijanju — kako visok je bil?",a:["170 cm","185 cm","160 cm","195 cm"],c:0,d:12},
+{q:"Kdo velja za dejanskega izumitelja sistema 'Triangle Offense', ki ga je populariziral Phil Jackson?",a:["Tex Winter","Hubie Brown","Chuck Daly","Don Nelson"],c:0,d:14},
+{q:"Na kaj se nanaša 'Rose pravilo' (Rose Rule) v NBA kolektivni pogodbi?",a:["večja podaljšana pogodba za mlade igralce z nagradami (MVP/All-NBA)","obvezni ščitniki","prepoved oviranja","prehod čez sredino"],c:0,d:15},
+{q:"Katera franšiza je nastala iz Seattle SuperSonics, ki se je 2008 preselila?",a:["Oklahoma City Thunder","Memphis Grizzlies","New Orleans Pelicans","Brooklyn Nets"],c:0,d:9},
+{q:"Kdo je dobil vzdevek 'The Glide'?",a:["Clyde Drexler","Hakeem Olajuwon","Ralph Sampson","Tracy McGrady"],c:0,d:11},
+{q:"Kateri igralec je ob debiju pri 18 letih dosegel 25 točk, 9 asistenc in 6 skokov (2003, proti Sacramentu)?",a:["LeBron James","Kobe Bryant","Carmelo Anthony","Luka Dončić"],c:0,d:11},
+{q:"Kdo je bil leta 2001 prvi igralec izbran kot 1. na naboru naravnost iz srednje šole?",a:["Kwame Brown","LeBron James","Dwight Howard","Tracy McGrady"],c:0,d:13},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 1993-94? (med temi štirimi)",a:["David Robinson", "Nick Anderson", "Chris Mills", "Harvey Grant"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2024-25? (med temi štirimi)",a:["Tyler Herro", "Kristaps Porziņģis", "Nick Richards", "Yves Missi"],c:0,d:4},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 1994-95? (med temi štirimi)",a:["John Stockton", "Terry Dehere", "Doug Overton", "Lee Mayberry"],c:0,d:6},
+{q:"V kateri sezoni je imel John Wall najvišje povprečje asistenc?",a:["2015-16", "2020-21", "2011-12", "2013-14"],c:0,d:6},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2011-12? (med temi štirimi)",a:["Dwyane Wade", "Marco Belinelli", "Mario Chalmers", "Samuel Dalembert"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 2010-11? (med temi štirimi)",a:["Jason Thompson", "Steve Nash", "Mike Conley", "Gilbert Arenas"],c:0,d:3},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2007-08? (med temi štirimi)",a:["Amar'e Stoudemire", "Zydrunas Ilgauskas", "Al Harrington", "T.J. Ford"],c:0,d:5},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2011-12? (med temi štirimi)",a:["Tony Parker", "J.J. Barea", "Alonzo Gee", "Jason Thompson"],c:0,d:5},
+{q:"V kateri sezoni je imel Gary Harris najvišje povprečje točk?",a:["2017-18", "2023-24", "2022-23", "2021-22"],c:0,d:8},
+{q:"V kateri sezoni je imel Jermaine O'Neal najvišje povprečje točk?",a:["2004-05", "2013-14", "2005-06", "2000-01"],c:0,d:8},
+{q:"V kateri sezoni je imel Arvydas Sabonis najvišje povprečje skokov?",a:["1997-98", "1996-97", "1999-00", "1998-99"],c:0,d:8},
+{q:"V kateri sezoni je imel David Lee najvišje povprečje skokov?",a:["2008-09", "2013-14", "2007-08", "2011-12"],c:0,d:8},
+{q:"V kateri sezoni je imel Cedric Ceballos najvišje povprečje točk?",a:["1995-96", "1999-00", "1992-93", "1996-97"],c:0,d:7},
+{q:"V kateri sezoni je imel Reggie Jackson najvišje povprečje točk?",a:["2015-16", "2020-21", "2016-17", "2013-14"],c:0,d:8},
+{q:"V kateri sezoni je imel Kevin Garnett najvišje povprečje točk?",a:["1999-00", "2010-11", "2008-09", "1997-98"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2011-12? (med temi štirimi)",a:["Tony Parker", "J.J. Barea", "Dwyane Wade", "Marreese Speights"],c:0,d:6},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 2003-04? (med temi štirimi)",a:["Erick Dampier", "Mike Dunleavy", "Caron Butler", "Ricky Davis"],c:0,d:5},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 1996-97? (med temi štirimi)",a:["Latrell Sprewell", "Jeff Hornacek", "Dikembe Mutombo", "Buck Williams"],c:0,d:5},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2009-10? (med temi štirimi)",a:["Kevin Durant", "Tyreke Evans", "Stephen Curry", "Chase Budinger"],c:0,d:5},
+{q:"V kateri sezoni je imel Otis Thorpe najvišje povprečje točk?",a:["1988-89", "1995-96", "1993-94", "1994-95"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 2025-26? (med temi štirimi)",a:["Nikola Vučević", "Javon Small", "Caleb Love", "Walter Clayton Jr."],c:0,d:5},
+{q:"V kateri sezoni je imel Kerry Kittles najvišje povprečje točk?",a:["1997-98", "2002-03", "2001-02", "1999-00"],c:0,d:9},
+{q:"V kateri sezoni je imel Sam Cassell najvišje povprečje asistenc?",a:["1999-00", "2005-06", "2000-01", "2001-02"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2021-22? (med temi štirimi)",a:["Dejounte Murray", "Buddy Hield", "Isaiah Roby", "Austin Reaves"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 1986-87? (med temi štirimi)",a:["Mark Eaton", "Sam Perkins", "Ed Pinckney", "Vern Fleming"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 2006-07? (med temi štirimi)",a:["Shaquille O'Neal", "James Posey", "Anthony Parker", "Juwan Howard"],c:0,d:7},
+{q:"V kateri sezoni je imel Kevin Huerter najvišje povprečje točk?",a:["2022-23", "2023-24", "2019-20", "2025-26"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 1997-98? (med temi štirimi)",a:["Sam Cassell", "Dana Barros", "Khalid Reeves", "Cherokee Parks"],c:0,d:3},
+{q:"V kateri sezoni je imel Reggie Theus najvišje povprečje asistenc?",a:["1986-87", "1989-90", "1990-91", "1988-89"],c:0,d:6},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 1992-93? (med temi štirimi)",a:["Mookie Blaylock", "Anthony Mason", "Eddie Johnson", "Terry Mills"],c:0,d:5},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2010-11? (med temi štirimi)",a:["Rajon Rondo", "Baron Davis", "Jarrett Jack", "Steve Blake"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2000-01? (med temi štirimi)",a:["Terrell Brandon", "Bryon Russell", "Theo Ratliff", "Vitaly Potapenko"],c:0,d:6},
+{q:"V kateri sezoni je imel Jalen Rose najvišje povprečje točk?",a:["2001-02", "1995-96", "1994-95", "2005-06"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2017-18? (med temi štirimi)",a:["Kris Dunn", "Austin Rivers", "Dwight Powell", "Wayne Ellington"],c:0,d:6},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 1998-99? (med temi štirimi)",a:["Tim Duncan", "Tony Battie", "P.J. Brown", "Rod Strickland"],c:0,d:6},
+{q:"V kateri sezoni je imel Hassan Whiteside najvišje povprečje skokov?",a:["2016-17", "2018-19", "2017-18", "2014-15"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 1994-95? (med temi štirimi)",a:["Muggsy Bogues", "Anthony Peeler", "Sean Rooks", "Johnny Newman"],c:0,d:6},
+{q:"V kateri sezoni je imel Eric Snow najvišje povprečje točk?",a:["2002-03", "1999-00", "2004-05", "2005-06"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 1995-96? (med temi štirimi)",a:["Jason Kidd", "Anfernee Hardaway", "Scottie Pippen", "Bryant Stith"],c:0,d:5},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 1986-87? (med temi štirimi)",a:["James Donaldson", "LaSalle Thompson", "Orlando Woolridge", "Johnny Dawkins"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 2008-09? (med temi štirimi)",a:["Tim Duncan", "Charlie Villanueva", "Kirk Hinrich", "J.J. Barea"],c:0,d:4},
+{q:"V kateri sezoni je imel Derrick White najvišje povprečje točk?",a:["2025-26", "2019-20", "2022-23", "2018-19"],c:0,d:6},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 2011-12? (med temi štirimi)",a:["Al Jefferson", "Monta Ellis", "Jodie Meeks", "JJ Redick"],c:0,d:6},
+{q:"V kateri sezoni je imel Alex Caruso najvišje povprečje točk?",a:["2023-24", "2021-22", "2022-23", "2020-21"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2006-07? (med temi štirimi)",a:["Dwyane Wade", "Josh Smith", "Grant Hill", "Speedy Claxton"],c:0,d:5},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 2011-12? (med temi štirimi)",a:["DeMarcus Cousins", "Carlos Boozer", "Kevin Durant", "Chris Bosh"],c:0,d:5},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 2004-05? (med temi štirimi)",a:["Tim Duncan", "Jason Richardson", "Morris Peterson", "Gary Payton"],c:0,d:5},
+{q:"V kateri sezoni je imel Jeremy Lin najvišje povprečje asistenc?",a:["2012-13", "2014-15", "2015-16", "2013-14"],c:0,d:8},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 1999-00? (med temi štirimi)",a:["Chris Webber", "Antonio McDyess", "Marcus Camby", "LaPhonso Ellis"],c:0,d:6},
+{q:"V kateri sezoni je imel Michael Cage najvišje povprečje točk?",a:["1989-90", "1995-96", "1994-95", "1992-93"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2013-14? (med temi štirimi)",a:["Rudy Gay", "Nikola Vučević", "Brandon Bass", "Patrick Patterson"],c:0,d:4},
+{q:"V kateri sezoni je imel Quentin Richardson najvišje povprečje točk?",a:["2001-02", "2009-10", "2007-08", "2008-09"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 1994-95? (med temi štirimi)",a:["Shawn Kemp", "Kenny Anderson", "Avery Johnson", "Elliot Perry"],c:0,d:6},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 2000-01? (med temi štirimi)",a:["Dikembe Mutombo", "Joe Smith", "Jerome Williams", "Matt Harpring"],c:0,d:3},
+{q:"V kateri sezoni je imel Devin Brown najvišje povprečje točk?",a:["2006-07", "2007-08", "2005-06", "2009-10"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2018-19? (med temi štirimi)",a:["Devin Booker", "Tim Hardaway Jr.", "Tristan Thompson", "Ish Smith"],c:0,d:4},
+{q:"V kateri sezoni je imel Jameer Nelson najvišje povprečje asistenc?",a:["2012-13", "2004-05", "2016-17", "2010-11"],c:0,d:6},
+{q:"V kateri sezoni je imel Tom Chambers najvišje povprečje točk?",a:["1986-87", "1987-88", "1993-94", "1992-93"],c:0,d:6},
+{q:"V kateri sezoni je imel Kevin Willis najvišje povprečje skokov?",a:["1991-92", "1999-00", "1990-91", "1996-97"],c:0,d:6},
+{q:"V kateri sezoni je imel LaSalle Thompson najvišje povprečje točk?",a:["1988-89", "1989-90", "1990-91", "1986-87"],c:0,d:6},
+{q:"V kateri sezoni je imel Joe Johnson najvišje povprečje točk?",a:["2008-09", "2014-15", "2012-13", "2017-18"],c:0,d:8},
+{q:"V kateri sezoni je imel Doug Christie najvišje povprečje točk?",a:["1998-99", "2000-01", "2002-03", "2001-02"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2020-21? (med temi štirimi)",a:["Zach LaVine", "Malcolm Brogdon", "Jeff Green", "Svi Mykhailiuk"],c:0,d:3},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2004-05? (med temi štirimi)",a:["Joe Johnson", "Darius Miles", "P.J. Brown", "Luke Ridnour"],c:0,d:7},
+{q:"V kateri sezoni je imel Dorell Wright najvišje povprečje točk?",a:["2010-11", "2009-10", "2007-08", "2012-13"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 1986-87? (med temi štirimi)",a:["Hakeem Olajuwon", "Rodney McCray", "John Long", "Jeff Malone"],c:0,d:5},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2017-18? (med temi štirimi)",a:["CJ McCollum", "Josh Richardson", "Al-Farouq Aminu", "Lance Stephenson"],c:0,d:5},
+{q:"V kateri sezoni je imel Paolo Banchero najvišje povprečje točk?",a:["2024-25", "2023-24", "2022-23", "2025-26"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2014-15? (med temi štirimi)",a:["Chris Paul", "Jamal Crawford", "Marco Belinelli", "Matt Barnes"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 2024-25? (med temi štirimi)",a:["Anthony Davis", "LeBron James", "Vít Krejčí", "Miles McBride"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2004-05? (med temi štirimi)",a:["Tracy McGrady", "David Wesley", "Jon Barry", "Lee Nailon"],c:0,d:7},
+{q:"V kateri sezoni je imel Carmelo Anthony najvišje povprečje točk?",a:["2005-06", "2011-12", "2020-21", "2008-09"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 2017-18? (med temi štirimi)",a:["Russell Westbrook", "Marquese Chriss", "Elfrid Payton", "Goran Dragic"],c:0,d:6},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 1994-95? (med temi štirimi)",a:["Vlade Divac", "Chris Dudley", "Glenn Robinson", "Hubert Davis"],c:0,d:4},
+{q:"V kateri sezoni je imel Jerami Grant najvišje povprečje točk?",a:["2021-22", "2014-15", "2018-19", "2024-25"],c:0,d:9},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 2012-13? (med temi štirimi)",a:["Derrick Favors", "Thaddeus Young", "Gerald Henderson", "Devin Harris"],c:0,d:3},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2024-25? (med temi štirimi)",a:["Nikola Jokić", "Keegan Murray", "Jabari Smith Jr.", "Gary Trent Jr."],c:0,d:4},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 2002-03? (med temi štirimi)",a:["Tim Duncan", "Jermaine O'Neal", "Othella Harrington", "Chucky Atkins"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 1998-99? (med temi štirimi)",a:["John Stockton", "Eddie Jones", "Ray Allen", "Shawn Kemp"],c:0,d:3},
+{q:"Kdo je imel najvišje povprečje skokov v sezoni 2023-24? (med temi štirimi)",a:["Josh Hart", "John Konchar", "Damian Lillard", "Markelle Fultz"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2002-03? (med temi štirimi)",a:["Jason Terry", "Ben Wallace", "Shawn Kemp", "Tony Battie"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2005-06? (med temi štirimi)",a:["Steve Nash", "Gary Payton", "David Wesley", "Andrew Bogut"],c:0,d:3},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 1993-94? (med temi štirimi)",a:["Shawn Kemp", "Felton Spencer", "Greg Anthony", "Charles Oakley"],c:0,d:6},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2006-07? (med temi štirimi)",a:["Baron Davis", "Josh Smith", "Tayshaun Prince", "Luther Head"],c:0,d:7},
+{q:"Kdo je imel najvišje povprečje asistenc v sezoni 2024-25? (med temi štirimi)",a:["Chris Paul", "Davion Mitchell", "Cameron Johnson", "Isaiah Joe"],c:0,d:6},
+{q:"V kateri sezoni je imel Kris Dunn najvišje povprečje točk?",a:["2017-18", "2024-25", "2025-26", "2019-20"],c:0,d:8},
+{q:"Kdo je imel najvišje povprečje blokad v sezoni 1995-96? (med temi štirimi)",a:["Gheorghe Muresan", "Blue Edwards", "Larry Johnson", "Kurt Thomas"],c:0,d:6},
+{q:"V kateri sezoni je imel Dejounte Murray najvišje povprečje asistenc?",a:["2021-22", "2023-24", "2019-20", "2020-21"],c:0,d:6},
+{q:"Kdo je imel najvišje povprečje točk v sezoni 2003-04? (med temi štirimi)",a:["Corey Maggette", "Glenn Robinson", "Clifford Robinson", "Christian Laettner"],c:0,d:5},
+{q:"V kateri sezoni je imel Mike Conley najvišje povprečje točk?",a:["2016-17", "2021-22", "2014-15", "2024-25"],c:0,d:6},
+];
+
 const DAILY_GOALS=[
   {id:"ovr88", type:"build", minBudget:"težka", label:"Sestavi ekipo z OVERALL 88+", test:ev=>ev.overall>=88, fmt:ev=>`OVERALL ${ev.overall}`},
   {id:"ovr92", type:"build", minBudget:null, label:"Sestavi ekipo z OVERALL 92+", test:ev=>ev.overall>=92, fmt:ev=>`OVERALL ${ev.overall}`},
@@ -1084,11 +1437,78 @@ function updateRosterSlot(){
 function leaveDraftFrame(){ /* naslednji full-screen render sam prepiše screen */ }
 
 // ---- SCREENS ----
+function showLanding(){
+  phase="landing";
+  screen.innerHTML=`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">Hall of Draft</div>
+      <div class="hod-verdict" style="margin:0 auto 22px;max-width:440px">
+        Izberi način igre. <b style="color:var(--gold)">Draft</b> — sestavi svojo all-time ekipo. <b style="color:var(--gold)">Kviz</b> — preizkusi svoje NBA znanje.
+      </div>
+      <div class="hod-landing-row">
+        <button class="hod-landing-card" id="hod-go-draft">
+          <span class="hod-landing-emoji">🏀</span>
+          <span class="hod-landing-name">Draft</span>
+          <span class="hod-landing-sub">Sestavi ekipo sanj</span>
+        </button>
+        <button class="hod-landing-card hod-landing-quiz" id="hod-go-quiz">
+          <span class="hod-landing-emoji">🧠</span>
+          <span class="hod-landing-name">Kviz</span>
+          <span class="hod-landing-sub">Milijonar & Daily Climb</span>
+        </button>
+      </div>
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="hod-btn secondary" id="hod-land-leaders">🏅 Lestvice</button>
+        <button class="hod-btn secondary" id="hod-land-howto">❓ Kako igrati</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:18px;letter-spacing:1px">
+        vir: ${DATA_SOURCE}
+      </div>
+    </div>`;
+  document.getElementById('hod-go-draft').onclick=()=>{ showIntro(); };
+  document.getElementById('hod-go-quiz').onclick=()=>{ showQuizMenu(); };
+  document.getElementById('hod-land-leaders').onclick=()=>{ showLeadersPage("daily"); };
+  document.getElementById('hod-land-howto').onclick=()=>{ showHowTo(); };
+  renderProgress();
+}
+
+function showQuizMenu(){
+  phase="quizmenu";
+  screen.innerHTML=`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">Kviz</div>
+      <div class="hod-verdict" style="margin:0 auto 22px;max-width:440px">
+        Dva načina. <b style="color:var(--gold)">Milijonar</b> — 15 vprašanj, vse težje, pomoči na voljo. <b style="color:var(--gold)">Daily Climb</b> — tekma s časom, 3 napake in konec.
+      </div>
+      <div class="hod-landing-row">
+        <button class="hod-landing-card hod-landing-mil" id="hod-go-millionaire">
+          <span class="hod-landing-emoji">🏆</span>
+          <span class="hod-landing-name">Milijonar</span>
+          <span class="hod-landing-sub">15 vprašanj · pomoči</span>
+        </button>
+        <button class="hod-landing-card hod-landing-climb" id="hod-go-climb">
+          <span class="hod-landing-emoji">⛰️</span>
+          <span class="hod-landing-name">Daily Climb</span>
+          <span class="hod-landing-sub">na čas · 3 življenja</span>
+        </button>
+      </div>
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="hod-btn secondary" id="hod-quiz-leaders">🏅 Lestvice kvizov</button>
+        <button class="hod-btn secondary" id="hod-quiz-back">← Nazaj</button>
+      </div>
+    </div>`;
+  document.getElementById('hod-go-millionaire').onclick=()=>{ startMillionaire(); };
+  document.getElementById('hod-go-climb').onclick=()=>{ startClimb(); };
+  document.getElementById('hod-quiz-leaders').onclick=()=>{ showQuizLeaderboard("kviz"); };
+  document.getElementById('hod-quiz-back').onclick=()=>{ showLanding(); };
+  renderProgress();
+}
+
 function showIntro(){
   phase="intro";
   screen.innerHTML=`
     <div class="hod-slot-stage hod-fade">
-      <div class="hod-stage-label">Pravila</div>
+      <div class="hod-stage-label">Draft</div>
       <div class="hod-verdict" style="margin:0 auto 14px">
         Zavrti kolut, izberi sezono in draftaj igralce. Sestavi <b style="color:var(--gold)">12 igralcev</b>: največ 3 na pozicijo, vsaj 1 na vsako. Na koncu dobiš oceno ekipe.
       </div>
@@ -1106,7 +1526,7 @@ function showIntro(){
       <div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn" id="hod-quick" style="background:linear-gradient(180deg,#f0843a,#c46524);box-shadow:0 5px 0 #994e1c">⚡ Quickfire</button>
         <button class="hod-btn secondary" id="hod-leaders">🏅 Lestvice</button>
-        <button class="hod-btn secondary" id="hod-howto">❓ Kako igrati</button>
+        <button class="hod-btn secondary" id="hod-back-landing">← Nazaj</button>
       </div>
       ${dailyStatusLine()}
       <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:1px">
@@ -1127,7 +1547,7 @@ function showIntro(){
   document.getElementById('hod-daily').onclick=()=>{ startDaily(); };
   document.getElementById('hod-quick').onclick=()=>{ startQuickfire(); };
   document.getElementById('hod-leaders').onclick=()=>{ showLeadersPage("daily"); };
-  document.getElementById('hod-howto').onclick=()=>{ showHowTo(); };
+  document.getElementById('hod-back-landing').onclick=()=>{ showLanding(); };
   renderProgress();
 }
 
@@ -1162,6 +1582,317 @@ async function showLeadersPage(mode){
     <div style="font-size:10px;color:var(--muted);margin-top:6px">klikni igralca za njegovo ekipo${(mode==="daily"||mode==="quickfire")?` · ${todayKey()}`:''}</div>`;
   listBox.querySelectorAll('.hod-lb-row').forEach(el=>{ el.onclick=()=>showUserTeam(_leadersRows[+el.dataset.i]); });
 }
+
+// ========================= KVIZI =========================
+let quizState=null;
+const QUIZ_PRIZES=15; // millionaire: 15 vprašanj
+// lestvica nagrad — plezaš navzgor z vsakim pravilnim odgovorom
+const QUIZ_LADDER=[100,200,300,400,500,1000,2500,5000,10000,20000,50000,100000,250000,500000,1000000];
+// varne točke (zajamčeno) — pri milijonarju navadno na 5. in 10.
+const QUIZ_SAFE=[4,9]; // indeksi (0-based): po 5. in 10. pravilnem
+function fmtPrize(n){ return n>=1000 ? (n/1000)+'k' : ''+n; }
+function ladderEarned(correctCount){
+  // koliko denarja odneseš, če si pravilno odgovoril na 'correctCount' vprašanj
+  if(correctCount<=0) return 0;
+  return QUIZ_LADDER[correctCount-1];
+}
+function ladderGuaranteed(correctCount){
+  // če zgrešiš, padeš na zadnjo prečkano varno točko
+  let safe=0;
+  for(const s of QUIZ_SAFE){ if(correctCount>s) safe=QUIZ_LADDER[s]; }
+  return safe;
+}
+
+function shuffleArr(a){ a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+// izberi N vprašanj naraščajoče težavnosti za millionaire
+function pickMillionaireQuestions(){
+  const out=[];
+  for(let lvl=1;lvl<=QUIZ_PRIZES;lvl++){
+    // poišči vprašanja te težavnosti; če jih ni dovolj, vzemi bližnjo
+    let pool=QUIZ_QUESTIONS.filter(q=>q.d===lvl);
+    let span=1;
+    while(pool.filter(q=>!out.includes(q)).length<1 && span<=14){
+      pool=QUIZ_QUESTIONS.filter(q=>Math.abs(q.d-lvl)<=span);
+      span++;
+    }
+    if(!pool.length) pool=QUIZ_QUESTIONS.filter(q=>!out.includes(q));
+    let avail=pool.filter(q=>!out.includes(q));
+    // če je bilo prejšnje statistično, raje ne-statistično
+    const prev=out[out.length-1];
+    if(prev && isStatQ(prev)){
+      const ns=avail.filter(q=>!isStatQ(q));
+      if(ns.length) avail=ns;
+    }
+    const chosen=(avail.length?avail:pool)[Math.floor(Math.random()*(avail.length?avail.length:pool.length))];
+    out.push(chosen);
+  }
+  return out;
+}
+
+// pripravi prikaz vprašanja z odgovori (premešani), vrne {q, opts:[{text,correct}], }
+function prepQuestion(qd){
+  const opts=qd.a.map((t,i)=>({text:t, correct:i===qd.c}));
+  return {qd, opts:shuffleArr(opts)};
+}
+
+// ===== MILLIONAIRE =====
+function startMillionaire(){
+  const qs=pickMillionaireQuestions().map(prepQuestion);
+  quizState={mode:"millionaire", qs, idx:0, helps:{fifty:true,quarter:true,swap:true}, hidden:[], startTime:Date.now()};
+  renderMillionaire();
+}
+function renderLadder(curIdx){
+  // curIdx = trenutno vprašanje (0-based). Prečkane = pod njim.
+  let rows='';
+  for(let i=QUIZ_PRIZES-1;i>=0;i--){
+    const isCur=i===curIdx;
+    const isPast=i<curIdx;
+    const isSafe=QUIZ_SAFE.includes(i);
+    let cls='hod-rung';
+    if(isCur) cls+=' cur';
+    else if(isPast) cls+=' past';
+    if(isSafe) cls+=' safe';
+    rows+=`<div class="${cls}"><span class="hod-rung-n">${i+1}</span><span class="hod-rung-v">${QUIZ_LADDER[i].toLocaleString('sl-SI')} €</span></div>`;
+  }
+  return `<div class="hod-ladder">${rows}</div>`;
+}
+function renderMillionaire(){
+  const st=quizState; const cur=st.qs[st.idx];
+  const qd=cur.qd;
+  const optBtns=cur.opts.map((o,i)=>{
+    const hidden=st.hidden.includes(i);
+    return `<button class="hod-quiz-opt ${hidden?'gone':''}" data-i="${i}" ${hidden?'disabled':''}>
+      <span class="hod-quiz-letter">${String.fromCharCode(65+i)}</span><span>${o.text}</span></button>`;
+  }).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Lestvica do milijona</div>
+      <div class="hod-mil-layout">
+        <div class="hod-mil-main">
+          <div class="hod-quiz-progress">Vprašanje ${st.idx+1} / ${QUIZ_PRIZES} · igraš za <b style="color:var(--gold)">${QUIZ_LADDER[st.idx].toLocaleString('sl-SI')} €</b></div>
+          <div class="hod-quiz-q">${qd.q}</div>
+          <div class="hod-quiz-opts">${optBtns}</div>
+          <div class="hod-quiz-helps">
+            <button class="hod-help ${st.helps.fifty?'':'used'}" id="hod-h-fifty" ${st.helps.fifty?'':'disabled'}>50:50<span>pusti 2</span></button>
+            <button class="hod-help ${st.helps.quarter?'':'used'}" id="hod-h-quarter" ${st.helps.quarter?'':'disabled'}>25%<span>pusti 3</span></button>
+            <button class="hod-help ${st.helps.swap?'':'used'}" id="hod-h-swap" ${st.helps.swap?'':'disabled'}>Swap<span>menjaj</span></button>
+          </div>
+          <button class="hod-btn secondary" id="hod-quiz-quit" style="margin-top:14px">Vzemi ${ladderEarned(st.idx).toLocaleString('sl-SI')} € in končaj</button>
+        </div>
+        ${renderLadder(st.idx)}
+      </div>
+    </div>`;
+  screen.querySelectorAll('.hod-quiz-opt').forEach(b=>{
+    if(b.disabled) return;
+    b.onclick=()=>answerMillionaire(+b.dataset.i, b);
+  });
+  const hf=document.getElementById('hod-h-fifty'); if(st.helps.fifty) hf.onclick=()=>useFifty();
+  const hq=document.getElementById('hod-h-quarter'); if(st.helps.quarter) hq.onclick=()=>useQuarter();
+  const hs=document.getElementById('hod-h-swap'); if(st.helps.swap) hs.onclick=()=>useSwap();
+  document.getElementById('hod-quiz-quit').onclick=()=>endMillionaire(false);
+}
+function wrongIndices(){
+  const cur=quizState.qs[quizState.idx];
+  return cur.opts.map((o,i)=>({o,i})).filter(x=>!x.o.correct).map(x=>x.i);
+}
+function useFifty(){
+  const st=quizState; if(!st.helps.fifty) return;
+  st.helps.fifty=false;
+  const wrong=shuffleArr(wrongIndices());
+  st.hidden=wrong.slice(0,2);  // skrij 2 napačna -> ostaneta 2
+  renderMillionaire();
+}
+function useQuarter(){
+  const st=quizState; if(!st.helps.quarter) return;
+  st.helps.quarter=false;
+  const wrong=shuffleArr(wrongIndices());
+  st.hidden=wrong.slice(0,1);  // skrij 1 napačnega -> ostanejo 3
+  renderMillionaire();
+}
+function useSwap(){
+  const st=quizState; if(!st.helps.swap) return;
+  st.helps.swap=false;
+  const qd=st.qs[st.idx].qd;
+  // nadomesti z drugim vprašanjem iste težavnosti
+  let pool=QUIZ_QUESTIONS.filter(q=>q.d===qd.d && q!==qd && !st.qs.some(x=>x.qd===q));
+  if(!pool.length) pool=QUIZ_QUESTIONS.filter(q=>Math.abs(q.d-qd.d)<=1 && q!==qd && !st.qs.some(x=>x.qd===q));
+  if(pool.length){ st.qs[st.idx]=prepQuestion(pool[Math.floor(Math.random()*pool.length)]); }
+  st.hidden=[];
+  renderMillionaire();
+}
+function answerMillionaire(i, btn){
+  const st=quizState; const cur=st.qs[st.idx];
+  const correct=cur.opts[i].correct;
+  st.qs.forEach(()=>{});
+  // pokaži pravilnega/napačnega
+  screen.querySelectorAll('.hod-quiz-opt').forEach(b=>{
+    const bi=+b.dataset.i; b.disabled=true;
+    if(cur.opts[bi].correct) b.classList.add('right');
+    else if(bi===i) b.classList.add('wrong');
+  });
+  setTimeout(()=>{
+    if(!correct){ endMillionaire(false, true); return; }  // napaka
+    st.idx++;
+    if(st.idx>=QUIZ_PRIZES){ endMillionaire(true); return; }
+    st.hidden=[];
+    renderMillionaire();
+  }, 1100);
+}
+function endMillionaire(won, wrong){
+  const st=quizState;
+  // reached = št. pravilnih odgovorov; pri zmagi vseh 15
+  const reached=won?QUIZ_PRIZES:st.idx;
+  const timeSec=Math.round((Date.now()-st.startTime)/1000);
+  // denar: zmaga = milijon; napaka = padeš na varno točko; predaja = obdržiš trenutni nivo
+  let money;
+  if(won) money=QUIZ_LADDER[QUIZ_PRIZES-1];
+  else if(wrong) money=ladderGuaranteed(reached);
+  else money=ladderEarned(reached);
+  const score=money; // lestvica = točke na lestvici
+  const headline = won ? 'MILIJON! Vseh 15!' : (wrong ? 'Napačen odgovor' : 'Vzel si denar');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">${headline}</div>
+      <div class="hod-grade hod-pop" style="color:var(--gold)">${money.toLocaleString('sl-SI')} €</div>
+      <div class="hod-overall">${reached}/15 pravilnih${won?` · čas ${timeSec}s`:''}</div>
+      <div class="hod-verdict">${won?'Popoln rezultat — pravi NBA milijonar!':(wrong?`Padel si na zajamčeno vsoto. Prišel si do ${reached+1}. vprašanja.`:`Pametna odločitev — odnesel si ${money.toLocaleString('sl-SI')} €.`)}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+        <button class="hod-btn" id="hod-quiz-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi rezultat</button>
+        <button class="hod-btn secondary" id="hod-quiz-again">Še enkrat</button>
+        <button class="hod-btn secondary" id="hod-quiz-home">🏠 Domov</button>
+      </div>
+      <div id="hod-leaderboard"></div>
+    </div>`;
+  document.getElementById('hod-quiz-again').onclick=()=>startMillionaire();
+  document.getElementById('hod-quiz-home').onclick=()=>goHome();
+  const po=document.getElementById('hod-quiz-post');
+  po.onclick=()=>postQuizScore("kviz", score, reached, po);
+  showQuizLeaderboard("kviz");
+}
+
+// ===== DAILY CLIMB =====
+function startClimb(){
+  quizState={mode:"climb", score:0, lives:3, answered:0, used:[], startTime:Date.now()};
+  nextClimb();
+}
+function isStatQ(q){ return /povprečje|med temi štirimi/.test(q.q); }
+function nextClimb(){
+  const st=quizState;
+  let pool=QUIZ_QUESTIONS.filter(q=>!st.used.includes(q));
+  if(!pool.length){ st.used=[]; pool=QUIZ_QUESTIONS.filter(q=>q!==st.curQd); }
+  // če je bilo prejšnje statistično, raje izberi ne-statistično (manj nizanja)
+  if(st.curQd && isStatQ(st.curQd)){
+    const nonStat=pool.filter(q=>!isStatQ(q));
+    if(nonStat.length) pool=nonStat;
+  }
+  const qd=pool[Math.floor(Math.random()*pool.length)];
+  st.used.push(qd);
+  st.curQd=qd; st.cur=prepQuestion(qd);
+  st.qStart=Date.now();
+  st.timeLeft=10;
+  renderClimb();
+  if(st.timer) clearInterval(st.timer);
+  st.timer=setInterval(()=>{
+    st.timeLeft-=0.1;
+    if(st.timeLeft<=0){ clearInterval(st.timer); climbTimeout(); }
+    else updateClimbTimer();
+  },100);
+}
+function renderClimb(){
+  const st=quizState; const cur=st.cur; const qd=cur.qd;
+  const optBtns=cur.opts.map((o,i)=>`<button class="hod-quiz-opt" data-i="${i}"><span class="hod-quiz-letter">${String.fromCharCode(65+i)}</span><span>${o.text}</span></button>`).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Daily Climb</div>
+      <div class="hod-climb-bar"><span>Točke: <b>${st.score}</b></span><span>${'❤'.repeat(st.lives)}</span><span>#${st.answered+1}</span></div>
+      <div class="hod-climb-timer-wrap"><div class="hod-climb-timer" id="hod-climb-timer"></div></div>
+      <div class="hod-quiz-q">${qd.q}</div>
+      <div class="hod-quiz-opts">${optBtns}</div>
+    </div>`;
+  screen.querySelectorAll('.hod-quiz-opt').forEach(b=>b.onclick=()=>answerClimb(+b.dataset.i,b));
+  updateClimbTimer();
+}
+function updateClimbTimer(){
+  const el=document.getElementById('hod-climb-timer'); if(!el) return;
+  const pct=Math.max(0,quizState.timeLeft/10*100);
+  el.style.width=pct+'%';
+  el.style.background=pct>50?'#2ec4b6':pct>25?'#ffb627':'#e63946';
+}
+function answerClimb(i, btn){
+  const st=quizState; if(!st.timer) return;
+  clearInterval(st.timer); st.timer=null;
+  const cur=st.cur; const correct=cur.opts[i].correct;
+  const speed=Math.max(0, st.timeLeft);
+  screen.querySelectorAll('.hod-quiz-opt').forEach(b=>{
+    const bi=+b.dataset.i; b.disabled=true;
+    if(cur.opts[bi].correct) b.classList.add('right');
+    else if(bi===i) b.classList.add('wrong');
+  });
+  if(correct){ st.score += 50 + Math.round(speed*10); }
+  else { st.lives--; }
+  st.answered++;
+  setTimeout(()=>{
+    if(st.lives<=0){ endClimb(); return; }
+    nextClimb();
+  }, 900);
+}
+function climbTimeout(){
+  const st=quizState; st.lives--; st.answered++;
+  screen.querySelectorAll('.hod-quiz-opt').forEach(b=>{ b.disabled=true; if(st.cur.opts[+b.dataset.i].correct) b.classList.add('right'); });
+  setTimeout(()=>{ if(st.lives<=0){ endClimb(); return; } nextClimb(); }, 900);
+}
+function endClimb(){
+  const st=quizState; if(st.timer) clearInterval(st.timer);
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Climb končan</div>
+      <div class="hod-grade hod-pop" style="color:var(--gold)">${st.score}</div>
+      <div class="hod-overall">${st.answered} odgovorov · ${st.answered-3} pravilnih</div>
+      <div class="hod-verdict">Hitrost prinaša točke — naslednjič še hitreje!</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+        <button class="hod-btn" id="hod-climb-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi rezultat</button>
+        <button class="hod-btn secondary" id="hod-climb-again">Še enkrat</button>
+        <button class="hod-btn secondary" id="hod-climb-home">🏠 Domov</button>
+      </div>
+      <div id="hod-leaderboard"></div>
+    </div>`;
+  document.getElementById('hod-climb-again').onclick=()=>startClimb();
+  document.getElementById('hod-climb-home').onclick=()=>goHome();
+  const po=document.getElementById('hod-climb-post');
+  po.onclick=()=>postQuizScore("climb", st.score, st.answered-3, po);
+  showQuizLeaderboard("climb");
+}
+
+// ===== KVIZ LESTVICE (Supabase, isti vzorec) =====
+async function postQuizScore(mode, score, correct, btn){
+  let nick=getNick();
+  if(!nick){ nick=(prompt("Vnesi svoj vzdevek za lestvico:")||"").trim().slice(0,14); if(!nick) return; setNick(nick); }
+  if(btn){ btn.disabled=true; btn.textContent="Objavljam…"; }
+  const row={ mode, challenge_day:todayKey(), nickname:nick, overall:Math.min(99,Math.round(score/20)),
+    goal_id:null, goal_done:correct>=10, chem:correct, sim_wins:score, sim_title:null, roster:[] };
+  try{ await supaSubmit(row); if(btn) btn.textContent="✓ Objavljeno"; _myLastPost={nick,overall:row.overall,mode}; showQuizLeaderboard(mode); }
+  catch(e){ if(btn){ btn.disabled=false; btn.textContent="📊 Objavi rezultat"; } alert("Objava ni uspela. "+e.message); }
+}
+async function showQuizLeaderboard(mode){
+  const box=document.getElementById('hod-leaderboard'); if(!box) return;
+  const title=mode==="kviz"?"Lestvica · Milijonar":"Lestvica · Daily Climb";
+  box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
+  let rows;
+  try{ rows=await supaQuizLeaderboard(mode); }
+  catch(e){ box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--red);font-size:12px">napaka pri nalaganju</div>`; return; }
+  if(!rows.length){ box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">še ni rezultatov — bodi prvi!</div>`; return; }
+  const medals=["🥇","🥈","🥉"];
+  const list=rows.slice(0,15).map((r,i)=>`<div class="hod-lb-row"><span class="hod-lb-rank">${medals[i]||(i+1)}</span><span class="hod-lb-nick">${escapeHtml(r.nickname)}</span><span class="hod-lb-ovr">${r.sim_wins||0}</span></div>`).join('');
+  box.innerHTML=`<div class="hod-lb-title">${title}</div><div class="hod-lb-list">${list}</div>`;
+}
+// kviz lestvica ureja po sim_wins (dejanske točke), ne overall
+async function supaQuizLeaderboard(mode){
+  const url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${mode}&order=sim_wins.desc.nullslast,created_at.asc&limit=100`;
+  const res=await fetch(url,{headers:SUPA_HEADERS});
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  return await res.json();
+}
+
 
 function showHowTo(){
   const steps=[
@@ -1235,7 +1966,7 @@ function goHome(){
   budgetMode=false; budgetTotal=0; budgetSpent=0;
   _cachedLeague=null; _courtSel=null; if(typeof _myLastPost!=='undefined') _myLastPost=null;
   selectedEras=new Set();
-  showIntro();
+  showLanding();
 }
 
 function showDecadePicker(){
@@ -2942,7 +3673,7 @@ function showLoading(){
   }catch(e){}
   showLoading();
   await loadDataset();
-  showIntro();
+  showLanding();
 })();
 })();
 </script>
