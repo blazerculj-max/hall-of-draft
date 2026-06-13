@@ -424,6 +424,17 @@
 .hod-lb-nick{flex:1;text-align:left;font-size:14px;}
 .hod-lb-ovr{font-family:'Anton';font-size:20px;color:var(--gold);flex:none;}
 .hod-lb-row.me{border-color:#4cc9f0;background:rgba(76,201,240,.15);box-shadow:0 0 10px rgba(76,201,240,.3);}
+.hod-lb-row.mine{border-color:var(--gold);background:rgba(255,182,39,.15);box-shadow:0 0 12px rgba(255,182,39,.35);}
+.hod-lb-banner{font-family:'Oswald';font-size:13px;color:var(--ink);margin-bottom:10px;}
+.hod-lb-banner b{font-family:'Anton';color:var(--gold);font-size:18px;}
+.hod-nick-card{background:linear-gradient(180deg,#1f2230,#16181f);border:2px solid var(--gold);border-radius:18px;
+  padding:26px 24px;max-width:340px;width:90%;text-align:center;box-shadow:0 14px 50px rgba(0,0,0,.6);}
+.hod-nick-title{font-family:'Anton';font-size:24px;letter-spacing:1px;color:var(--gold);margin-bottom:8px;}
+.hod-nick-sub{font-family:'Oswald';font-weight:300;font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:16px;}
+.hod-nick-input{width:100%;box-sizing:border-box;background:#0e0f15;border:2px solid var(--line);border-radius:12px;
+  padding:13px 15px;font-family:'Oswald';font-size:18px;color:#fff;text-align:center;outline:none;transition:.15s;margin-bottom:16px;}
+.hod-nick-input:focus{border-color:var(--gold);}
+.hod-nick-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 .hod-lb-sep{text-align:center;color:var(--muted);font-size:14px;letter-spacing:3px;padding:3px 0;}
 .hod-lb-myrank{font-size:13px;color:#4cc9f0;margin-bottom:8px;}
 .hod-lb-myrank b{font-size:16px;color:#fff;}
@@ -1908,7 +1919,6 @@ function endMillionaire(won, wrong){
       <div class="hod-overall">${reached}/15 pravilnih${won?` · čas ${timeSec}s`:''}</div>
       <div class="hod-verdict">${won?'Popoln rezultat — pravi NBA milijonar!':(wrong?`Padel si na zajamčeno vsoto. Prišel si do ${reached+1}. vprašanja.`:`Pametna odločitev — odnesel si ${money.toLocaleString('sl-SI')} €.`)}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
-        <button class="hod-btn" id="hod-quiz-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi rezultat</button>
         <button class="hod-btn secondary" id="hod-quiz-again">Še enkrat</button>
         <button class="hod-btn secondary" id="hod-quiz-home">🏠 Domov</button>
       </div>
@@ -1916,9 +1926,7 @@ function endMillionaire(won, wrong){
     </div>`;
   document.getElementById('hod-quiz-again').onclick=()=>startMillionaire();
   document.getElementById('hod-quiz-home').onclick=()=>goHome();
-  const po=document.getElementById('hod-quiz-post');
-  po.onclick=()=>postQuizScore("kviz", score, reached, po);
-  showQuizLeaderboard("kviz");
+  autoSubmitScore("kviz", score, reached);
 }
 
 // ===== DAILY CLIMB =====
@@ -2118,7 +2126,6 @@ function endHigherLower(){
       <div class="hod-overall">zaporednih pravilnih</div>
       <div class="hod-verdict">${score>=15?'Neverjetno! Pravi poznavalec statistik.':score>=8?'Odličen niz!':score>=4?'Solidno — gre še bolje.':'Poskusi znova, dobiš občutek hitro!'}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
-        <button class="hod-btn" id="hod-hol-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi rezultat</button>
         <button class="hod-btn secondary" id="hod-hol-again">Še enkrat</button>
         <button class="hod-btn secondary" id="hod-hol-home">🏠 Domov</button>
       </div>
@@ -2126,9 +2133,7 @@ function endHigherLower(){
     </div>`;
   document.getElementById('hod-hol-again').onclick=()=>startHigherLower();
   document.getElementById('hod-hol-home').onclick=()=>goHome();
-  const po=document.getElementById('hod-hol-post');
-  po.onclick=()=>postQuizScore("hol", score, score, po);
-  showQuizLeaderboard("hol");
+  autoSubmitScore("hol", score, score);
 }
 
 function endClimb(){
@@ -2140,7 +2145,6 @@ function endClimb(){
       <div class="hod-overall">${st.answered} odgovorov · ${st.answered-3} pravilnih</div>
       <div class="hod-verdict">Hitrost prinaša točke — naslednjič še hitreje!</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
-        <button class="hod-btn" id="hod-climb-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi rezultat</button>
         <button class="hod-btn secondary" id="hod-climb-again">Še enkrat</button>
         <button class="hod-btn secondary" id="hod-climb-home">🏠 Domov</button>
       </div>
@@ -2148,12 +2152,59 @@ function endClimb(){
     </div>`;
   document.getElementById('hod-climb-again').onclick=()=>startClimb();
   document.getElementById('hod-climb-home').onclick=()=>goHome();
-  const po=document.getElementById('hod-climb-post');
-  po.onclick=()=>postQuizScore("climb", st.score, st.answered-3, po);
-  showQuizLeaderboard("climb");
+  autoSubmitScore("climb", st.score, st.answered-3);
 }
 
 // ===== KVIZ LESTVICE (Supabase, isti vzorec) =====
+// samodejna objava rezultata: prvič vpraša za ime (lep pop-up), potem tiho objavlja
+async function autoSubmitScore(mode, score, correct){
+  const nick=getNick();
+  if(nick){ await doSubmitQuiz(mode, score, correct, nick); return; }
+  // prvič: pokaži pop-up za ime
+  askNickname(async (name)=>{
+    setNick(name);
+    await doSubmitQuiz(mode, score, correct, name);
+  });
+}
+async function doSubmitQuiz(mode, score, correct, nick){
+  const box=document.getElementById('hod-leaderboard');
+  const row={ mode, challenge_day:todayKey(), nickname:nick, overall:Math.min(99,Math.round(score/20)),
+    goal_id:null, goal_done:correct>=10, chem:correct, sim_wins:score, sim_title:null, roster:[] };
+  try{
+    await supaSubmit(row);
+    _myLastPost={nick, overall:row.overall, mode};
+    showQuizLeaderboard(mode, {nick, score});
+  }catch(e){
+    if(box) box.innerHTML=`<div style="color:var(--red);font-size:12px;margin-top:10px">Lestvice trenutno ni mogoče naložiti.</div>`;
+  }
+}
+// lep pop-up za vnos vzdevka (namesto prompt)
+function askNickname(onConfirm){
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-nick-card hod-pop">
+    <div class="hod-nick-title">VPIŠI SVOJE IME</div>
+    <div class="hod-nick-sub">Da te uvrstimo na lestvico. Ime si zapomnimo za naslednje igre.</div>
+    <input type="text" id="hod-nick-input" class="hod-nick-input" maxlength="14" placeholder="npr. Blaž" autocomplete="off">
+    <div class="hod-nick-btns">
+      <button class="hod-btn" id="hod-nick-ok">Na lestvico!</button>
+      <button class="hod-btn secondary" id="hod-nick-skip">Preskoči</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  const input=ov.querySelector('#hod-nick-input');
+  setTimeout(()=>input.focus(),50);
+  const submit=()=>{
+    const v=(input.value||"").trim().slice(0,14);
+    if(!v){ input.focus(); return; }
+    ov.remove();
+    onConfirm(v);
+  };
+  ov.querySelector('#hod-nick-ok').onclick=submit;
+  input.addEventListener('keydown',e=>{ if(e.key==='Enter') submit(); });
+  ov.querySelector('#hod-nick-skip').onclick=()=>ov.remove();
+}
+
 async function postQuizScore(mode, score, correct, btn){
   let nick=getNick();
   if(!nick){ nick=(prompt("Vnesi svoj vzdevek za lestvico:")||"").trim().slice(0,14); if(!nick) return; setNick(nick); }
@@ -2163,17 +2214,35 @@ async function postQuizScore(mode, score, correct, btn){
   try{ await supaSubmit(row); if(btn) btn.textContent="✓ Objavljeno"; _myLastPost={nick,overall:row.overall,mode}; showQuizLeaderboard(mode); }
   catch(e){ if(btn){ btn.disabled=false; btn.textContent="📊 Objavi rezultat"; } alert("Objava ni uspela. "+e.message); }
 }
-async function showQuizLeaderboard(mode){
+async function showQuizLeaderboard(mode, highlight){
   const box=document.getElementById('hod-leaderboard'); if(!box) return;
   const title=mode==="kviz"?"Lestvica · Milijonar":mode==="hol"?"Lestvica · Higher/Lower":"Lestvica · Daily Climb";
+  const unit=mode==="kviz"?" €":"";
   box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
   let rows;
   try{ rows=await supaQuizLeaderboard(mode); }
   catch(e){ box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--red);font-size:12px">napaka pri nalaganju</div>`; return; }
   if(!rows.length){ box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">še ni rezultatov — bodi prvi!</div>`; return; }
   const medals=["🥇","🥈","🥉"];
-  const list=rows.slice(0,15).map((r,i)=>`<div class="hod-lb-row"><span class="hod-lb-rank">${medals[i]||(i+1)}</span><span class="hod-lb-nick">${escapeHtml(r.nickname)}</span><span class="hod-lb-ovr">${r.sim_wins||0}</span></div>`).join('');
-  box.innerHTML=`<div class="hod-lb-title">${title}</div><div class="hod-lb-list">${list}</div>`;
+  // poišči mesto trenutnega igralca (po imenu in rezultatu)
+  let myRank=-1;
+  if(highlight){
+    myRank=rows.findIndex(r=>r.nickname===highlight.nick && (r.sim_wins||0)===highlight.score);
+  }
+  const top=rows.slice(0,15);
+  const mkRow=(r,i)=>{
+    const mine = highlight && i===myRank;
+    return `<div class="hod-lb-row ${mine?'mine':''}"><span class="hod-lb-rank">${medals[i]||(i+1)}</span><span class="hod-lb-nick">${escapeHtml(r.nickname)}${mine?' (ti)':''}</span><span class="hod-lb-ovr">${(r.sim_wins||0).toLocaleString('sl-SI')}${unit}</span></div>`;
+  };
+  let list=top.map(mkRow).join('');
+  // če je igralec izven top 15, dodaj njegovo vrstico spodaj
+  if(myRank>=15){
+    const r=rows[myRank];
+    list+=`<div class="hod-lb-sep">···</div>`+
+      `<div class="hod-lb-row mine"><span class="hod-lb-rank">${myRank+1}</span><span class="hod-lb-nick">${escapeHtml(r.nickname)} (ti)</span><span class="hod-lb-ovr">${(r.sim_wins||0).toLocaleString('sl-SI')}${unit}</span></div>`;
+  }
+  const banner = highlight ? `<div class="hod-lb-banner">${myRank>=0?`Tvoja uvrstitev: <b>#${myRank+1}</b>`:'Rezultat objavljen!'}</div>` : '';
+  box.innerHTML=`<div class="hod-lb-title">${title}</div>${banner}<div class="hod-lb-list">${list}</div>`;
 }
 // kviz lestvica ureja po sim_wins (dejanske točke), ne overall
 async function supaQuizLeaderboard(mode){
