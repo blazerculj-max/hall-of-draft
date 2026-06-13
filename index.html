@@ -174,6 +174,13 @@
 .hod-landing-climb .hod-landing-name{color:#5fe0d2;}
 .hod-landing-hol:hover{border-color:#f0843a;}
 .hod-landing-hol .hod-landing-name{color:#ffa75c;}
+.hod-landing-mp:hover{border-color:#4cc9f0;}
+.hod-landing-mp .hod-landing-name{color:#7ad8f5;}
+.hod-landing-daily:hover{border-color:#4cc9f0;}
+.hod-landing-daily .hod-landing-name{color:#7ad8f5;}
+.hod-landing-quick:hover{border-color:#f0843a;}
+.hod-landing-quick .hod-landing-name{color:#ffa75c;}
+.hod-draft-modes{max-width:520px;}
 /* Higher or Lower */
 .hod-hol-bar{display:flex;justify-content:space-between;max-width:460px;margin:0 auto 6px;
   font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:var(--ink);}
@@ -1539,18 +1546,12 @@ function showLanding(){
           <span class="hod-landing-sub">Milijonar & Daily Climb</span>
         </button>
       </div>
-      <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="hod-btn secondary" id="hod-land-leaders">🏅 Lestvice</button>
-        <button class="hod-btn secondary" id="hod-land-howto">❓ Kako igrati</button>
-      </div>
       <div style="font-size:11px;color:var(--muted);margin-top:18px;letter-spacing:1px">
         vir: ${DATA_SOURCE}
       </div>
     </div>`;
   document.getElementById('hod-go-draft').onclick=()=>{ showIntro(); };
   document.getElementById('hod-go-quiz').onclick=()=>{ showQuizMenu(); };
-  document.getElementById('hod-land-leaders').onclick=()=>{ showLeadersPage("daily"); };
-  document.getElementById('hod-land-howto').onclick=()=>{ showHowTo(); };
   renderProgress();
 }
 
@@ -1597,23 +1598,34 @@ function showIntro(){
   screen.innerHTML=`
     <div class="hod-slot-stage hod-fade">
       <div class="hod-stage-label">Draft</div>
-      <div class="hod-verdict" style="margin:0 auto 14px">
-        Zavrti kolut, izberi sezono in draftaj igralce. Sestavi <b style="color:var(--gold)">12 igralcev</b>: največ 3 na pozicijo, vsaj 1 na vsako. Na koncu dobiš oceno ekipe.
+      <div class="hod-verdict" style="margin:0 auto 18px;max-width:460px">
+        Zavrti kolut, izberi sezono in draftaj igralce. Sestavi <b style="color:var(--gold)">12 igralcev</b>: največ 3 na pozicijo, vsaj 1 na vsako.
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Koliko igralcev?</div>
-      <div class="hod-mode-row" id="hod-nplayers">
-        <div class="hod-mode-chip on" data-n="1"><span class="hod-mode-name">Solo</span><span class="hod-mode-sub">1 igralec</span></div>
-        <div class="hod-mode-chip" data-n="2"><span class="hod-mode-name">2</span><span class="hod-mode-sub">snake draft</span></div>
-        <div class="hod-mode-chip" data-n="3"><span class="hod-mode-name">3</span><span class="hod-mode-sub">snake draft</span></div>
-        <div class="hod-mode-chip" data-n="4"><span class="hod-mode-name">4</span><span class="hod-mode-sub">snake draft</span></div>
+      <div class="hod-landing-row hod-draft-modes">
+        <button class="hod-landing-card" id="hod-m-solo">
+          <span class="hod-landing-emoji">🏀</span>
+          <span class="hod-landing-name">Solo igra</span>
+          <span class="hod-landing-sub">sam sestaviš ekipo</span>
+        </button>
+        <button class="hod-landing-card hod-landing-mp" id="hod-m-mp">
+          <span class="hod-landing-emoji">👥</span>
+          <span class="hod-landing-name">Multiplayer</span>
+          <span class="hod-landing-sub">2–4 · snake draft</span>
+        </button>
+        <button class="hod-landing-card hod-landing-daily" id="hod-m-daily">
+          <span class="hod-landing-emoji">🏆</span>
+          <span class="hod-landing-name">Dnevni izziv</span>
+          <span class="hod-landing-sub">isti cilj za vse</span>
+        </button>
+        <button class="hod-landing-card hod-landing-quick" id="hod-m-quick">
+          <span class="hod-landing-emoji">⚡</span>
+          <span class="hod-landing-name">Quickfire</span>
+          <span class="hod-landing-sub">8 izborov · peterka</span>
+        </button>
       </div>
       <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="hod-btn" id="hod-start">Naprej</button>
-        <button class="hod-btn" id="hod-daily" style="background:linear-gradient(180deg,#4cc9f0,#3a9fc4);box-shadow:0 5px 0 #2a7a99,0 8px 20px rgba(0,0,0,.4)">🏆 Dnevni izziv</button>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="hod-btn" id="hod-quick" style="background:linear-gradient(180deg,#f0843a,#c46524);box-shadow:0 5px 0 #994e1c">⚡ Quickfire</button>
         <button class="hod-btn secondary" id="hod-leaders">🏅 Lestvice</button>
+        <button class="hod-btn secondary" id="hod-howto">❓ Kako igrati</button>
         <button class="hod-btn secondary" id="hod-back-landing">← Nazaj</button>
       </div>
       ${dailyStatusLine()}
@@ -1624,6 +1636,37 @@ function showIntro(){
         players.json še ni na GitHubu — igra teče na vgrajenih 10 sezonah. Ko objaviš poln dataset, se naloži samodejno.
       </div>`:''}
     </div>`;
+  document.getElementById('hod-m-solo').onclick=()=>{ dailyMode=false; quickMode=false; numPlayers=1; showDecadePicker(); };
+  document.getElementById('hod-m-mp').onclick=()=>{ showMultiplayerSetup(); };
+  document.getElementById('hod-m-daily').onclick=()=>{ startDaily(); };
+  document.getElementById('hod-m-quick').onclick=()=>{ startQuickfire(); };
+  document.getElementById('hod-leaders').onclick=()=>{ showLeadersPage("daily"); };
+  document.getElementById('hod-howto').onclick=()=>{ showHowTo(); };
+  document.getElementById('hod-back-landing').onclick=()=>{ showLanding(); };
+  renderProgress();
+}
+
+// izbira števila igralcev za multiplayer snake draft
+function showMultiplayerSetup(){
+  phase="mpsetup";
+  screen.innerHTML=`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">Multiplayer</div>
+      <div class="hod-verdict" style="margin:0 auto 18px;max-width:440px">
+        Snake draft za <b style="color:var(--gold)">2–4 igralce</b> na isti napravi. Izberite se po vrsti, žoga kroži naprej in nazaj.
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase">Koliko igralcev?</div>
+      <div class="hod-mode-row" id="hod-nplayers">
+        <div class="hod-mode-chip on" data-n="2"><span class="hod-mode-name">2</span><span class="hod-mode-sub">igralca</span></div>
+        <div class="hod-mode-chip" data-n="3"><span class="hod-mode-name">3</span><span class="hod-mode-sub">igralci</span></div>
+        <div class="hod-mode-chip" data-n="4"><span class="hod-mode-name">4</span><span class="hod-mode-sub">igralci</span></div>
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="hod-btn" id="hod-mp-start">Začni snake draft</button>
+        <button class="hod-btn secondary" id="hod-mp-back">← Nazaj</button>
+      </div>
+    </div>`;
+  numPlayers=2;
   screen.querySelectorAll('#hod-nplayers .hod-mode-chip').forEach(c=>{
     c.onclick=()=>{
       screen.querySelectorAll('#hod-nplayers .hod-mode-chip').forEach(x=>x.classList.remove('on'));
@@ -1631,11 +1674,8 @@ function showIntro(){
       numPlayers=+c.dataset.n;
     };
   });
-  document.getElementById('hod-start').onclick=()=>{ dailyMode=false; quickMode=false; showDecadePicker(); };
-  document.getElementById('hod-daily').onclick=()=>{ startDaily(); };
-  document.getElementById('hod-quick').onclick=()=>{ startQuickfire(); };
-  document.getElementById('hod-leaders').onclick=()=>{ showLeadersPage("daily"); };
-  document.getElementById('hod-back-landing').onclick=()=>{ showLanding(); };
+  document.getElementById('hod-mp-start').onclick=()=>{ dailyMode=false; quickMode=false; showDecadePicker(); };
+  document.getElementById('hod-mp-back').onclick=()=>{ showIntro(); };
   renderProgress();
 }
 
