@@ -180,6 +180,38 @@
 .hod-landing-daily .hod-landing-name{color:#7ad8f5;}
 .hod-landing-quick:hover{border-color:#f0843a;}
 .hod-landing-quick .hod-landing-name{color:#ffa75c;}
+.hod-landing-poker:hover{border-color:#e84d6f;}
+.hod-landing-poker .hod-landing-name{color:#ff8aa3;}
+/* NBA Poker */
+.hod-pk-bar{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;max-width:560px;margin:0 auto 6px;
+  font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;color:var(--ink);}
+.hod-pk-bar b{color:var(--gold);font-family:'Anton';font-size:18px;}
+.hod-pk-hint{font-family:'Oswald';font-weight:300;font-size:12px;color:var(--muted);margin-bottom:14px;}
+.hod-pk-grid{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;max-width:600px;margin:0 auto;}
+.hod-pk-card{position:relative;flex:1 1 100px;max-width:108px;min-width:92px;background:var(--panel);
+  border:2px solid var(--line);border-radius:14px;padding:12px 7px 10px;cursor:pointer;transition:.15s;overflow:hidden;}
+.hod-pk-card:hover{border-color:var(--gold);transform:translateY(-3px);}
+.hod-pk-card.held{border-color:var(--gold);background:rgba(255,182,39,.1);box-shadow:0 0 14px rgba(255,182,39,.3);}
+.hod-pk-card.spinning{animation:pkspin .32s ease;}
+@keyframes pkspin{0%{transform:rotateY(0) scale(1);opacity:1;}50%{transform:rotateY(90deg) scale(.9);opacity:.3;}100%{transform:rotateY(0) scale(1);opacity:1;}}
+.hod-pk-lock{position:absolute;top:5px;right:6px;font-size:13px;}
+.hod-pk-avatar{width:46px;height:46px;border-radius:50%;margin:0 auto 7px;display:flex;align-items:center;
+  justify-content:center;font-family:'Anton';font-size:18px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);
+  border:2px solid rgba(255,255,255,.2);}
+.hod-pk-name{font-family:'Bebas Neue';font-size:15px;letter-spacing:.3px;color:#fff;line-height:1.05;margin-bottom:2px;min-height:30px;display:flex;align-items:center;justify-content:center;}
+.hod-pk-meta{font-family:'Oswald';font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;line-height:1.3;}
+.hod-pk-rating{font-family:'Anton';font-size:30px;color:var(--gold);line-height:1;}
+.hod-pk-stats{font-family:'Oswald';font-size:9px;color:var(--ink);margin-top:5px;line-height:1.3;}
+.hod-pk-stats span{color:var(--muted);font-size:7px;}
+.hod-pk-hold{font-family:'Bebas Neue';font-size:10px;letter-spacing:1px;margin-top:7px;padding-top:6px;
+  border-top:1px solid var(--line);color:var(--muted);}
+.hod-pk-card.held .hod-pk-hold{color:var(--gold);}
+@media(max-width:560px){
+  .hod-pk-card{flex:1 1 28%;max-width:none;min-width:0;}
+  .hod-pk-avatar{width:38px;height:38px;font-size:15px;}
+  .hod-pk-rating{font-size:24px;}
+  .hod-pk-name{font-size:13px;}
+}
 .hod-draft-modes{max-width:520px;margin-left:auto;margin-right:auto;}
 /* Higher or Lower */
 .hod-hol-bar{display:flex;justify-content:space-between;max-width:460px;margin:0 auto 6px;
@@ -1544,7 +1576,7 @@ function showLanding(){
     <div class="hod-slot-stage hod-fade">
       <div class="hod-stage-label">Hall of Draft</div>
       <div class="hod-verdict" style="margin:0 auto 22px;max-width:440px">
-        Izberi način igre. <b style="color:var(--gold)">Draft</b> — sestavi svojo all-time ekipo. <b style="color:var(--gold)">Znanje</b> — preizkusi svoje NBA znanje.
+        <b style="color:var(--gold)">Draft</b> sestavi all-time ekipo · <b style="color:var(--gold)">Znanje</b> preizkusi NBA znanje · <b style="color:var(--gold)">Poker</b> zakleni & zavrti za najvišji overall.
       </div>
       <div class="hod-landing-row">
         <button class="hod-landing-card" id="hod-go-draft">
@@ -1557,6 +1589,11 @@ function showLanding(){
           <span class="hod-landing-name">Znanje</span>
           <span class="hod-landing-sub">preizkusi se</span>
         </button>
+        <button class="hod-landing-card hod-landing-poker" id="hod-go-poker">
+          <span class="hod-landing-emoji">🃏</span>
+          <span class="hod-landing-name">NBA Poker</span>
+          <span class="hod-landing-sub">hold & spin · overall</span>
+        </button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-top:18px;letter-spacing:1px">
         vir: ${DATA_SOURCE}
@@ -1564,6 +1601,7 @@ function showLanding(){
     </div>`;
   document.getElementById('hod-go-draft').onclick=()=>{ showIntro(); };
   document.getElementById('hod-go-quiz').onclick=()=>{ showQuizMenu(); };
+  document.getElementById('hod-go-poker').onclick=()=>{ startPoker(); };
   renderProgress();
 }
 
@@ -2137,6 +2175,115 @@ function endHigherLower(){
   autoSubmitScore("hol", score, score);
 }
 
+// ===== NBA POKER =====
+// barva avatarja iz imena (stabilen hash -> HSL)
+function nameColor(name){
+  let h=0; for(let i=0;i<name.length;i++){ h=(h*31+name.charCodeAt(i))%360; }
+  return `hsl(${h},58%,42%)`;
+}
+function initials(name){
+  const parts=name.trim().split(/\s+/);
+  if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+}
+let pokerState=null;
+function startPoker(){
+  const list=holPlayerList(); // ista baza igralcev (vse dekade)
+  if(list.length<10){ alert("Premalo podatkov. Najprej objavi players.json."); showQuizMenu(); return; }
+  pokerState={ list, cards:[], held:[false,false,false,false,false], spinsLeft:5, started:false };
+  // prvi delež: 5 naključnih kart
+  pokerState.cards=[0,1,2,3,4].map(()=>pokerPick());
+  pokerState.spinsLeft=5;
+  renderPoker(false);
+}
+function pokerPick(){
+  const l=pokerState.list;
+  return l[Math.floor(Math.random()*l.length)];
+}
+function pokerTotal(){
+  return pokerState.cards.reduce((a,c)=>a+(c.rating||0),0);
+}
+function renderPoker(finished){
+  const st=pokerState;
+  const total=pokerTotal();
+  const avg=Math.round(total/5);
+  const cards=st.cards.map((c,i)=>{
+    const held=st.held[i];
+    const col=nameColor(c.name);
+    return `<div class="hod-pk-card ${held?'held':''} ${finished?'done':''}" data-i="${i}">
+      ${held?`<div class="hod-pk-lock">🔒</div>`:''}
+      <div class="hod-pk-avatar" style="background:${col}">${initials(c.name)}</div>
+      <div class="hod-pk-name">${escapeHtml(c.name)}</div>
+      <div class="hod-pk-meta">${escapeHtml(c.team||'')} · ${c.season} · ${c.pos||''}</div>
+      <div class="hod-pk-rating">${c.rating||0}</div>
+      <div class="hod-pk-stats">${(c.pts||0).toFixed(1)} <span>PTS</span> · ${(c.reb||0).toFixed(1)} <span>REB</span> · ${(c.ast||0).toFixed(1)} <span>AST</span></div>
+      ${!finished?`<div class="hod-pk-hold">${held?'ZAKLENJEN':'tapni za HOLD'}</div>`:''}
+    </div>`;
+  }).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">NBA Poker</div>
+      <div class="hod-pk-bar">
+        <span>Skupaj: <b>${total}</b></span>
+        <span>Povprečje: ${avg}</span>
+        <span>Vrtljaji: ${'●'.repeat(st.spinsLeft)}${'○'.repeat(5-st.spinsLeft)}</span>
+      </div>
+      <div class="hod-pk-hint">Zakleni dobre karte (tap), ostale zavrti. Cilj: čim višji skupni overall.</div>
+      <div class="hod-pk-grid">${cards}</div>
+      ${finished
+        ? `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+             <button class="hod-btn secondary" id="hod-pk-again">Še enkrat</button>
+             <button class="hod-btn secondary" id="hod-pk-home">🏠 Domov</button>
+           </div>
+           <div id="hod-leaderboard"></div>`
+        : `<div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+             <button class="hod-btn" id="hod-pk-spin">${st.spinsLeft<=1?'Zadnji vrtljaj':'Zavrti ('+st.spinsLeft+')'}</button>
+             <button class="hod-btn secondary" id="hod-pk-stop">Ustavi & shrani</button>
+           </div>`}
+    </div>`;
+  if(finished){
+    document.getElementById('hod-pk-again').onclick=()=>startPoker();
+    document.getElementById('hod-pk-home').onclick=()=>goHome();
+    const total2=pokerTotal();
+    autoSubmitScore("poker", total2, Math.round(total2/5));
+    return;
+  }
+  screen.querySelectorAll('.hod-pk-card').forEach(el=>{
+    el.onclick=()=>{
+      const i=+el.dataset.i;
+      st.held[i]=!st.held[i];
+      renderPoker(false);
+    };
+  });
+  document.getElementById('hod-pk-spin').onclick=()=>pokerSpin();
+  document.getElementById('hod-pk-stop').onclick=()=>endPoker();
+}
+function pokerSpin(){
+  const st=pokerState;
+  // zavrti vse nezaklenjene
+  st.cards=st.cards.map((c,i)=> st.held[i] ? c : pokerPick());
+  st.spinsLeft--;
+  // animacija vrtenja: kratko pokaži "?" pa nato rezultat
+  const grid=screen.querySelector('.hod-pk-grid');
+  if(grid){
+    st.cards.forEach((c,i)=>{
+      if(!st.held[i]){
+        const el=grid.querySelector(`.hod-pk-card[data-i="${i}"]`);
+        if(el) el.classList.add('spinning');
+      }
+    });
+  }
+  setTimeout(()=>{
+    // konec igre: ni več vrtljajev ALI vse zaklenjene
+    if(st.spinsLeft<=0 || st.held.every(h=>h)){ endPoker(); return; }
+    renderPoker(false);
+  }, 320);
+}
+function endPoker(){
+  pokerState.held=[true,true,true,true,true];
+  renderPoker(true);
+}
+
 function endClimb(){
   const st=quizState; if(st.timer) clearInterval(st.timer);
   screen.innerHTML=`
@@ -2217,7 +2364,7 @@ async function postQuizScore(mode, score, correct, btn){
 }
 async function showQuizLeaderboard(mode, highlight){
   const box=document.getElementById('hod-leaderboard'); if(!box) return;
-  const title=mode==="kviz"?"Lestvica · Milijonar":mode==="hol"?"Lestvica · Higher/Lower":"Lestvica · Daily Climb";
+  const title=mode==="kviz"?"Lestvica · Milijonar":mode==="hol"?"Lestvica · Higher/Lower":mode==="poker"?"Lestvica · NBA Poker":"Lestvica · Daily Climb";
   const unit=mode==="kviz"?" €":"";
   box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
   let rows;
@@ -2257,7 +2404,7 @@ async function supaQuizLeaderboard(mode){
 async function showQuizLeadersPage(mode){
   mode=mode||"kviz";
   phase="quizleaders";
-  const tabs=[["kviz","Milijonar"],["climb","Daily Climb"],["hol","Higher/Lower"]];
+  const tabs=[["kviz","Milijonar"],["climb","Daily Climb"],["hol","Higher/Lower"],["poker","NBA Poker"]];
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">Lestvice kvizov</div>
@@ -2270,7 +2417,7 @@ async function showQuizLeadersPage(mode){
   screen.querySelectorAll('.hod-ltab').forEach(b=>{ b.onclick=()=>showQuizLeadersPage(b.dataset.m); });
   document.getElementById('hod-ql-back').onclick=()=>showQuizMenu();
   const box=document.getElementById('hod-ql-list');
-  const title=mode==="kviz"?"Milijonar — največ €":mode==="hol"?"Higher/Lower — najdaljši niz":"Daily Climb — največ točk";
+  const title=mode==="kviz"?"Milijonar — največ €":mode==="hol"?"Higher/Lower — najdaljši niz":mode==="poker"?"NBA Poker — najvišji overall":"Daily Climb — največ točk";
   const unit=mode==="kviz"?" €":"";
   let rows;
   try{ rows=await supaQuizLeaderboard(mode); }
