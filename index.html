@@ -541,6 +541,33 @@
 .hod-alb-search{width:100%;box-sizing:border-box;background:#fff;border:2px solid var(--gold-warm);border-radius:10px;
   padding:9px 14px;font-family:'Oswald';font-size:14px;color:#1a1a1a;}
 .hod-alb-search:focus{outline:none;border-color:var(--orange);}
+.hod-alb-num{position:absolute;top:3px;left:4px;z-index:3;font-family:'Anton';font-size:9px;color:var(--gold-d);
+  background:rgba(255,240,220,.7);border-radius:4px;padding:0 3px;line-height:1.3;}
+.hod-alb-cell.empty .hod-alb-num{color:var(--gold-warm);background:rgba(0,0,0,.25);}
+.hod-alb-numinfo{max-width:380px;margin:6px auto;background:rgba(255,209,102,.12);border:1px solid var(--gold-warm);
+  border-radius:8px;padding:7px 12px;font-size:13px;color:var(--amber);}
+.hod-alb-numinfo b{color:#fff;}
+/* layout s stranskim stolpcem na PC */
+.hod-alb-layout{display:flex;gap:16px;align-items:flex-start;}
+.hod-alb-layout #hod-alb-body{flex:1;min-width:0;}
+.hod-alb-sidebar{width:210px;flex:none;background:#13192a;border:1px solid var(--gold-warm);border-radius:12px;
+  padding:10px;max-height:70vh;overflow-y:auto;position:sticky;top:10px;}
+.hod-sb-title{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;color:var(--amber);margin-bottom:8px;}
+.hod-sb-empty,.hod-sb-more{font-size:11px;color:var(--muted);padding:6px 2px;}
+.hod-sb-card{display:flex;align-items:center;gap:8px;background:#1a2236;border:1px solid var(--gold-warm);
+  border-radius:8px;padding:5px 7px;margin-bottom:6px;cursor:pointer;transition:transform .12s,border-color .12s;}
+.hod-sb-card:hover{transform:translateX(-3px);border-color:var(--orange);}
+.hod-sb-card.rar-legendary{border-color:#ffd166;}
+.hod-sb-card.rar-moment{border-color:#ff4d6d;}
+.hod-sb-photo{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:none;border:1px solid var(--orange);}
+.hod-sb-photo img{width:100%;height:100%;object-fit:cover;}
+.hod-sb-info{min-width:0;}
+.hod-sb-nm{font-family:'Oswald';font-weight:600;font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hod-sb-meta{font-size:9px;color:var(--muted);}
+@media(max-width:760px){
+  .hod-alb-sidebar{display:none !important;}
+  .hod-alb-layout{display:block;}
+}
 /* moment detail */
 .hod-moment-card{background:linear-gradient(180deg,#2a1820,#1a1015);border:2px solid #ff4d6d;border-radius:18px;
   padding:22px;max-width:330px;width:90%;text-align:center;box-shadow:0 14px 50px rgba(0,0,0,.7),0 0 30px rgba(255,77,109,.4);color:#fff;}
@@ -2825,9 +2852,21 @@ function albumCatalogRaw(){
         rarity:cardRarity(p.rating||0)};
     }
   }));
-  _albumCatalog=Object.values(byPid);
+  let arr=Object.values(byPid);
+  // dodeli FIKSNE globalne številke: po dekadi -> ekipi -> rating -> ime (stabilno)
+  const decIdx={'70s':0,'80s':1,'90s':2,'2000s':3,'2010s':4,'2020s':5};
+  arr.sort((a,b)=>{
+    const da=(decIdx[a.era]??9)-(decIdx[b.era]??9); if(da) return da;
+    const t=(a.team||'').localeCompare(b.team||''); if(t) return t;
+    if(b.rating!==a.rating) return b.rating-a.rating;
+    return (a.name||'').localeCompare(b.name||'');
+  });
+  arr.forEach((c,i)=>{ c.num=i+1; });
+  _albumCatalog=arr;
+  _albumByNum={}; arr.forEach(c=>{ _albumByNum[c.num]=c; });
   return _albumCatalog;
 }
+let _albumByNum={};
 // album katalog (slike so zdaj fiksno določene — NBA CDN ali assets/legende)
 function albumCatalog(){ return albumCatalogRaw(); }
 // (opuščeno) staro živo preverjanje slik — ohranjeno kot prazne funkcije za združljivost
@@ -3816,7 +3855,10 @@ function showAlbum(){
         <button class="hod-alb-tabm ${_albumTab==='nove'?'on':''}" data-t="nove">Nenalepljene${unstuckTotal>0?` (${unstuckTotal})`:''}</button>
         <button class="hod-alb-tabm ${_albumTab==='trgovina'?'on':''}" data-t="trgovina">Trgovina</button>
       </div>
-      <div id="hod-alb-body"></div>
+      <div class="hod-alb-layout">
+        <div id="hod-alb-body"></div>
+        <div id="hod-alb-sidebar" class="hod-alb-sidebar"></div>
+      </div>
       <div style="margin-top:18px"><button class="hod-btn secondary" id="hod-alb-back">← Domov</button></div>
     </div>`;
   document.getElementById('hod-alb-back').onclick=()=>goHome();
@@ -3824,10 +3866,33 @@ function showAlbum(){
   screen.querySelectorAll('.hod-alb-tabm').forEach(b=>b.onclick=()=>{ _albumTab=b.dataset.t; renderAlbumBody(); });
   renderAlbumBody();
 }
+// stranski stolpec (PC): nenalepljene kartice za hitro lepljenje, viden samo pri tabu 'album'
+function renderSidebar(){
+  const sb=document.getElementById('hod-alb-sidebar'); if(!sb) return;
+  if(_albumTab!=='album'){ sb.style.display='none'; return; }
+  sb.style.display='';
+  const col=getCollected();
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.pid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
+  let items=Object.keys(col).filter(k=>!col[k].stuck && (col[k].count||0)>0).map(k=>catMap[k]).filter(Boolean);
+  items.sort((a,b)=>(b.rating||0)-(a.rating||0));
+  if(!items.length){ sb.innerHTML=`<div class="hod-sb-title">Za lepljenje</div><div class="hod-sb-empty">Ni nenalepljenih kartic.</div>`; return; }
+  sb.innerHTML=`<div class="hod-sb-title">Za lepljenje (${items.length})</div>`+items.slice(0,40).map(c=>{
+    const id=c.id||c.pid; const cnt=col[id].count||1;
+    return `<div class="hod-sb-card rar-${c.rarity}" data-id="${id}" data-era="${c.era||'moments'}">
+      <div class="hod-sb-photo">${avatarImg(c.pid,'')}</div>
+      <div class="hod-sb-info"><div class="hod-sb-nm">${c.num?'#'+c.num+' ':''}${escapeHtml(c.name||'')}</div><div class="hod-sb-meta">${c.era} · ${escapeHtml(c.team||'')}${cnt>1?' ·×'+cnt:''}</div></div>
+    </div>`;
+  }).join('')+(items.length>40?`<div class="hod-sb-more">+${items.length-40} več v zavihku »Nenalepljene«</div>`:'');
+  sb.querySelectorAll('.hod-sb-card').forEach(el=>el.onclick=()=>{
+    const id=el.dataset.id, era=el.dataset.era; const c=catMap[id];
+    _pendingStick=id; _pendingStickName=c?c.name:''; _albumDecade=era;
+    renderAlbumBody();
+  });
+}
 function renderAlbumBody(){
   const body=document.getElementById('hod-alb-body'); if(!body) return;
-  if(_albumTab==='nove') return renderUnstuck(body);
-  if(_albumTab==='trgovina') return renderShop(body);
+  if(_albumTab==='nove'){ renderUnstuck(body); renderSidebar(); return; }
+  if(_albumTab==='trgovina'){ renderShop(body); renderSidebar(); return; }
   // ALBUM tab
   const cat=albumCatalog();
   const byDec={}; DECADE_ORDER.forEach(d=>byDec[d]=[]);
@@ -3843,19 +3908,39 @@ function renderAlbumBody(){
   }).join('');
   const momGot=MOMENTS.filter(m=>col[m.id]&&col[m.id].stuck).length;
   const momWait=waitByDec['moments']||0;
-  // iskalnik
+  // iskalnik (po imenu ALI številki)
+  let numInfo='';
+  const qs=(_albumSearch||'').trim();
+  if(/^\d+$/.test(qs)){
+    const c=_albumByNum[parseInt(qs,10)];
+    if(c){
+      const have=col[c.pid]; const status=have&&have.stuck?'✅ prilepljena':(have&&(have.count||0)>0?'📥 imaš, ni prilepljena':'❌ še nimaš');
+      numInfo=`<div class="hod-alb-numinfo">#${c.num} · <b>${escapeHtml(c.name)}</b> — ${c.era} · ${escapeHtml(c.team)} · ${status}</div>`;
+    } else {
+      numInfo=`<div class="hod-alb-numinfo">Številka #${qs} ne obstaja (album ima ${albumCatalog().length} kartic).</div>`;
+    }
+  }
   body.innerHTML=`
-    <div class="hod-alb-search-wrap"><input class="hod-alb-search" id="hod-alb-search" placeholder="🔎 Išči igralca po imenu…" value="${escapeHtml(_albumSearch||'')}"></div>
+    <div class="hod-alb-search-wrap"><input class="hod-alb-search" id="hod-alb-search" placeholder="🔎 Išči po imenu ali številki (#)…" value="${escapeHtml(_albumSearch||'')}"></div>
+    ${numInfo}
     ${_pendingStick?`<div class="hod-alb-stickbar">Prilepi: <b>${escapeHtml(_pendingStickName)}</b> — tapni utripajoče mesto · <button id="hod-cancel-stick">prekliči</button></div>`:''}
     <div class="hod-alb-tabs">${decTabs}
       <button class="hod-alb-tab moment ${_albumDecade==='moments'?'on':''}" data-dec="moments">⭐<span>${momGot}/${MOMENTS.length}</span>${momWait>0?`<i class="hod-wait-dot">${momWait}</i>`:''}</button>
     </div>
     <div class="hod-alb-grid" id="hod-alb-grid"></div>`;
   const srch=document.getElementById('hod-alb-search');
-  if(srch) srch.oninput=()=>{ _albumSearch=srch.value; renderAlbumGrid(byDec); };
+  if(srch) srch.oninput=()=>{
+    _albumSearch=srch.value;
+    // če vpiše številko in obstaja, skoči na njeno dekado
+    const v=srch.value.trim();
+    if(/^\d+$/.test(v)){ const c=_albumByNum[parseInt(v,10)]; if(c && c.era!==_albumDecade){ _albumDecade=c.era; } }
+    renderAlbumBody();
+    const ns=document.getElementById('hod-alb-search'); if(ns){ ns.focus(); ns.setSelectionRange(ns.value.length,ns.value.length); }
+  };
   const cs=document.getElementById('hod-cancel-stick'); if(cs) cs.onclick=()=>{ _pendingStick=null; renderAlbumBody(); };
   body.querySelectorAll('.hod-alb-tab').forEach(b=>b.onclick=()=>{ _albumDecade=b.dataset.dec; renderAlbumGrid(byDec); });
   renderAlbumGrid(byDec);
+  renderSidebar();
 }
 // koliko nenalepljenih čaka po dekadi (za rdečo piko + številko)
 function albumWaitByDecade(){
@@ -3891,7 +3976,10 @@ function renderAlbumGrid(byDec){
     return;
   }
   let cards=(byDec[_albumDecade]||[]).slice();
-  if(q) cards=cards.filter(c=>c.name.toLowerCase().includes(q));
+  if(q){
+    if(/^\d+$/.test(q)){ const tn=parseInt(q,10); cards=cards.filter(c=>c.num===tn); }
+    else cards=cards.filter(c=>c.name.toLowerCase().includes(q));
+  }
   cards.sort((a,b)=> (a.team||'').localeCompare(b.team||'') || (b.rating-a.rating));
   const byTeam={};
   cards.forEach(c=>{ (byTeam[c.team||'?']=byTeam[c.team||'?']||[]).push(c); });
@@ -3905,9 +3993,10 @@ function renderAlbumGrid(byDec){
       const isTarget=target&&target==c.pid;
       if(!st){
         const waiting=col[c.pid]&&!col[c.pid].stuck&&(col[c.pid].count||0)>0;
-        return `<div class="hod-alb-cell empty rar-${c.rarity} ${isTarget?'target':''} ${waiting&&!isTarget?'waiting':''}" data-stickid="${c.pid}"><div class="hod-alb-q">?</div>${isTarget?'<div class="hod-alb-here">tukaj!</div>':waiting?'<div class="hod-alb-waitmark">●</div>':''}</div>`;
+        return `<div class="hod-alb-cell empty rar-${c.rarity} ${isTarget?'target':''} ${waiting&&!isTarget?'waiting':''}" data-stickid="${c.pid}"><div class="hod-alb-num">${c.num}</div><div class="hod-alb-q">?</div>${isTarget?'<div class="hod-alb-here">tukaj!</div>':waiting?'<div class="hod-alb-waitmark">●</div>':''}</div>`;
       }
       return `<div class="hod-alb-cell rar-${c.rarity}">
+        <div class="hod-alb-num">${c.num}</div>
         <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
         <div class="hod-alb-fullnm">${escapeHtml(c.name)}</div>
         <div class="hod-alb-szn">${c.season||''}</div>
@@ -3992,6 +4081,7 @@ function renderUnstuck(body){
     <div class="hod-alb-cells stick">`+shown.map(c=>{
     const id=c.id||c.pid; const cnt=col[id].count||1;
     return `<div class="hod-alb-cell rar-${c.rarity} stickable" data-id="${id}" data-era="${c.era||'moments'}">
+      ${c.num?`<div class="hod-alb-num">${c.num}</div>`:''}
       ${cnt>1?`<div class="hod-alb-dup">×${cnt}</div>`:''}
       <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
       <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
