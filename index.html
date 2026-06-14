@@ -573,24 +573,34 @@
 .hod-cd-flip.flipped .hod-cd-inner{transform:rotateY(180deg);}
 .hod-cd-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;overflow:hidden;
   box-shadow:0 18px 50px rgba(0,0,0,.7);}
-.hod-cd-front{background:var(--cream);background-image:var(--card-tex);background-size:cover;border:3px solid var(--gold-warm);
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:18px 14px;text-align:center;}
-.hod-cd-front::after{content:'';position:absolute;inset:0;background:rgba(244,234,210,.12);pointer-events:none;}
+.hod-cd-front{border:3px solid var(--gold-warm);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0;text-align:center;}
 .hod-cd-front.rar-legendary{border-color:#ffd166;box-shadow:0 0 30px rgba(255,209,102,.6),0 18px 50px rgba(0,0,0,.7);}
 .hod-cd-front.rar-rare{border-color:#9ec5e8;}
 .hod-cd-front.rar-moment{border-color:#ff4d6d;box-shadow:0 0 30px rgba(255,77,109,.6),0 18px 50px rgba(0,0,0,.7);}
-.hod-cd-ribbon{position:absolute;top:0;right:0;width:10px;height:100%;z-index:2;}
-.hod-cd-num{position:absolute;top:10px;left:12px;font-family:'Anton';font-size:14px;color:var(--gold-d);
-  background:rgba(255,240,220,.8);border-radius:5px;padding:1px 6px;z-index:3;}
-.hod-cd-photo{width:130px;height:130px;border-radius:50%;border:3px solid var(--orange);overflow:hidden;margin:14px auto 10px;position:relative;z-index:1;}
+/* diagonalno ozadje v klubskih barvah */
+.hod-cd-bg{position:absolute;inset:0;z-index:0;overflow:hidden;}
+.hod-cd-bg-base{position:absolute;inset:0;background:var(--tc1);}
+.hod-cd-bg-diag{position:absolute;inset:0;background:var(--tc2);clip-path:polygon(0 62%,100% 38%,100% 100%,0 100%);}
+.hod-cd-bg-wm{position:absolute;bottom:-22px;right:-8px;font-family:'Anton';font-size:120px;line-height:.8;
+  color:rgba(255,255,255,.10);letter-spacing:-6px;pointer-events:none;}
+.hod-cd-teamlbl{position:absolute;top:11px;left:0;right:0;text-align:center;font-family:'Bebas Neue';
+  font-size:15px;letter-spacing:3px;z-index:2;opacity:.92;}
+.hod-cd-num{position:absolute;top:9px;left:11px;font-family:'Anton';font-size:13px;color:#fff;
+  background:rgba(0,0,0,.28);border-radius:5px;padding:1px 6px;z-index:3;}
+.hod-cd-photo{width:120px;height:120px;border-radius:50%;border:3px solid #fff;overflow:hidden;margin:34px auto 0;
+  position:relative;z-index:1;box-shadow:0 4px 16px rgba(0,0,0,.35);}
 .hod-cd-photo img{width:100%;height:100%;object-fit:cover;}
-.hod-cd-name{font-family:'Anton';font-size:21px;color:var(--navy);line-height:1.05;position:relative;z-index:1;}
-.hod-cd-team-szn{font-family:'Bebas Neue';font-size:13px;letter-spacing:1px;color:var(--gold-d);margin:4px 0;position:relative;z-index:1;}
-.hod-cd-rating{font-family:'Anton';font-size:46px;line-height:1;margin:6px 0;position:relative;z-index:1;}
-.hod-cd-stats{display:flex;gap:16px;position:relative;z-index:1;margin-top:4px;}
-.hod-cd-stats b{font-family:'Anton';font-size:18px;color:var(--navy);display:block;}
+/* svetla plošča s podatki (berljivost čez barvno ozadje) */
+.hod-cd-plate{position:relative;z-index:1;margin:10px 10px 0;background:rgba(244,234,210,.95);
+  border-radius:12px;padding:10px 8px 12px;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.hod-cd-name{font-family:'Anton';font-size:19px;color:var(--navy);line-height:1.05;}
+.hod-cd-team-szn{font-family:'Bebas Neue';font-size:12px;letter-spacing:1px;color:var(--gold-d);margin:3px 0;}
+.hod-cd-rating{font-family:'Anton';font-size:38px;line-height:1;margin:2px 0;}
+.hod-cd-stats{display:flex;gap:14px;justify-content:center;margin-top:2px;}
+.hod-cd-stats b{font-family:'Anton';font-size:16px;color:var(--navy);display:block;}
 .hod-cd-stats span{font-family:'Oswald';font-size:9px;color:var(--gold-d);letter-spacing:1px;}
-.hod-cd-hint{position:absolute;bottom:10px;left:0;right:0;font-family:'Oswald';font-size:10px;color:var(--gold-d);opacity:.75;z-index:1;}
+.hod-cd-hint{position:absolute;bottom:8px;left:0;right:0;font-family:'Oswald';font-size:10px;color:rgba(255,255,255,.85);z-index:2;}
 .hod-cd-back{transform:rotateY(180deg);background:linear-gradient(180deg,#1a2236,#0d1119);border:3px solid var(--gold-warm);
   display:flex;flex-direction:column;align-items:center;padding:22px 16px;}
 .hod-cd-back-title{font-family:'Anton';font-size:18px;letter-spacing:3px;color:var(--amber);}
@@ -2905,6 +2915,21 @@ const TEAM_COLORS={
   PHW:'#1d428a',NYN:'#006bb6'
 };
 function teamColor(t){ return TEAM_COLORS[t]||'#b89a78'; }
+// druga (akcentna) klubska barva za diagonalni rez
+const TEAM_COLORS2={
+  ATL:'#fdb927',BOS:'#bb9753',BKN:'#ffffff',NJN:'#c8102e',CHA:'#00788c',CHH:'#280071',CHI:'#000000',
+  CLE:'#fdbb30',DAL:'#002b5e',DEN:'#fec524',DET:'#1d42ba',GSW:'#ffc72c',GOS:'#ffc72c',SFW:'#ffc72c',
+  HOU:'#000000',IND:'#fdbb30',LAC:'#1d428a',SDC:'#ffc20e',LAL:'#fdb927',MEM:'#12173f',VAN:'#00b2a9',
+  MIA:'#f9a01b',MIL:'#eee1c6',MIN:'#236192',NOP:'#c8102e',NOH:'#c8102e',NOK:'#c8102e',NOJ:'#00471b',
+  NYK:'#f58426',OKC:'#ef3b24',SEA:'#ffc200',ORL:'#c4ced4',PHI:'#ed174c',PHL:'#ed174c',PHX:'#e56020',
+  POR:'#000000',SAC:'#63727a',KCK:'#ffc72c',SAS:'#000000',SAN:'#000000',TOR:'#000000',UTA:'#f9a01b',
+  UTH:'#f9a01b',WAS:'#e31837',BLT:'#e31837',CAP:'#e31837',BUF:'#c8102e',SDR:'#fdb927',CIN:'#c8102e',
+  PHW:'#ffc72c',NYN:'#f58426'
+};
+function teamColor2(t){ return TEAM_COLORS2[t]||TEAM_COLORS[t]||'#8a6d3b'; }
+// luminanca za izbiro barve besedila na ekipni barvi
+function _lum(hex){ if(!hex||hex[0]!=='#')return .5; const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255; }
+function txtOnColor(hex){ return _lum(hex)>0.6?'#1a2236':'#ffffff'; }
 const STAR_MULTI_RATING=90; // zvezde s tem ratingom+ dobijo kartico pri vsaki ekipi
 function albumCatalogRaw(){
   if(_albumCatalog) return _albumCatalog;
@@ -4175,22 +4200,30 @@ function showCardDetail(c){
     </div>`;
   }).join('');
   const rarCol=(RARITY_DEFS[c.rarity]&&RARITY_DEFS[c.rarity].col)||'#e8541e';
+  const col1=teamColor(c.team), col2=teamColor2(c.team);
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay hod-cd-overlay';
   ov.innerHTML=`<div class="hod-cd-wrap">
     <div class="hod-cd-flip" id="hod-cd-flip">
       <div class="hod-cd-inner">
-        <div class="hod-cd-face hod-cd-front rar-${c.rarity}">
-          <div class="hod-cd-ribbon" style="background:${teamColor(c.team)}"></div>
+        <div class="hod-cd-face hod-cd-front rar-${c.rarity}" style="--tc1:${col1};--tc2:${col2}">
+          <div class="hod-cd-bg">
+            <div class="hod-cd-bg-base"></div>
+            <div class="hod-cd-bg-diag"></div>
+            <div class="hod-cd-bg-wm">${escapeHtml(c.team)}</div>
+          </div>
           <div class="hod-cd-num">#${c.num}</div>
+          <div class="hod-cd-teamlbl" style="color:${txtOnColor(col1)}">${escapeHtml(c.team)}</div>
           <div class="hod-cd-photo">${avatarImg(c.pid,'')}</div>
-          <div class="hod-cd-name">${escapeHtml(c.name)}</div>
-          <div class="hod-cd-team-szn">${escapeHtml(c.team)} · ${c.season||''}</div>
-          <div class="hod-cd-rating" style="color:${rarCol}">${c.rating}</div>
-          <div class="hod-cd-stats">
-            <div><b>${c.pts??'–'}</b><span>PPG</span></div>
-            <div><b>${c.reb??'–'}</b><span>RPG</span></div>
-            <div><b>${c.ast??'–'}</b><span>APG</span></div>
+          <div class="hod-cd-plate">
+            <div class="hod-cd-name">${escapeHtml(c.name)}</div>
+            <div class="hod-cd-team-szn">${escapeHtml(c.team)} · ${c.season||''}</div>
+            <div class="hod-cd-rating" style="color:${rarCol}">${c.rating}</div>
+            <div class="hod-cd-stats">
+              <div><b>${c.pts??'–'}</b><span>PPG</span></div>
+              <div><b>${c.reb??'–'}</b><span>RPG</span></div>
+              <div><b>${c.ast??'–'}</b><span>APG</span></div>
+            </div>
           </div>
           <div class="hod-cd-hint">tapni za kariero ↻</div>
         </div>
