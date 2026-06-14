@@ -62,20 +62,20 @@
 .hod-stage-label{font-size:14px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
 .hod-reels{display:flex;gap:10px;justify-content:center;margin-bottom:20px;}
 .hod-reel{
-  width:130px;height:110px;background:linear-gradient(180deg,#1c1c2a,#0e0e16);
-  border:2px solid var(--line);border-radius:14px;overflow:hidden;position:relative;
-  box-shadow:inset 0 0 30px rgba(0,0,0,0.6), 0 6px 20px rgba(0,0,0,0.4);
+  width:130px;height:110px;background:linear-gradient(180deg,#1f2433,#12161f);
+  border:2px solid var(--gold-warm);border-radius:14px;overflow:hidden;position:relative;
+  box-shadow:inset 0 0 30px rgba(0,0,0,0.6), 0 6px 20px rgba(0,0,0,0.5);
 }
 .hod-reel::before,.hod-reel::after{content:"";position:absolute;left:0;right:0;height:30px;z-index:3;pointer-events:none;}
-.hod-reel::before{top:0;background:linear-gradient(180deg,#0e0e16,transparent);}
-.hod-reel::after{bottom:0;background:linear-gradient(0deg,#0e0e16,transparent);}
+.hod-reel::before{top:0;background:linear-gradient(180deg,#12161f,transparent);}
+.hod-reel::after{bottom:0;background:linear-gradient(0deg,#12161f,transparent);}
 .hod-reel-strip{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;}
 .hod-reel-item{height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.hod-reel-year{font-family:'Anton';font-size:34px;color:var(--gold);line-height:1;}
+.hod-reel-year{font-family:'Anton';font-size:34px;color:var(--amber);line-height:1;}
 .hod-reel-era{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:4px;}
 .hod-reel.spinning .hod-reel-strip{animation:hod-spin .3s linear infinite;}
 @keyframes hod-spin{from{transform:translateY(0)}to{transform:translateY(-110px)}}
-.hod-reel.locked{border-color:var(--gold);box-shadow:0 0 18px rgba(255,182,39,.4),inset 0 0 30px rgba(0,0,0,0.6);}
+.hod-reel.locked{border-color:var(--orange);box-shadow:0 0 18px rgba(232,84,30,.5),inset 0 0 30px rgba(0,0,0,0.6);}
 
 .hod-btn{
   font-family:'Bebas Neue';font-size:24px;letter-spacing:2px;
@@ -101,11 +101,11 @@
 /* Player offer cards */
 .hod-offer-grid{display:grid;grid-template-columns:1fr;gap:10px;margin:6px 0 16px;}
 .hod-pcard{
-  background:linear-gradient(135deg,#1a1a28,#12121c);border:1px solid var(--line);border-radius:14px;
+  background:#161b2a;border:1px solid var(--gold-warm);border-radius:14px;
   padding:14px 16px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;
-  display:flex;align-items:center;gap:14px;
+  display:flex;align-items:center;gap:14px;box-shadow:0 6px 18px rgba(0,0,0,.5);
 }
-.hod-pcard:hover{border-color:var(--gold);transform:scale(1.015);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.hod-pcard:hover{border-color:var(--orange);transform:scale(1.015);box-shadow:0 10px 28px rgba(0,0,0,.55);}
 .hod-pcard.disabled{opacity:.3;pointer-events:none;filter:grayscale(1);}
 .hod-pos-badge{
   font-family:'Bebas Neue';font-size:16px;letter-spacing:.5px;
@@ -115,22 +115,22 @@
 .hod-pos-PG{background:#4cc9f0;} .hod-pos-SG{background:#4895ef;}
 .hod-pos-SF{background:#b5179e;} .hod-pos-PF{background:#f72585;} .hod-pos-C{background:#ff8500;}
 .hod-pinfo{flex:1;min-width:0;}
-.hod-pname{font-size:18px;font-weight:600;line-height:1.1;}
+.hod-pname{font-family:'Oswald';font-size:18px;font-weight:600;line-height:1.1;color:var(--ink);}
 .hod-pseason{font-size:12px;color:var(--muted);letter-spacing:.5px;}
 .hod-pstats{display:flex;gap:12px;margin-top:5px;font-size:12px;}
-.hod-pstats b{font-family:'Bebas Neue';font-size:17px;color:var(--gold);display:block;line-height:1;}
+.hod-pstats b{font-family:'Bebas Neue';font-size:17px;color:var(--amber);display:block;line-height:1;}
 .hod-pstats span{color:var(--muted);font-size:10px;letter-spacing:1px;}
 .hod-prating{font-family:'Anton';font-size:30px;flex:none;}
 .hod-r-elite{color:#ffd60a;text-shadow:0 0 12px rgba(255,214,10,.5);}
-.hod-r-good{color:#2ec4b6;} .hod-r-mid{color:#90a4ae;} .hod-r-low{color:#607d8b;}
+.hod-r-good{color:var(--amber);} .hod-r-mid{color:#c9a87a;} .hod-r-low{color:#a08862;}
 
 /* Roster */
-.hod-roster{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px;}
-.hod-roster-title{font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;}
+.hod-roster{background:#161b2a;border:1px solid var(--gold-warm);border-radius:14px;padding:12px;margin-top:8px;box-shadow:0 6px 18px rgba(0,0,0,.5);}
+.hod-roster-title{font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;color:var(--amber);margin-bottom:8px;display:flex;justify-content:space-between;}
 .hod-pos-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;}
 .hod-pos-tag{font-family:'Bebas Neue';font-size:13px;width:34px;color:var(--gold);}
-.hod-chip{font-size:12px;background:#1f1f2e;border:1px solid var(--line);border-radius:20px;padding:3px 10px;}
-.hod-chip.empty{color:var(--muted);font-style:italic;border-style:dashed;}
+.hod-chip{font-size:12px;background:#1f2233;border:1px solid var(--gold-d);border-radius:20px;padding:3px 10px;}
+.hod-chip.empty{color:var(--muted);font-style:italic;border-style:dashed;border-color:var(--line);}
 
 /* Result */
 .hod-result{text-align:center;padding:10px 0;}
@@ -621,6 +621,13 @@
 .hod-mp-team-head{display:flex;justify-content:space-between;font-family:'Bebas Neue';font-size:14px;letter-spacing:1px;margin-bottom:4px;}
 .hod-mp-team-head span:first-child{color:var(--tc);}
 .hod-mp-team-chips{display:flex;flex-wrap:wrap;gap:4px;}
+.hod-mp-posbar{display:flex;gap:4px;margin-bottom:6px;}
+.hod-mp-pos{flex:1;text-align:center;font-family:'Bebas Neue';font-size:11px;letter-spacing:.5px;
+  border-radius:5px;padding:2px 0;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--muted);}
+.hod-mp-pos b{display:block;font-family:'Anton';font-size:13px;line-height:1;}
+.hod-mp-pos.empty{color:#6a6a82;border-color:#3a2e20;}
+.hod-mp-pos.has{color:var(--amber);border-color:var(--gold-d);}
+.hod-mp-pos.full{color:#06302b;background:var(--green);border-color:#1a7268;}
 .hod-mp-results{display:flex;flex-direction:column;gap:8px;max-width:440px;margin:16px auto;}
 .hod-mp-result-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);
   border-left:4px solid var(--tc);border-radius:12px;padding:12px 14px;text-align:left;}
@@ -4084,8 +4091,15 @@ function mpRenderTeams(){
       const ps=t.roster.filter(p=>effPos(p)===pos);
       return ps.map(p=>`<span class="hod-chip">${lastNameCap(p)} <span style="color:var(--muted);font-size:10px">${shortSeason(p)}</span> <b style="color:var(--gold)">${p.rating}</b></span>`).join('');
     }).join('');
+    // pregled zasedenosti pozicij PG/SG/SF/PF/C
+    const posBar=POSITIONS.map(pos=>{
+      const n=mpTeamPosCount(t,pos);
+      const cls = n>=MAX_PER_POS ? 'full' : n>0 ? 'has' : 'empty';
+      return `<span class="hod-mp-pos ${cls}">${pos}<b>${n}</b></span>`;
+    }).join('');
     return `<div class="hod-mp-team" style="--tc:${MP_COLORS[ti]}">
       <div class="hod-mp-team-head"><span>${t.name}</span><span>${t.roster.length}/12</span></div>
+      <div class="hod-mp-posbar">${posBar}</div>
       <div class="hod-mp-team-chips">${chips||'<span class="hod-chip empty">prazno</span>'}</div>
     </div>`;
   }).join('');
