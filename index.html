@@ -182,6 +182,99 @@
 .hod-landing-quick .hod-landing-name{color:#ffa75c;}
 .hod-landing-poker:hover{border-color:#e84d6f;}
 .hod-landing-poker .hod-landing-name{color:#ff8aa3;}
+/* AI piramida */
+.hod-pk-ai-grid{display:flex;flex-direction:column;gap:8px;max-width:380px;margin:14px auto 0;}
+.hod-pk-ai-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:2px solid var(--line);
+  border-radius:14px;padding:10px 14px;cursor:pointer;transition:.15s;text-align:left;color:inherit;font-family:inherit;}
+.hod-pk-ai-card:hover:not(:disabled){border-color:var(--gold);transform:translateX(3px);}
+.hod-pk-ai-card.beaten{border-color:var(--green);background:rgba(46,196,182,.08);}
+.hod-pk-ai-card.locked{opacity:.45;cursor:not-allowed;}
+.hod-pk-ai-step{font-family:'Anton';font-size:18px;color:var(--muted);width:22px;text-align:center;flex:none;}
+.hod-pk-ai-avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:24px;flex:none;border:2px solid rgba(255,255,255,.2);}
+.hod-pk-ai-name{font-family:'Bebas Neue';font-size:19px;letter-spacing:.5px;color:#fff;line-height:1.1;}
+.hod-pk-ai-title{font-family:'Oswald';font-size:11px;color:var(--muted);}
+.hod-pk-ai-card.beaten .hod-pk-ai-title{color:var(--green);}
+/* Vs AI dvoboj */
+.hod-vs-side{max-width:520px;margin:0 auto;padding:10px 12px;border-radius:14px;background:var(--panel);border:1px solid var(--line);}
+.hod-vs-side.you{border-color:var(--gold);}
+.hod-vs-head{font-family:'Bebas Neue';font-size:16px;letter-spacing:.5px;color:var(--ink);display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.hod-vs-emoji{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;}
+.hod-vs-total{margin-left:auto;font-family:'Anton';font-size:22px;color:#fff;}
+.hod-vs-total.gold{color:var(--gold);}
+.hod-vs-mid{font-family:'Bebas Neue';letter-spacing:2px;color:var(--muted);font-size:13px;margin:8px 0;}
+.hod-pkm-row{display:flex;gap:5px;justify-content:center;}
+.hod-pkm-card-wrap{position:relative;flex:1 1 0;max-width:96px;cursor:pointer;}
+.hod-pkm-card-wrap.held{cursor:default;}
+.hod-pkm-card-wrap.spinning .hod-pkm-card{animation:pkspin .34s ease;}
+.hod-pkm-tap{font-family:'Bebas Neue';font-size:9px;letter-spacing:1px;color:var(--muted);margin-top:2px;}
+.hod-pkm-card{position:relative;background:#1a1a28;border:1.5px solid var(--line);border-radius:9px;padding:7px 3px 6px;}
+.hod-pkm-card.held{border-color:var(--gold);background:rgba(255,182,39,.1);}
+.hod-pkm-lock{position:absolute;top:2px;right:3px;font-size:9px;}
+.hod-pkm-av{position:relative;width:34px;height:34px;border-radius:50%;margin:0 auto 3px;display:flex;align-items:center;
+  justify-content:center;font-family:'Anton';font-size:12px;color:#fff;overflow:hidden;border:1.5px solid rgba(255,255,255,.2);}
+.hod-pkm-av span{position:absolute;z-index:1;}
+.hod-pkm-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%;z-index:2;}
+.hod-pkm-name{font-family:'Oswald';font-size:9px;color:var(--ink);line-height:1.15;min-height:22px;display:flex;align-items:center;justify-content:center;text-align:center;}
+.hod-pkm-pos{font-family:'Bebas Neue';font-size:10px;letter-spacing:.5px;color:#c4a8ff;line-height:1;margin:1px 0;}
+.hod-pkm-card.ai-lock{animation:ailock .48s ease;border-color:var(--gold)!important;}
+@keyframes ailock{0%{transform:scale(1);box-shadow:0 0 0 rgba(255,182,39,0);}40%{transform:scale(1.12);box-shadow:0 0 18px rgba(255,182,39,.7);}100%{transform:scale(1);box-shadow:0 0 8px rgba(255,182,39,.3);}}
+.hod-pkm-rating{font-family:'Anton';font-size:17px;color:var(--gold);line-height:1;}
+@media(max-width:560px){
+  .hod-pkm-rating{font-size:14px;}
+  .hod-pkm-av{width:28px;height:28px;font-size:10px;}
+  .hod-pkm-name{font-size:8px;}
+  .hod-pkm-pos{font-size:9px;}
+}
+/* power-up bar */
+.hod-pu-bar{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+.hod-pu-btn{display:flex;flex-direction:column;align-items:center;gap:1px;background:rgba(168,130,255,.14);
+  border:1.5px solid #a882ff;border-radius:12px;padding:7px 13px;cursor:pointer;transition:.15s;color:#fff;font-family:inherit;min-width:64px;}
+.hod-pu-btn:hover:not(.dis){background:rgba(168,130,255,.3);transform:translateY(-2px);}
+.hod-pu-btn.dis{opacity:.32;cursor:not-allowed;border-color:var(--line);background:rgba(255,255,255,.04);}
+.hod-pu-emoji{font-size:20px;}
+.hod-pu-name{font-family:'Bebas Neue';font-size:13px;letter-spacing:.5px;}
+.hod-pu-count{font-family:'Oswald';font-size:10px;color:#c4a8ff;}
+/* peek */
+.hod-peek-wrap{max-width:420px;margin:12px auto 0;padding:10px;border:1.5px dashed #a882ff;border-radius:12px;background:rgba(168,130,255,.06);}
+.hod-peek-label{font-family:'Oswald';font-size:12px;color:#c4a8ff;margin-bottom:7px;}
+/* nagradni slot */
+.hod-slot-card{background:linear-gradient(180deg,#2e3340,#23262f);border:2px solid var(--gold);border-radius:18px;
+  padding:28px 26px;max-width:320px;width:90%;text-align:center;box-shadow:0 14px 50px rgba(0,0,0,.7),0 0 30px rgba(255,182,39,.3);}
+.hod-slot-h{font-family:'Anton';font-size:22px;letter-spacing:1px;color:var(--gold);margin-bottom:16px;}
+.hod-slot-reel{width:100px;height:100px;margin:0 auto 14px;border-radius:16px;background:#0e0f15;border:3px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.hod-slot-sym{font-size:54px;line-height:1;}
+.hod-slot-sym.win{animation:holpop .5s ease;}
+.hod-slot-msg{font-family:'Oswald';font-size:16px;color:#fff;min-height:42px;margin-bottom:14px;line-height:1.4;}
+/* poker razčlenitev rezultata */
+.hod-pk-score{max-width:360px;margin:16px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;}
+.hod-pk-score-row{display:flex;justify-content:space-between;align-items:center;font-family:'Oswald';font-size:13px;color:var(--ink);padding:4px 0;}
+.hod-pk-score-row b{font-family:'Anton';}
+.hod-pk-score-row.plus b{color:var(--green);}
+.hod-pk-score-row.minus b{color:var(--red);}
+.hod-pk-score-total{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);
+  margin-top:6px;padding-top:8px;font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:#fff;}
+.hod-pk-score-total b{font-family:'Anton';font-size:24px;color:var(--gold);}
+.hod-pk-bar .pos-full{color:var(--green);}
+.hod-vs-bd{font-family:'Oswald';font-size:11px;color:var(--muted);margin-left:auto;margin-right:6px;}
+.hod-vs-bd .plus{color:var(--green);}
+.hod-vs-bd .minus{color:var(--red);}
+/* megla toggle */
+.hod-fog-toggle{display:flex;align-items:center;gap:12px;max-width:380px;margin:0 auto;background:var(--panel);
+  border:2px solid var(--line);border-radius:14px;padding:11px 16px;cursor:pointer;transition:.18s;color:inherit;font-family:inherit;width:90%;}
+.hod-fog-toggle.on{border-color:#a882ff;background:rgba(168,130,255,.1);}
+.hod-fog-icon{font-size:26px;flex:none;}
+.hod-fog-txt{flex:1;text-align:left;font-family:'Oswald';font-size:13px;color:var(--ink);line-height:1.3;}
+.hod-fog-txt b{font-family:'Bebas Neue';font-size:16px;letter-spacing:.5px;color:#fff;}
+.hod-fog-txt span{font-size:11px;color:var(--muted);}
+.hod-fog-sw{flex:none;width:42px;height:24px;border-radius:12px;background:var(--line);position:relative;transition:.18s;}
+.hod-fog-toggle.on .hod-fog-sw{background:#a882ff;}
+.hod-fog-knob{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.18s;}
+.hod-fog-toggle.on .hod-fog-knob{left:20px;}
+.hod-pk-rating.fog{color:#6a6a82;}
+.hod-pkm-rating.fog{color:#6a6a82;}
+.hod-pkm-fogstats{font-family:'Oswald';font-size:13px;color:#c4a8ff;font-weight:600;line-height:1.1;}
 /* NBA Poker */
 .hod-pk-bar{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;max-width:560px;margin:0 auto 6px;
   font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;color:var(--ink);}
@@ -1608,7 +1701,7 @@ function showLanding(){
     </div>`;
   document.getElementById('hod-go-draft').onclick=()=>{ showIntro(); };
   document.getElementById('hod-go-quiz').onclick=()=>{ showQuizMenu(); };
-  document.getElementById('hod-go-poker').onclick=()=>{ startPoker(); };
+  document.getElementById('hod-go-poker').onclick=()=>{ showPokerMenu(); };
   renderProgress();
 }
 
@@ -2069,9 +2162,9 @@ function holPlayerList(){
   const out=[];
   POOL.forEach(s=>{
     s.players.forEach(p=>{
-      // če imamo gp/mpg (poln dataset) filtriramo za smiselna povprečja; sicer vzamemo vse (builtin)
-      const hasDetail = (p.gp!==undefined && p.mpg!==undefined);
-      if(!hasDetail || ((p.gp||0)>=40 && (p.mpg||0)>=20)){
+      // ohlapen filter: dovolj je ~20+ tekem, da je sezona prava (a vključi tudi slabše/klopne igralce)
+      const hasDetail = (p.gp!==undefined);
+      if(!hasDetail || (p.gp||0)>=20){
         out.push(p);
       }
     });
@@ -2219,6 +2312,85 @@ function playerAvatar(p, cls){
   return `<div class="${cls||'hod-pk-avatar'}" style="background:${col}"><span class="hod-av-ini">${ini}</span>${img}</div>`;
 }
 let pokerState=null;
+// ===== POKER MENI + AI PIRAMIDA =====
+let pokerFog=false; // megla: overall skrit do zaklepa
+const POKER_AI=[
+  {id:0, name:"Igor Začetnik", title:"ne loči žoge od balona", emoji:"🤷", hold:78, color:"#7d8597"},
+  {id:1, name:"Tara Influencerka", title:"NBA TikTok zvezda", emoji:"📱", hold:80, color:"#e07a9c"},
+  {id:2, name:"Marko Navijač", title:"redni gledalec", emoji:"🍿", hold:81, color:"#4cc9f0"},
+  {id:3, name:"Dr. Stat", title:"košarkarski strokovnjak", emoji:"🧠", hold:83, color:"#ffb627"},
+  {id:4, name:"Gregg Popovich", title:"zadnji boss", emoji:"🏆", hold:84, color:"#e6394a"},
+];
+// napredek po AI piramidi je SAMO za trenutni run (vsak nov vstop = od začetka)
+let _pokerRun={beaten:-1, powerups:{reroll:0,steal:0,peek:0}};
+function pokerProgress(){ return {beaten:_pokerRun.beaten}; }
+function savePokerProgress(idx){ if(idx>_pokerRun.beaten) _pokerRun.beaten=idx; }
+function resetPokerRun(){ _pokerRun={beaten:-1, powerups:{reroll:0,steal:0,peek:0}}; }
+function showPokerMenu(){
+  phase="pokermenu";
+  screen.innerHTML=`
+    <div class="hod-slot-stage hod-fade">
+      <div class="hod-stage-label">NBA Poker</div>
+      <div class="hod-verdict" style="margin:0 auto 16px;max-width:440px">
+        <b style="color:var(--gold)">High Score</b> — sestavi najboljšo peterko in pridi na lestvico. <b style="color:var(--gold)">Vs AI</b> — premagaj 5 nasprotnikov od začetnika do Popovicha.
+      </div>
+      <button class="hod-fog-toggle ${pokerFog?'on':''}" id="hod-fog-toggle">
+        <span class="hod-fog-icon">${pokerFog?'🌫️':'👁️'}</span>
+        <span class="hod-fog-txt"><b>Megla ${pokerFog?'VKLOPLJENA':'izklopljena'}</b><br><span>${pokerFog?'overall skrit — sodi po statistiki!':'overall viden takoj'}</span></span>
+        <span class="hod-fog-sw"><span class="hod-fog-knob"></span></span>
+      </button>
+      <div class="hod-landing-row" style="margin-top:16px">
+        <button class="hod-landing-card hod-landing-poker" id="hod-pk-highscore">
+          <span class="hod-landing-emoji">🎯</span>
+          <span class="hod-landing-name">High Score</span>
+          <span class="hod-landing-sub">najvišji overall</span>
+        </button>
+        <button class="hod-landing-card hod-landing-poker" id="hod-pk-vsai">
+          <span class="hod-landing-emoji">🥊</span>
+          <span class="hod-landing-name">Vs AI</span>
+          <span class="hod-landing-sub">premagaj 5 bossov</span>
+        </button>
+      </div>
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="hod-btn secondary" id="hod-pk-leaders">🏅 Lestvica</button>
+        <button class="hod-btn secondary" id="hod-pk-back">← Nazaj</button>
+      </div>
+    </div>`;
+  document.getElementById('hod-fog-toggle').onclick=()=>{ pokerFog=!pokerFog; showPokerMenu(); };
+  document.getElementById('hod-pk-highscore').onclick=()=>startPoker();
+  document.getElementById('hod-pk-vsai').onclick=()=>{ resetPokerRun(); showPokerLadder(); };
+  document.getElementById('hod-pk-leaders').onclick=()=>showQuizLeadersPage(pokerFog?"poker_fog":"poker");
+  document.getElementById('hod-pk-back').onclick=()=>showLanding();
+  renderProgress();
+}
+function showPokerLadder(){
+  phase="pokerladder";
+  const prog=pokerProgress();
+  const cards=POKER_AI.map((ai,i)=>{
+    const locked = i>prog.beaten+1;
+    const beaten = i<=prog.beaten;
+    return `<button class="hod-pk-ai-card ${locked?'locked':''} ${beaten?'beaten':''}" data-i="${i}" ${locked?'disabled':''}>
+      <div class="hod-pk-ai-step">${i+1}</div>
+      <div class="hod-pk-ai-avatar" style="background:${ai.color}">${ai.emoji}</div>
+      <div class="hod-pk-ai-name">${ai.name}</div>
+      <div class="hod-pk-ai-title">${locked?'🔒 zaklenjen':beaten?'✓ premagan':ai.title}</div>
+    </button>`;
+  }).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Vs AI · Piramida</div>
+      <div class="hod-pk-hint">Premagaj vsakega po vrsti. Vsak je močnejši taktik. Zadnji je Popovich.</div>
+      <div class="hod-pk-ai-grid">${cards}</div>
+      <button class="hod-btn secondary" id="hod-pk-ladder-back" style="margin-top:18px">← Nazaj</button>
+    </div>`;
+  screen.querySelectorAll('.hod-pk-ai-card').forEach(el=>{
+    if(el.disabled) return;
+    el.onclick=()=>startPokerVsAI(+el.dataset.i);
+  });
+  document.getElementById('hod-pk-ladder-back').onclick=()=>showPokerMenu();
+  renderProgress();
+}
+
 function startPoker(){
   const list=holPlayerList(); // ista baza igralcev (vse dekade)
   if(list.length<10){ alert("Premalo podatkov. Najprej objavi players.json."); showQuizMenu(); return; }
@@ -2249,6 +2421,50 @@ function pokerPreload(n){
 function pokerTotal(){
   return pokerState.cards.reduce((a,c)=>a+(c.rating||0),0);
 }
+// ===== POZICIJE + KEMIJA ZA POKER =====
+// pokrij čim več od PG/SG/SF/PF/C; bonus za polno pokritost, penal za podvajanje
+function positionScore(cards){
+  const need=["PG","SG","SF","PF","C"];
+  // greedy: vsakemu igralcu dodeli pozicijo, ki jo pokrije in še ni zasedena
+  const slots={}; need.forEach(p=>slots[p]=null);
+  const playerPos=c=>(c.positions&&c.positions.length?c.positions:[c.pos||"SF"]);
+  // najprej igralci z eno samo pozicijo (manj fleksibilni), nato ostali
+  const order=[...cards].sort((a,b)=>playerPos(a).length-playerPos(b).length);
+  order.forEach(c=>{
+    const opts=playerPos(c).filter(p=>need.includes(p));
+    const free=opts.find(p=>!slots[p]);
+    if(free) slots[free]=c;
+  });
+  const covered=need.filter(p=>slots[p]).length;
+  let bonus=0, note="";
+  if(covered===5){ bonus=12; note="Popolna peterka! Vseh 5 položajev pokritih (+12)"; }
+  else { bonus=covered*1.5 - (5-covered)*3; note=`Pokritih ${covered}/5 položajev`+(covered<5?` (manjka ${5-covered})`:''); }
+  return {bonus:Math.round(bonus), covered, note, slots, need};
+}
+// kemija: pari, ki so igrali skupaj / za isto ekipo / so znani duo. Samo pozitivno.
+function chemistryScore(cards){
+  let bonus=0; const bonds=[];
+  for(let i=0;i<cards.length;i++){
+    for(let j=i+1;j<cards.length;j++){
+      const a=cards[i], b=cards[j];
+      if(a.name===b.name) continue;
+      let pts=0, label="";
+      if(pairMatch(a.name,b.name,DUOS)){ const d=duoInfo(a.name,b.name); pts=4; label=d?d.name:"slavni duo"; }
+      else if(a.team && b.team && a.team===b.team && a.season===b.season){ pts=3; label=`soigralca (${a.team} ${a.season})`; }
+      else if(a.team && b.team && a.team===b.team){ pts=1.5; label=`oba ${a.team}`; }
+      if(pts>0){ bonus+=pts; bonds.push({a:a.name,b:b.name,pts,label}); }
+    }
+  }
+  bonds.sort((x,y)=>y.pts-x.pts);
+  return {bonus:Math.round(bonus), bonds};
+}
+function pokerScore(cards){
+  const base=cards.reduce((a,c)=>a+(c.rating||0),0);
+  const pos=positionScore(cards);
+  const chem=chemistryScore(cards);
+  const total=base+pos.bonus+chem.bonus;
+  return {base, pos, chem, total};
+}
 function renderPoker(finished){
   const st=pokerState;
   const total=pokerTotal();
@@ -2256,28 +2472,37 @@ function renderPoker(finished){
   const cards=st.cards.map((c,i)=>{
     const held=st.held[i];
     const col=nameColor(c.name);
+    const showOvr = held || !pokerFog; // v megli viden šele ko zaklenjen
     return `<div class="hod-pk-card ${held?'held':''} ${finished?'done':''}" data-i="${i}">
       ${held?`<div class="hod-pk-lock">🔒</div>`:''}
       <div class="hod-pk-avatar" style="background:${col}"><span class="hod-av-ini">${initials(c.name)}</span>${c.pid?`<img class="hod-av-img" src="https://cdn.nba.com/headshots/nba/latest/1040x760/${c.pid}.png" alt="" loading="lazy" onerror="this.style.display='none'">`:''}</div>
       <div class="hod-pk-name">${escapeHtml(c.name)}</div>
-      <div class="hod-pk-meta">${escapeHtml(c.team||'')} · ${c.season} · ${c.pos||''}</div>
-      <div class="hod-pk-rating">${c.rating||0}</div>
+      <div class="hod-pk-meta">${escapeHtml(c.team||'')} · ${c.season} · <b style="color:#c4a8ff">${posLabel(c)}</b></div>
+      <div class="hod-pk-rating ${showOvr?'':'fog'}">${showOvr?(c.rating||0):'?'}</div>
       <div class="hod-pk-stats">${(c.pts||0).toFixed(1)} <span>PTS</span> · ${(c.reb||0).toFixed(1)} <span>REB</span> · ${(c.ast||0).toFixed(1)} <span>AST</span></div>
       ${!finished?`<div class="hod-pk-hold">${held?'🔒 ZAKLENJEN':'tapni za LOCK'}</div>`:''}
     </div>`;
   }).join('');
+  const sc = finished ? pokerScore(st.cards) : null;
+  const livePos = positionScore(st.cards);
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">NBA Poker</div>
       <div class="hod-pk-bar">
-        <span>Skupaj: <b>${total}</b></span>
-        <span>Povprečje: ${avg}</span>
+        <span>Overall: <b>${total}</b></span>
+        <span class="${livePos.covered===5?'pos-full':''}">Položaji: ${livePos.covered}/5</span>
         <span>Vrtljaji: ${'●'.repeat(st.spinsLeft)}${'○'.repeat(5-st.spinsLeft)}</span>
       </div>
-      <div class="hod-pk-hint">Zakleni dobre karte — <b style="color:var(--gold)">lock je dokončen!</b> Nezaklenjene zavrtiš. Cilj: čim višji skupni overall.</div>
+      <div class="hod-pk-hint">${finished?'':(pokerFog?'<b style="color:#c4a8ff">🌫️ MEGLA:</b> overall je skrit! Sodi po statistiki (PTS/REB/AST). Razkrije se šele ko zakleneš.':'Zakleni dobre karte — <b style="color:var(--gold)">lock je dokončen!</b> Pokrij vseh 5 položajev (PG/SG/SF/PF/C) in poišči soigralce za kemijo.')}</div>
       <div class="hod-pk-grid">${cards}</div>
       ${finished
-        ? `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+        ? `<div class="hod-pk-score">
+             <div class="hod-pk-score-row"><span>Overall (5 igralcev)</span><b>${sc.base}</b></div>
+             <div class="hod-pk-score-row ${sc.pos.bonus>=0?'plus':'minus'}"><span>${sc.pos.note}</span><b>${sc.pos.bonus>=0?'+':''}${sc.pos.bonus}</b></div>
+             <div class="hod-pk-score-row plus"><span>Kemija${sc.chem.bonds.length?' ('+sc.chem.bonds.slice(0,2).map(b=>b.label).join(', ')+(sc.chem.bonds.length>2?'…':'')+')':' (brez)'}</span><b>+${sc.chem.bonus}</b></div>
+             <div class="hod-pk-score-total"><span>SKUPAJ</span><b>${sc.total}</b></div>
+           </div>
+           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
              <button class="hod-btn secondary" id="hod-pk-again">Še enkrat</button>
              <button class="hod-btn secondary" id="hod-pk-home">🏠 Domov</button>
            </div>
@@ -2290,8 +2515,7 @@ function renderPoker(finished){
   if(finished){
     document.getElementById('hod-pk-again').onclick=()=>startPoker();
     document.getElementById('hod-pk-home').onclick=()=>goHome();
-    const total2=pokerTotal();
-    autoSubmitScore("poker", total2, Math.round(total2/5));
+    autoSubmitScore(pokerFog?"poker_fog":"poker", sc.total, Math.round(sc.base/5));
     return;
   }
   screen.querySelectorAll('.hod-pk-card').forEach(el=>{
@@ -2332,6 +2556,307 @@ function pokerSpin(){
 function endPoker(){
   pokerState.held=[true,true,true,true,true];
   renderPoker(true);
+}
+
+// ===== POKER VS AI =====
+let pkAI=null;
+// ===== POWER-UPI =====
+const PU_DEFS={
+  reroll:{emoji:"🎲", name:"Re-roll", desc:"Znova zavrti eno zaklenjeno karto"},
+  steal:{emoji:"🫳", name:"Steal", desc:"Ukradi AI-jevo karto za svojo najslabšo"},
+  peek:{emoji:"👁️", name:"Peek", desc:"Poglej naslednje 3 možne karte"},
+};
+function getPowerups(){ return _pokerRun.powerups; }
+function setPowerups(p){ _pokerRun.powerups=p; }
+function addPowerup(key){ const p=getPowerups(); p[key]=(p[key]||0)+1; setPowerups(p); }
+function usePowerup(key){ const p=getPowerups(); if((p[key]||0)<=0) return false; p[key]--; setPowerups(p); return true; }
+
+// slot-machine nagrada po zmagi: zavrti, lahko dobiš power-up ali nič
+function showPowerupSlot(onDone){
+  const keys=["reroll","steal","peek"];
+  // 40% možnost za nič, sicer naključen power-up
+  const win = Math.random()<0.6;
+  const prize = win ? keys[Math.floor(Math.random()*keys.length)] : null;
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-slot-card hod-pop">
+    <div class="hod-slot-h">NAGRADNI VRTLJAJ</div>
+    <div class="hod-slot-reel" id="hod-slot-reel"><div class="hod-slot-sym">🎰</div></div>
+    <div class="hod-slot-msg" id="hod-slot-msg">Vrti se…</div>
+    <button class="hod-btn" id="hod-slot-ok" style="display:none">Naprej</button>
+  </div>`;
+  document.body.appendChild(ov);
+  const reel=ov.querySelector('#hod-slot-reel');
+  const msg=ov.querySelector('#hod-slot-msg');
+  const okBtn=ov.querySelector('#hod-slot-ok');
+  const syms=["🎲","🫳","👁️","❌","🎲","🫳","👁️"];
+  let ticks=0;
+  const spin=setInterval(()=>{
+    reel.innerHTML=`<div class="hod-slot-sym">${syms[Math.floor(Math.random()*syms.length)]}</div>`;
+    ticks++;
+    if(ticks>16){
+      clearInterval(spin);
+      if(prize){
+        addPowerup(prize);
+        reel.innerHTML=`<div class="hod-slot-sym win">${PU_DEFS[prize].emoji}</div>`;
+        msg.innerHTML=`<b style="color:var(--gold)">${PU_DEFS[prize].name}!</b><br><span style="font-size:12px;color:var(--muted)">${PU_DEFS[prize].desc}</span>`;
+      } else {
+        reel.innerHTML=`<div class="hod-slot-sym">❌</div>`;
+        msg.innerHTML=`<span style="color:var(--muted)">Tokrat brez sreče. Naslednjič!</span>`;
+      }
+      okBtn.style.display='';
+    }
+  }, 90);
+  okBtn.onclick=()=>{ ov.remove(); if(onDone) onDone(); };
+}
+
+function startPokerVsAI(aiIdx){
+  const list=holPlayerList();
+  if(list.length<10){ alert("Premalo podatkov. Najprej objavi players.json."); showPokerMenu(); return; }
+  const ai=POKER_AI[aiIdx];
+  pkAI={
+    list, ai, aiIdx,
+    you:{ cards:[0,1,2,3,4].map(()=>list[Math.floor(Math.random()*list.length)]), held:[false,false,false,false,false], spins:5 },
+    bot:{ cards:[0,1,2,3,4].map(()=>list[Math.floor(Math.random()*list.length)]), held:[false,false,false,false,false], spins:5 },
+    done:false, usedPU:[], pending:null, peekShown:null
+  };
+  pokerPreloadList(list, 16);
+  renderPokerVsAI();
+}
+function pokerPreloadList(l, n){
+  for(let i=0;i<(n||12);i++){
+    const p=l[Math.floor(Math.random()*l.length)];
+    if(p && p.pid && !_pkPreloaded.has(p.pid)){ _pkPreloaded.add(p.pid); const im=new Image(); im.src=`https://cdn.nba.com/headshots/nba/latest/1040x760/${p.pid}.png`; }
+  }
+}
+function sumCards(side){ return side.cards.reduce((a,c)=>a+(c.rating||0),0); }
+function posLabel(c){
+  const ps=(c.positions&&c.positions.length?c.positions:[c.pos||'']).filter(Boolean);
+  return ps.slice(0,2).join('/');
+}
+function pkMiniCard(c, held, fog){
+  const col=nameColor(c.name);
+  const showOvr = held || !fog;
+  return `<div class="hod-pkm-card ${held?'held':''}">
+    ${held?'<div class="hod-pkm-lock">🔒</div>':''}
+    <div class="hod-pkm-av" style="background:${col}"><span>${initials(c.name)}</span>${c.pid?`<img src="https://cdn.nba.com/headshots/nba/latest/1040x760/${c.pid}.png" onerror="this.style.display='none'">`:''}</div>
+    <div class="hod-pkm-name">${escapeHtml(c.name)}</div>
+    <div class="hod-pkm-pos">${posLabel(c)}</div>
+    ${fog&&!held?`<div class="hod-pkm-fogstats">${(c.pts||0).toFixed(0)}·${(c.reb||0).toFixed(0)}·${(c.ast||0).toFixed(0)}</div>`:`<div class="hod-pkm-rating ${showOvr?'':'fog'}">${showOvr?(c.rating||0):'?'}</div>`}
+  </div>`;
+}
+function renderPokerVsAI(){
+  const st=pkAI; const ai=st.ai;
+  const youTotal=sumCards(st.you), botTotal=sumCards(st.bot);
+  const yourCards=st.you.cards.map((c,i)=>{
+    const held=st.you.held[i];
+    return `<div class="hod-pkm-card-wrap ${held?'held':''}" data-i="${i}">${pkMiniCard(c,held,pokerFog)}${!held?'<div class="hod-pkm-tap">LOCK</div>':''}</div>`;
+  }).join('');
+  const botCards=st.bot.cards.map((c,i)=>pkMiniCard(c, st.bot.held[i], pokerFog)).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Vs ${escapeHtml(ai.name)}</div>
+      <!-- AI stran -->
+      <div class="hod-vs-side bot">
+        <div class="hod-vs-head"><span class="hod-vs-emoji" style="background:${ai.color}">${ai.emoji}</span> ${escapeHtml(ai.name)} <span class="hod-vs-total">${botTotal}</span></div>
+        <div class="hod-pkm-row">${botCards}</div>
+      </div>
+      <div class="hod-vs-mid">TI ${'●'.repeat(st.you.spins)}${'○'.repeat(5-st.you.spins)}</div>
+      <!-- TVOJA stran -->
+      <div class="hod-vs-side you">
+        <div class="hod-vs-head">Tvoja peterka <span class="hod-vs-total gold">${youTotal}</span></div>
+        <div class="hod-pkm-row you-row">${yourCards}</div>
+      </div>
+      <div class="hod-pk-hint">${st.pending==='reroll'?'<b style="color:var(--gold)">Re-roll:</b> tapni zaklenjeno karto za ponovni vrtljaj.':st.pending==='steal'?'<b style="color:var(--gold)">Steal:</b> tapni AI-jevo karto za krajo.':'Zakleni (lock je dokončen!), ostalo zavrti. Premagaj '+escapeHtml(ai.name)+'.'}</div>
+      ${pkPowerupBar()}
+      ${st.peekShown?pkPeekRow():''}
+      <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="hod-btn" id="hod-vs-spin">${st.you.spins<=1?'Zadnji vrtljaj':'Zavrti ('+st.you.spins+')'}</button>
+        <button class="hod-btn secondary" id="hod-vs-stop">Ustavi</button>
+      </div>
+    </div>`;
+  // klik na tvojo karto: normalno LOCK, ali reroll če je pending
+  screen.querySelectorAll('.hod-pkm-card-wrap').forEach(el=>{
+    el.onclick=()=>{
+      const i=+el.dataset.i;
+      if(st.pending==='reroll'){
+        if(!st.you.held[i]) return; // reroll samo na zaklenjeni
+        st.you.cards[i]=st.list[Math.floor(Math.random()*st.list.length)];
+        st.you.held[i]=true; // ostane zaklenjena (nova)
+        st.pending=null;
+        renderPokerVsAI();
+        return;
+      }
+      if(st.pending) return;
+      if(st.you.held[i]) return;
+      st.you.held[i]=true;
+      if(st.you.held.every(h=>h)){ vsAIFinish(); return; }
+      renderPokerVsAI();
+    };
+  });
+  // klik na AI karto za steal
+  if(st.pending==='steal'){
+    screen.querySelectorAll('.hod-vs-side.bot .hod-pkm-card').forEach((el,i)=>{
+      el.style.cursor='pointer';
+      el.onclick=()=>{
+        // najdi tvojo najslabšo karto in jo zamenjaj z AI-jevo
+        let worst=0; for(let k=1;k<5;k++){ if((st.you.cards[k].rating||0)<(st.you.cards[worst].rating||0)) worst=k; }
+        const stolen=st.bot.cards[i];
+        // AI dobi tvojo staro najslabšo nazaj (poštena menjava)
+        const giveBack=st.you.cards[worst];
+        st.you.cards[worst]=stolen; st.you.held[worst]=true;
+        st.bot.cards[i]=giveBack;
+        st.pending=null;
+        renderPokerVsAI();
+      };
+    });
+  }
+  document.getElementById('hod-vs-spin').onclick=()=>{ if(st.pending){st.pending=null;} vsAISpin(); };
+  document.getElementById('hod-vs-stop').onclick=()=>vsAIFinish();
+  // power-up gumbi
+  ['reroll','steal','peek'].forEach(key=>{
+    const b=document.getElementById('hod-pu-'+key);
+    if(b) b.onclick=()=>activatePowerup(key);
+  });
+}
+function pkPowerupBar(){
+  const pu=getPowerups();
+  const st=pkAI;
+  const btns=['reroll','steal','peek'].map(key=>{
+    const n=pu[key]||0;
+    const usedThis = st.usedPU && st.usedPU.includes(key);
+    const dis = n<=0 || usedThis || st.pending;
+    return `<button class="hod-pu-btn ${dis?'dis':''}" id="hod-pu-${key}" ${dis?'disabled':''}>
+      <span class="hod-pu-emoji">${PU_DEFS[key].emoji}</span>
+      <span class="hod-pu-name">${PU_DEFS[key].name}</span>
+      <span class="hod-pu-count">×${n}</span>
+    </button>`;
+  }).join('');
+  return `<div class="hod-pu-bar">${btns}</div>`;
+}
+function pkPeekRow(){
+  const st=pkAI;
+  const cards=st.peekShown.map(c=>pkMiniCard(c,false)).join('');
+  return `<div class="hod-peek-wrap"><div class="hod-peek-label">👁️ Naslednje možne karte:</div><div class="hod-pkm-row">${cards}</div></div>`;
+}
+function activatePowerup(key){
+  const st=pkAI;
+  if(st.usedPU && st.usedPU.includes(key)) return;
+  const pu=getPowerups();
+  if((pu[key]||0)<=0) return;
+  if(key==='peek'){
+    // razkrij 3 naključne karte iz bazena (kot vpogled v "kolut")
+    if(!usePowerup('peek')) return;
+    st.usedPU.push('peek');
+    st.peekShown=[0,1,2].map(()=>st.list[Math.floor(Math.random()*st.list.length)]);
+    renderPokerVsAI();
+    return;
+  }
+  // reroll / steal potrebujeta izbiro karte -> nastavi pending
+  if(!usePowerup(key)) return;
+  st.usedPU.push(key);
+  st.pending=key;
+  renderPokerVsAI();
+}
+// AI se odloči katere karte zakleniti pred svojim vrtljajem.
+// Strategija: prag pada z vsakim vrtljajem (zgodaj izbirčen, pozno popustljiv).
+// Višji bazni 'hold' = boljša strategija = močnejši nasprotnik.
+function aiDecide(){
+  const st=pkAI; const ai=st.ai; const bot=st.bot;
+  const left=bot.spins; // 5..1
+  const stepDown={5:0, 4:2, 3:4, 2:7, 1:99}[left] ?? 0;
+  const thr=ai.hold - stepDown;
+  // v megli AI ne vidi overalla -> z verjetnostjo se zmoti (šibki bolj pogosto)
+  const errRate = pokerFog ? [0.42,0.30,0.20,0.08,0.0][ai.id] : 0;
+  bot.cards.forEach((c,i)=>{
+    if(bot.held[i]) return;
+    let good=(c.rating||0)>=thr; // prava odločitev
+    if(errRate>0 && Math.random()<errRate) good=!good; // napaka v presoji
+    if(good) bot.held[i]=true;
+  });
+}
+function vsAISpin(){
+  const st=pkAI;
+  st.peekShown=null;
+  // AI se najprej odloči (zabeleži, katere PRAVKAR zaklene = nova poteza)
+  let aiJustLocked=[];
+  if(st.bot.spins>0){
+    const before=st.bot.held.slice();
+    aiDecide();
+    aiJustLocked=st.bot.held.map((h,i)=>h&&!before[i]);
+  }
+  // animiraj vrtenje obeh strani PRED zamenjavo vrednosti
+  const youRow=screen.querySelector('.hod-pkm-row.you-row');
+  const botRow=screen.querySelector('.hod-vs-side.bot .hod-pkm-row');
+  if(youRow) youRow.querySelectorAll('.hod-pkm-card-wrap').forEach((el,i)=>{ if(!st.you.held[i]) el.classList.add('spinning'); });
+  if(botRow) botRow.querySelectorAll('.hod-pkm-card').forEach((el,i)=>{
+    if(aiJustLocked[i]) el.classList.add('ai-lock');       // pravkar zaklenjena -> poudarek
+    else if(!st.bot.held[i]) el.classList.add('spinning'); // se bo zavrtela
+  });
+  // po kratkem zamiku dejansko zavrti (zamenjaj vrednosti) in ponovno izriši
+  setTimeout(()=>{
+    st.you.cards=st.you.cards.map((c,i)=> st.you.held[i]?c:st.list[Math.floor(Math.random()*st.list.length)]);
+    st.you.spins--;
+    if(st.bot.spins>0){
+      st.bot.cards=st.bot.cards.map((c,i)=> st.bot.held[i]?c:st.list[Math.floor(Math.random()*st.list.length)]);
+      st.bot.spins--;
+    }
+    pokerPreloadList(st.list, 8);
+    if(st.you.spins<=0 || st.you.held.every(h=>h)){ vsAIFinish(); return; }
+    renderPokerVsAI();
+  }, 480);
+}
+function vsAIFinish(){
+  const st=pkAI;
+  // dokončaj obe strani: zakleni vse, AI porabi morebitne preostale vrtljaje
+  st.you.held=[true,true,true,true,true];
+  while(st.bot.spins>0 && !st.bot.held.every(h=>h)){
+    aiDecide();
+    st.bot.cards=st.bot.cards.map((c,i)=> st.bot.held[i]?c:st.list[Math.floor(Math.random()*st.list.length)]);
+    st.bot.spins--;
+  }
+  st.bot.held=[true,true,true,true,true];
+  st.done=true;
+  const youSc=pokerScore(st.you.cards), botSc=pokerScore(st.bot.cards);
+  const youTotal=youSc.total, botTotal=botSc.total;
+  const win = youTotal>botTotal;
+  const tie = youTotal===botTotal;
+  if(win) savePokerProgress(st.aiIdx);
+  const ai=st.ai;
+  const isLast = st.aiIdx===POKER_AI.length-1;
+  const nextUnlocked = win && !isLast;
+  const botCards=st.bot.cards.map((c)=>pkMiniCard(c,true)).join('');
+  const yourCards=st.you.cards.map((c)=>pkMiniCard(c,true)).join('');
+  const breakdown=(sc)=>`<span class="hod-vs-bd">${sc.base}${sc.pos.bonus?` <span class="${sc.pos.bonus>=0?'plus':'minus'}">${sc.pos.bonus>=0?'+':''}${sc.pos.bonus}</span>`:''}${sc.chem.bonus?` <span class="plus">+${sc.chem.bonus}</span>`:''}</span>`;
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">${win?'ZMAGA!':tie?'NEODLOČENO':'PORAZ'}</div>
+      <div class="hod-grade hod-pop" style="color:${win?'var(--green)':tie?'var(--gold)':'var(--red)'}">${youTotal} : ${botTotal}</div>
+      <div class="hod-overall">ti : ${escapeHtml(ai.name)}</div>
+      <div class="hod-verdict">${
+        win ? (isLast?'Premagal si Popovicha — ti si prvak NBA Pokra! 🏆':`Premagal si ${escapeHtml(ai.name)}! Naslednji nasprotnik odklenjen.`)
+        : tie ? 'Izenačeno! Poskusi znova za zmago.'
+        : `${escapeHtml(ai.name)} te je premagal za ${botTotal-youTotal}. ${youSc.pos.covered<5?'Namig: pokrij vseh 5 položajev!':'Poskusi znova!'}`
+      }</div>
+      <div class="hod-vs-side bot" style="margin-top:14px">
+        <div class="hod-vs-head"><span class="hod-vs-emoji" style="background:${ai.color}">${ai.emoji}</span> ${escapeHtml(ai.name)} ${breakdown(botSc)}<span class="hod-vs-total">${botTotal}</span></div>
+        <div class="hod-pkm-row">${botCards}</div>
+      </div>
+      <div class="hod-vs-side you" style="margin-top:10px">
+        <div class="hod-vs-head">Tvoja peterka ${breakdown(youSc)}<span class="hod-vs-total gold">${youTotal}</span></div>
+        <div class="hod-pkm-row">${yourCards}</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+        ${nextUnlocked?`<button class="hod-btn" id="hod-vs-next">Naslednji nasprotnik →</button>`:''}
+        <button class="hod-btn secondary" id="hod-vs-again">Še enkrat</button>
+        <button class="hod-btn secondary" id="hod-vs-ladder">Piramida</button>
+      </div>
+    </div>`;
+  if(nextUnlocked) document.getElementById('hod-vs-next').onclick=()=>startPokerVsAI(st.aiIdx+1);
+  document.getElementById('hod-vs-again').onclick=()=>startPokerVsAI(st.aiIdx);
+  document.getElementById('hod-vs-ladder').onclick=()=>showPokerLadder();
+  // ob zmagi: nagradni vrtljaj za power-up (po kratkem zamiku, da se vidi rezultat)
+  if(win){ setTimeout(()=>showPowerupSlot(), 700); }
 }
 
 function endClimb(){
@@ -2414,7 +2939,7 @@ async function postQuizScore(mode, score, correct, btn){
 }
 async function showQuizLeaderboard(mode, highlight){
   const box=document.getElementById('hod-leaderboard'); if(!box) return;
-  const title=mode==="kviz"?"Lestvica · Milijonar":mode==="hol"?"Lestvica · Higher/Lower":mode==="poker"?"Lestvica · NBA Poker":"Lestvica · Daily Climb";
+  const title=mode==="kviz"?"Lestvica · Milijonar":mode==="hol"?"Lestvica · Higher/Lower":mode==="poker"?"Lestvica · NBA Poker":mode==="poker_fog"?"Lestvica · Poker (Megla)":"Lestvica · Daily Climb";
   const unit=mode==="kviz"?" €":"";
   box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
   let rows;
@@ -2454,7 +2979,7 @@ async function supaQuizLeaderboard(mode){
 async function showQuizLeadersPage(mode){
   mode=mode||"kviz";
   phase="quizleaders";
-  const tabs=[["kviz","Milijonar"],["climb","Daily Climb"],["hol","Higher/Lower"],["poker","NBA Poker"]];
+  const tabs=[["kviz","Milijonar"],["climb","Daily Climb"],["hol","Higher/Lower"],["poker","NBA Poker"],["poker_fog","Poker 🌫️"]];
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">Lestvice kvizov</div>
@@ -2467,7 +2992,7 @@ async function showQuizLeadersPage(mode){
   screen.querySelectorAll('.hod-ltab').forEach(b=>{ b.onclick=()=>showQuizLeadersPage(b.dataset.m); });
   document.getElementById('hod-ql-back').onclick=()=>showQuizMenu();
   const box=document.getElementById('hod-ql-list');
-  const title=mode==="kviz"?"Milijonar — največ €":mode==="hol"?"Higher/Lower — najdaljši niz":mode==="poker"?"NBA Poker — najvišji overall":"Daily Climb — največ točk";
+  const title=mode==="kviz"?"Milijonar — največ €":mode==="hol"?"Higher/Lower — najdaljši niz":mode==="poker"?"NBA Poker — najvišji overall":mode==="poker_fog"?"Poker Megla — najvišji overall":"Daily Climb — največ točk";
   const unit=mode==="kviz"?" €":"";
   let rows;
   try{ rows=await supaQuizLeaderboard(mode); }
