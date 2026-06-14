@@ -2810,6 +2810,8 @@ function albumCatalogRaw(){
   POOL.forEach(s=>s.players.forEach(p=>{
     if(!p.pid) return;
     if((p.rating||0)<70) return; // samo kvalitetne kartice
+    // izloči igralce brez slike (NBA CDN nima, Wikimedia ni našla)
+    if(typeof NO_PHOTO_PIDS!=='undefined' && NO_PHOTO_PIDS.has(p.pid) && !(typeof LEGEND_PIDS!=='undefined' && LEGEND_PIDS.has(p.pid))) return;
     const ex=byPid[p.pid];
     if(!ex || (p.rating||0)>(ex.rating||0)){
       byPid[p.pid]={pid:p.pid,name:p.name,team:p.team||'',season:p.season,
@@ -2820,65 +2822,26 @@ function albumCatalogRaw(){
   _albumCatalog=Object.values(byPid);
   return _albumCatalog;
 }
-// --- preverjanje slik: NBA fotografije so 1040x760; manjkajoče vrnejo manjšo privzeto sliko ---
-function getImgCache(){
-  try{
-    // verzija cache: če metoda preverjanja se spremeni, ponastavi
-    if(storeGet('hod-imgok-v')!=='3'){ storeSet('hod-imgok','{}'); storeSet('hod-imgok-v','3'); return {}; }
-    return JSON.parse(storeGet('hod-imgok')||'{}');
-  }catch(e){ return {}; }
-}
-function setImgCache(c){ storeSet('hod-imgok', JSON.stringify(c)); }
-function pidHasPhoto(pid){ const c=getImgCache(); return c[pid]===1; }
-function pidChecked(pid){ const c=getImgCache(); return c[pid]!==undefined; }
-// preveri en pid — samo nalaganje (CORS na NBA CDN ne dovoli branja pikslov)
-function checkOnePid(pid){
-  return new Promise(resolve=>{
-    const img=new Image();
-    let done=false;
-    const finish=(ok)=>{ if(done) return; done=true; resolve(ok); };
-    img.onload=()=>finish(img.naturalWidth>=1000 && img.naturalHeight>=600);
-    img.onerror=()=>finish(false);
-    setTimeout(()=>finish(false), 9000);
-    img.src=`https://cdn.nba.com/headshots/nba/latest/1040x760/${pid}.png`;
-  });
-}
-// preveri vse nepreverjene v serijah (v ozadju), pokliče onProgress
-let _imgCheckRunning=false;
-async function ensureImagesChecked(onProgress){
-  if(_imgCheckRunning) return;
-  _imgCheckRunning=true;
-  const raw=albumCatalogRaw();
-  const cache=getImgCache();
-  const todo=raw.filter(c=>cache[c.pid]===undefined).map(c=>c.pid);
-  // dodaj moment pid-e
-  MOMENTS.forEach(m=>{ if(cache[m.pid]===undefined) todo.push(m.pid); });
-  const BATCH=12;
-  for(let i=0;i<todo.length;i+=BATCH){
-    const chunk=todo.slice(i,i+BATCH);
-    const res=await Promise.all(chunk.map(pid=>checkOnePid(pid)));
-    const c=getImgCache();
-    chunk.forEach((pid,j)=>{ c[pid]=res[j]?1:0; });
-    setImgCache(c);
-    _albumCatalog=null; // invalidiraj filtriran katalog
-    if(onProgress) onProgress(Math.min(todo.length, i+BATCH), todo.length);
-  }
-  _imgCheckRunning=false;
-}
-// filtriran katalog: samo kartice s preverjeno sliko (če ni preverjeno, jih ZAČASNO vključi)
-function albumCatalog(){
-  const raw=albumCatalogRaw();
-  const cache=getImgCache();
-  // če sploh še nič preverjeno, vrni raw (da album ni prazen ob prvem zagonu)
-  const anyChecked=Object.keys(cache).length>0;
-  if(!anyChecked) return raw;
-  return raw.filter(c=>cache[c.pid]!==0); // izloči potrjeno brez slike
-}
+// album katalog (slike so zdaj fiksno določene — NBA CDN ali assets/legende)
+function albumCatalog(){ return albumCatalogRaw(); }
+// (opuščeno) staro živo preverjanje slik — ohranjeno kot prazne funkcije za združljivost
+function ensureImagesChecked(onProgress){ if(onProgress) onProgress(1,1); }
+function getImgCache(){ return {}; }
+function missingPhotosReportEnabled(){ return false; }
 // NBA-slogovna silhueta (možiček) kot fallback, ko ni fotografije
+// pid-i z legende sliko (assets/legende/{pid}.jpg) namesto NBA CDN
+const LEGEND_PIDS=new Set([2,21,22,26,36,41,42,47,51,56,61,63,64,65,72,78,82,96,100,101,109,111,114,123,129,137,143,146,157,166,170,177,178,179,181,182,192,198,201,203,213,216,229,236,239,243,244,251,262,270,271,273,278,283,288,293,296,299,308,317,323,328,335,339,341,344,345,349,351,353,356,363,369,375,376,378,384,390,399,417,418,433,436,440,441,442,452,456,458,462,467,470,680,698,703,711,714,717,721,722,724,727,738,760,763,777,779,788,892,895,896,899,902,906,911,913,917,920,921,922,923,926,927,930,938,939,940,958,960,961,964,965,966,970,971,976,979,982,983,990,1000,1006,1008,1032,1088,1112,1114,1123,1381,1442,1453,1456,1472,1474,1479,1499,1505,1506,1508,1509,1510,1513,1517,1520,1521,1532,1533,1536,1540,1541,1544,1559,1594,1601,1622,1709,1712,1714,1716,1720,1723,1724,1728,1729,1730,1733,1740,1741,1744,1763,1800,1838,1847,1853,1885,1888,1890,1892,1894,1902,1904,1905,1907,1908,1913,1916,1919,1922,1928,1944,1952,1956,1960,1985,2031,2033,2036,2037,2038,2039,2041,2043,2046,2047,2048,2049,2050,2052,2054,2055,2056,2058,2059,2060,2063,2067,2069,2072,2073,2078,2098,2109,2124,2128,2137,2198,2202,2203,2205,2208,2209,2212,2215,2217,2221,2222,2229,2230,2239,2242,2243,2246,2248,2254,2260,2261,2294,2306,2351,2398,2402,2404,2407,2413,2416,2417,2429,2430,2431,2434,2436,2443,2454,2457,2471,2484,2501,2545,2553,2554,2556,2557,2562,2566,2567,2568,2569,2575,2584,2586,2588,2624,2669,2679,2740,2741,2742,2745,2751,2753,2761,2767,2768,2774,2782,76001,76002,76005,76011,76015,76016,76017,76019,76027,76054,76076,76093,76095,76106,76107,76144,76154,76162,76170,76187,76192,76195,76204,76206,76213,76217,76231,76233,76249,76252,76253,76256,76257,76266,76268,76276,76289,76290,76296,76305,76317,76348,76350,76351,76356,76362,76379,76385,76386,76392,76402,76403,76421,76431,76436,76444,76458,76471,76499,76516,76518,76521,76522,76525,76526,76531,76539,76545,76567,76568,76577,76583,76598,76599,76616,76619,76628,76631,76641,76663,76672,76673,76680,76716,76736,76739,76750,76753,76761,76785,76786,76806,76819,76826,76832,76867,76874,76881,76882,76883,76887,76890,76895,76899,76908,76916,76928,76942,76965,76971,76972,76981,76983,76993,77022,77034,77043,77053,77054,77070,77071,77078,77081,77092,77097,77103,77106,77133,77134,77141,77144,77146,77152,77160,77163,77168,77175,77182,77186,77193,77200,77205,77215,77227,77236,77259,77263,77290,77295,77320,77323,77324,77326,77328,77330,77331,77338,77350,77351,77357,77364,77376,77384,77385,77387,77396,77412,77413,77415,77418,77419,77420,77438,77454,77463,77475,77484,77487,77490,77498,77505,77532,77533,77543,77547,77553,77554,77578,77584,77586,77609,77618,77626,77662,77669,77674,77685,77688,77689,77696,77700,77710,77721,77731,77754,77756,77770,77786,77800,77812,77819,77820,77839,77844,77845,77848,77875,77876,77879,77881,77883,77905,77914,77917,77929,77946,77952,77962,77966,77984,77993,77996,77998,78000,78014,78015,78025,78028,78045,78047,78055,78059,78060,78084,78097,78103,78110,78133,78143,78146,78149,78151,78157,78167,78173,78183,78188,78195,78198,78199,78202,78213,78222,78238,78241,78245,78293,78296,78302,78310,78326,78331,78347,78350,78351,78367,78387,78390,78395,78398,78399,78400,78404,78421,78432,78435,78437,78439,78440,78442,78467,78473,78475,78482,78485,78495,78500,78501,78510,78520,78530,78531,78532,78547,78548,78549,78561,78565,78567,78578,78592,78596,78602,78610,78614,100263,101113,101115,101118,101119,101120,101121,101124,101126,101128,101130,101131,101132,101136,101138,101141,101142,101143,101144,101153,101154,101155,101160,101177,101180,101189,101249,200747,200748,200749,200750,200758,200761,200764,200766,200767,200769,200776,200783,200789,200796,200809,200810,200814,200816,200835,201141,201154,201159,201161,201168,201175,201187,201189,201274,201446,201564,201576,201590,201591,201602,201611,201785,201814,201938,201944,201947,201953,201957,201958,201960,201963,201974,201979,201985,201991,202333,202343,202345,202361,202396,202399,202412,202686,202690,202698,202706,202716,202724,202970,203094,203100,203106,203144,203156,203457,203476,203516,203544,203561,203903,203944,600001,600005,600006,600009,600010,1626169,1626171,1626204,1627748,1627752,1629091,1629117,1629627,1629675,1630183,1630558,1630577,1630647,1630658,1641727,1641765,1642264,1642271,1642844,1642849,1642852,1642874,1642962]);
+// pid-i brez slike (izloči iz albuma)
+const NO_PHOTO_PIDS=new Set([3,7,9,12,24,28,29,31,32,38,43,49,52,54,55,67,71,73,76,77,80,81,84,85,95,103,104,116,117,122,128,138,140,145,149,156,168,173,174,175,180,184,187,190,194,195,197,199,202,221,228,234,238,240,246,265,279,280,287,289,291,306,313,333,348,355,359,361,364,365,380,381,386,400,402,404,412,416,420,423,426,432,435,446,457,461,469,475,511,673,677,679,684,685,690,692,694,704,705,707,713,716,718,734,735,737,753,761,766,767,768,769,770,771,780,781,783,785,786,894,897,898,907,912,914,916,919,924,931,932,935,941,962,969,988,994,997,1023,1051,1065,1073,1074,1080,1106,1108,1110,1118,1125,1134,1365,1380,1425,1444,1489,1500,1511,1512,1516,1518,1538,1542,1562,1565,1593,1600,1603,1609,1631,1683,1721,1732,1735,1736,1751,1761,1814,1839,1855,1886,1901,1909,1915,1918,1924,1934,2000,2035,2042,2044,2051,2062,2064,2084,2204,2206,2214,2349,2370,2408,2418,2424,2428,2452,2552,2648,2693,2758,2867,76009,76012,76021,76045,76046,76050,76078,76082,76085,76091,76094,76112,76120,76121,76130,76140,76146,76158,76176,76222,76226,76242,76247,76248,76263,76272,76283,76321,76330,76338,76353,76355,76365,76383,76387,76395,76397,76412,76413,76418,76426,76435,76441,76447,76453,76477,76483,76497,76500,76543,76553,76564,76590,76607,76618,76632,76634,76656,76661,76664,76686,76703,76713,76726,76727,76733,76734,76740,76742,76747,76748,76771,76782,76788,76789,76790,76801,76807,76815,76821,76822,76830,76834,76842,76860,76873,76876,76889,76944,76948,76960,76966,76968,76978,76985,76996,77010,77013,77019,77021,77024,77028,77030,77042,77047,77056,77074,77080,77087,77091,77098,77110,77115,77126,77130,77136,77148,77149,77162,77167,77178,77184,77189,77195,77201,77235,77239,77246,77251,77273,77289,77297,77308,77316,77334,77341,77353,77373,77377,77386,77395,77401,77411,77435,77474,77489,77510,77516,77524,77528,77530,77558,77561,77570,77580,77582,77615,77623,77627,77633,77635,77636,77691,77697,77701,77715,77719,77733,77789,77817,77829,77835,77869,77873,77894,77911,77936,77944,77950,77964,77975,77986,77988,77997,78022,78041,78087,78095,78102,78139,78150,78168,78190,78200,78204,78215,78217,78220,78233,78237,78239,78257,78279,78304,78305,78320,78327,78332,78348,78365,78366,78369,78375,78377,78378,78381,78386,78406,78414,78417,78418,78423,78436,78449,78460,78461,78465,78466,78468,78481,78512,78516,78523,78537,78539,78545,78546,78554,78569,78571,78575,78577,78600,78606,78611,78615,78623,78633,78656,201157,201966,201970,202130,202178,202386,202962,600011,1630542,1631321,1642380]);
 const SILHOUETTE="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23223'/%3E%3Cg fill='%23556'%3E%3Ccircle cx='50' cy='38' r='19'/%3E%3Cpath d='M18 92c0-20 14-32 32-32s32 12 32 32z'/%3E%3C/g%3E%3C/svg%3E";
 function avatarImg(pid, cls){
-  // če ima pid: poskusi NBA foto, ob napaki preklopi na silhueto (ne skrij)
-  if(pid) return `<img class="${cls||'hod-av-img'}" src="https://cdn.nba.com/headshots/nba/latest/1040x760/${pid}.png" alt="" loading="lazy" onerror="this.onerror=null;this.src='${SILHOUETTE}'">`;
+  if(pid){
+    // legenda s prosto sliko -> uporabi assets/legende/{pid}.jpg, ob napaki NBA CDN, nato silhueta
+    if(typeof LEGEND_PIDS!=='undefined' && LEGEND_PIDS.has(pid)){
+      return `<img class="${cls||'hod-av-img'}" src="assets/legende/${pid}.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src='https://cdn.nba.com/headshots/nba/latest/1040x760/${pid}.png';this.onerror=function(){this.onerror=null;this.src='${SILHOUETTE}'}">`;
+    }
+    return `<img class="${cls||'hod-av-img'}" src="https://cdn.nba.com/headshots/nba/latest/1040x760/${pid}.png" alt="" loading="lazy" onerror="this.onerror=null;this.src='${SILHOUETTE}'">`;
+  }
   return `<img class="${cls||'hod-av-img'}" src="${SILHOUETTE}" alt="">`;
 }
 function playerAvatar(p, cls){
@@ -4087,9 +4050,7 @@ function renderShop(body){
       ${dups.length?`<div class="hod-shop-sell-d">Imaš ${dups.reduce((a,x)=>a+x.n,0)} dvojnikov v vrednosti <b>🪙 ${dupValue}</b></div>
       <button class="hod-btn" id="hod-sell-all" ${dupValue<=0?'disabled':''}>Prodaj vse dvojnike (🪙 ${dupValue})</button>`
       :'<div class="hod-shop-sell-d">Nimaš dvojnikov za prodajo.</div>'}
-    </div>
-    <div style="margin-top:12px"><button class="hod-btn secondary" id="hod-show-missing" style="font-size:13px">🔍 Poročilo: manjkajoče slike</button></div>`;
-  const mb=document.getElementById('hod-show-missing'); if(mb) mb.onclick=()=>showMissingReport();
+    </div>`;
   const b1=document.getElementById('hod-buy1'); if(b1) b1.onclick=()=>{ if(buyPack()){ hodToast('📦 <b>Paket kupljen!</b> Odpri ga.'); showAlbum(); } };
   const b5=document.getElementById('hod-buy5'); if(b5) b5.onclick=()=>{ if(buyPack5()){ hodToast('📦 <b>5 paketov kupljenih!</b>'); showAlbum(); } };
   const sa=document.getElementById('hod-sell-all'); if(sa) sa.onclick=()=>{
