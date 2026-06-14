@@ -2206,10 +2206,24 @@ function startPoker(){
   pokerState.cards=[0,1,2,3,4].map(()=>pokerPick());
   pokerState.spinsLeft=5;
   renderPoker(false);
+  pokerPreload(16);
 }
 function pokerPick(){
   const l=pokerState.list;
   return l[Math.floor(Math.random()*l.length)];
+}
+// vnaprej naloži nekaj naključnih slik v predpomnilnik (manj zamika pri vrtenju)
+let _pkPreloaded=new Set();
+function pokerPreload(n){
+  const l=pokerState&&pokerState.list; if(!l) return;
+  for(let i=0;i<(n||12);i++){
+    const p=l[Math.floor(Math.random()*l.length)];
+    if(p.pid && !_pkPreloaded.has(p.pid)){
+      _pkPreloaded.add(p.pid);
+      const im=new Image();
+      im.src=`https://cdn.nba.com/headshots/nba/latest/1040x760/${p.pid}.png`;
+    }
+  }
 }
 function pokerTotal(){
   return pokerState.cards.reduce((a,c)=>a+(c.rating||0),0);
@@ -2291,6 +2305,7 @@ function pokerSpin(){
     // konec igre: ni več vrtljajev ALI vse zaklenjene
     if(st.spinsLeft<=0 || st.held.every(h=>h)){ endPoker(); return; }
     renderPoker(false);
+    pokerPreload(10);
   }, 320);
 }
 function endPoker(){
