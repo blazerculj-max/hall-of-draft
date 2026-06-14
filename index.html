@@ -549,6 +549,78 @@
 .hod-shop-sell-h{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:var(--amber);margin-bottom:6px;}
 .hod-shop-sell-d{font-size:13px;color:var(--ink);margin-bottom:10px;}
 .hod-shop-sell-d b{color:var(--amber);}
+/* PACK OPENING animacije */
+.hod-pko-wrap{display:flex;flex-direction:column;align-items:center;padding:16px;}
+.hod-pko-stage{width:100%;max-width:420px;min-height:300px;display:flex;align-items:center;justify-content:center;position:relative;}
+.hod-pko-pack{width:160px;height:226px;border-radius:14px;cursor:pointer;position:relative;
+  background:linear-gradient(150deg,#e8541e,#b03410 60%,#7a2408);border:3px solid var(--amber);
+  box-shadow:0 14px 40px rgba(0,0,0,.6),inset 0 2px 10px rgba(255,255,255,.2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  animation:pkoIdle 2.4s ease-in-out infinite;overflow:hidden;}
+.hod-pko-pack:active{transform:scale(.96);}
+.hod-pko-pack.opening{animation:pkoShake .5s ease-in-out, pkoBurst .35s ease-in .5s forwards;}
+@keyframes pkoIdle{0%,100%{transform:translateY(0) rotate(-1deg);}50%{transform:translateY(-8px) rotate(1deg);}}
+@keyframes pkoShake{0%,100%{transform:rotate(0);}20%{transform:rotate(-5deg) scale(1.04);}40%{transform:rotate(5deg) scale(1.06);}60%{transform:rotate(-4deg) scale(1.07);}80%{transform:rotate(4deg) scale(1.08);}}
+@keyframes pkoBurst{0%{transform:scale(1.08);opacity:1;}100%{transform:scale(1.6);opacity:0;}}
+.hod-pko-rays{position:absolute;inset:0;opacity:.22;background:repeating-conic-gradient(from 0deg at 50% 50%,#fff 0deg 8deg,transparent 8deg 16deg);}
+.hod-pko-tear{position:absolute;top:32px;left:0;right:0;height:0;border-top:2px dashed rgba(255,255,255,.7);}
+.hod-pko-logo{font-family:'Anton';font-size:28px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.5);line-height:.85;text-align:center;position:relative;z-index:1;}
+.hod-pko-logo span{color:var(--navy);}
+.hod-pko-sub{font-family:'Bebas Neue';font-size:12px;letter-spacing:3px;color:var(--navy);position:relative;z-index:1;}
+.hod-pko-tap{font-family:'Oswald';font-size:10px;color:rgba(255,255,255,.85);margin-top:8px;position:relative;z-index:1;letter-spacing:1px;}
+.hod-pko-fan{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;opacity:0;pointer-events:none;}
+.hod-pko-fan.show{opacity:1;pointer-events:auto;}
+.hod-flip{width:96px;height:138px;perspective:800px;cursor:pointer;flex:none;}
+.hod-flip.pop{animation:pkoCardPop .5s cubic-bezier(.2,1.3,.4,1) backwards;}
+@keyframes pkoCardPop{0%{transform:translateY(50px) scale(.4);opacity:0;}100%{transform:translateY(0) scale(1);opacity:1;}}
+.hod-flip-inner{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d;}
+.hod-flip.flipped .hod-flip-inner{transform:rotateY(180deg);}
+.hod-flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:10px;overflow:hidden;}
+.hod-flip-back{background:linear-gradient(150deg,#1a2236,#0d1119);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;}
+.hod-flip-back::after{content:'HOD';font-family:'Anton';font-size:20px;color:var(--amber);opacity:.55;}
+.hod-flip-wreath{position:absolute;width:62px;height:62px;border-radius:50%;border:2px solid var(--gold-d);opacity:.4;}
+.hod-flip-front{transform:rotateY(180deg);background:var(--card-tex);background-size:cover;border:2px solid var(--gold-warm);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;text-align:center;}
+.hod-flip-front::after{content:'';position:absolute;inset:0;background:rgba(244,234,210,.16);}
+.hod-flip-rays-top{height:8px;width:100%;position:absolute;top:0;left:0;z-index:2;background:repeating-linear-gradient(125deg,var(--orange) 0 8px,#d8481a 8px 16px);}
+.hod-flip-photo{width:46px;height:46px;border-radius:50%;border:2px solid var(--orange);margin:6px auto 4px;overflow:hidden;position:relative;z-index:1;}
+.hod-flip-nm{font-family:'Anton';font-size:11px;color:var(--navy);line-height:1;position:relative;z-index:1;}
+.hod-flip-rt{font-family:'Anton';font-size:22px;line-height:1;margin-top:2px;position:relative;z-index:1;}
+.hod-flip-rar{font-family:'Bebas Neue';font-size:9px;letter-spacing:.5px;position:relative;z-index:1;}
+.hod-flip-new{position:absolute;top:10px;right:4px;z-index:3;font-family:'Anton';font-size:8px;background:var(--orange);color:#fff;border-radius:4px;padding:0 4px;}
+.hod-flip-dup{position:absolute;top:10px;right:4px;z-index:3;font-family:'Anton';font-size:8px;background:var(--gold-d);color:#fff;border-radius:4px;padding:0 4px;}
+/* redka */
+.hod-flip.rar-rare .hod-flip-front{border-color:#9ec5e8;box-shadow:0 0 16px rgba(158,197,232,.7);}
+.hod-flip.rar-rare.flipped{animation:pkoRareGlow 1s ease;}
+@keyframes pkoRareGlow{0%{filter:brightness(1);}40%{filter:brightness(1.35) drop-shadow(0 0 14px #9ec5e8);}100%{filter:brightness(1);}}
+/* legendarna */
+.hod-flip.rar-legendary .hod-flip-front{border-color:#ffd166;box-shadow:0 0 26px rgba(255,209,102,.9);}
+.hod-flip.rar-legendary.flipped{animation:pkoLegShake .7s ease;}
+@keyframes pkoLegShake{0%{transform:scale(1) rotate(0);}15%{transform:scale(1.15) rotate(-3deg);}30%{transform:scale(1.12) rotate(3deg);}45%{transform:scale(1.14) rotate(-2deg);}100%{transform:scale(1) rotate(0);}}
+/* moment */
+.hod-flip.rar-moment .hod-flip-front{border-color:#ff4d6d;box-shadow:0 0 26px rgba(255,77,109,.9);}
+.hod-flip.rar-moment.flipped{animation:pkoLegShake .7s ease;}
+.hod-leg-burst{position:absolute;inset:-30px;border-radius:50%;pointer-events:none;opacity:0;z-index:-1;background:radial-gradient(circle,rgba(255,209,102,.8),transparent 70%);}
+.hod-flip.rar-legendary.flipped .hod-leg-burst,.hod-flip.rar-moment.flipped .hod-leg-burst{animation:pkoLegBurst 1s ease forwards;}
+@keyframes pkoLegBurst{0%{opacity:0;transform:scale(.3);}40%{opacity:1;transform:scale(1.1);}100%{opacity:0;transform:scale(1.5);}}
+.hod-leg-rays{position:absolute;inset:-22px;z-index:-1;opacity:0;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,209,102,.5) 0deg 6deg,transparent 6deg 12deg);}
+.hod-flip.rar-legendary.flipped .hod-leg-rays,.hod-flip.rar-moment.flipped .hod-leg-rays{animation:pkoLegRays 1.4s linear forwards;}
+@keyframes pkoLegRays{0%{opacity:0;transform:rotate(0) scale(.5);}30%{opacity:.8;}100%{opacity:0;transform:rotate(80deg) scale(1.3);}}
+.hod-pko-ctrl{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center;}
+/* AUTH */
+.hod-auth-tabs{display:flex;gap:8px;justify-content:center;margin:10px 0;}
+.hod-auth-tab{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;background:#161b2a;border:1px solid var(--gold-warm);
+  color:var(--amber);border-radius:9px;padding:8px 20px;cursor:pointer;}
+.hod-auth-tab.on{background:var(--orange);color:#fff;border-color:var(--orange);}
+.hod-auth-card{background:#161b2a;border:1px solid var(--gold-warm);border-radius:14px;padding:20px;max-width:340px;margin:0 auto;
+  box-shadow:0 8px 22px rgba(0,0,0,.5);}
+.hod-auth-in{width:100%;box-sizing:border-box;background:#fff;border:2px solid var(--gold-warm);border-radius:10px;
+  padding:11px 14px;font-family:'Oswald';font-size:15px;color:#1a1a1a;margin-bottom:10px;}
+.hod-auth-in:focus{outline:none;border-color:var(--orange);}
+.hod-auth-err{color:var(--red);font-size:13px;min-height:18px;margin-bottom:6px;}
+.hod-auth-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:12px;}
+.hod-auth-hi{font-family:'Oswald';font-size:13px;color:var(--muted);}
+.hod-auth-user{font-family:'Anton';font-size:24px;color:var(--amber);margin:4px 0 10px;}
 .hod-howto-card{position:relative;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;
   background:linear-gradient(165deg,#1e1e2c 0%,#16161f 100%);
   border:1px solid rgba(255,182,39,.35);border-radius:20px;padding:0 0 22px;
@@ -1841,6 +1913,7 @@ function showLanding(){
       </div>
       <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn secondary" id="hod-go-album">📒 Album${getPendingPacks()>0?` <span class="hod-pack-badge">${getPendingPacks()} 📦</span>`:''}</button>
+        <button class="hod-btn secondary" id="hod-go-auth">${isLoggedIn()?'👤 '+escapeHtml(currentUser()):'🔑 Prijava'}</button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:1px">
         vir: ${DATA_SOURCE}
@@ -1849,7 +1922,11 @@ function showLanding(){
   document.getElementById('hod-go-draft').onclick=()=>{ showIntro(); };
   document.getElementById('hod-go-quiz').onclick=()=>{ showQuizMenu(); };
   document.getElementById('hod-go-poker').onclick=()=>{ showPokerMenu(); };
-  document.getElementById('hod-go-album').onclick=()=>{ showAlbum(); };
+  document.getElementById('hod-go-album').onclick=()=>{
+    if(!isLoggedIn() && !storeGet('hod-guest-ok')){ showGuestWarning(()=>showAlbum()); }
+    else showAlbum();
+  };
+  document.getElementById('hod-go-auth').onclick=()=>{ showAuth(); };
   renderProgress();
 }
 
@@ -2472,9 +2549,85 @@ function countUp(el, target, dur){
   }
   requestAnimationFrame(step);
 }
+// ===================== RAČUNI (Supabase) =====================
+// Tabela 'accounts': username (text, unique), pass (text), data (jsonb)
+// Preprost hash gesla (NI kriptografsko močan, a dovolj za neobčutljivo igro)
+function hashPass(s){ let h=5381; for(let i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; } return 'h'+h.toString(16); }
+let _account=null; // {username}
+function getSession(){ try{ return JSON.parse(storeGet('hod-session')||'null'); }catch(e){ return null; } }
+function setSession(s){ if(s) storeSet('hod-session', JSON.stringify(s)); else { try{localStorage.removeItem('hod-session');}catch(e){} } }
+function isLoggedIn(){ return !!_account; }
+function currentUser(){ return _account?_account.username:null; }
+
+// lokalno stanje albuma kot en objekt (za sinhronizacijo)
+function localProgress(){
+  return { album:getCollected(), coins:getCoins(), packs:getPendingPacks(),
+           daily:(()=>{try{return JSON.parse(storeGet('hod-daily')||'{}');}catch(e){return {};}})() };
+}
+function applyProgress(p){
+  if(!p) return;
+  if(p.album) setCollected(p.album);
+  if(typeof p.coins==='number') setCoins(p.coins);
+  if(typeof p.packs==='number') setPendingPacks(p.packs);
+  if(p.daily) storeSet('hod-daily', JSON.stringify(p.daily));
+}
+async function accFetch(username){
+  const url=`${SUPA_URL}/rest/v1/accounts?username=eq.${encodeURIComponent(username)}&select=*`;
+  const res=await fetch(url,{headers:SUPA_HEADERS});
+  if(!res.ok) throw new Error('net');
+  const rows=await res.json();
+  return rows[0]||null;
+}
+async function accRegister(username, pass){
+  username=username.trim();
+  if(username.length<3) return {err:'Uporabniško ime mora imeti vsaj 3 znake.'};
+  if(pass.length<4) return {err:'Geslo mora imeti vsaj 4 znake.'};
+  const ex=await accFetch(username).catch(()=>undefined);
+  if(ex===undefined) return {err:'Ni povezave s strežnikom.'};
+  if(ex) return {err:'To uporabniško ime že obstaja.'};
+  const row={username, pass:hashPass(pass), data:localProgress()};
+  const res=await fetch(`${SUPA_URL}/rest/v1/accounts`,{method:'POST',headers:{...SUPA_HEADERS,Prefer:'return=minimal'},body:JSON.stringify(row)});
+  if(!res.ok) return {err:'Registracija ni uspela.'};
+  _account={username}; setSession({username,p:hashPass(pass)});
+  return {ok:true};
+}
+async function accLogin(username, pass){
+  username=username.trim();
+  const row=await accFetch(username).catch(()=>undefined);
+  if(row===undefined) return {err:'Ni povezave s strežnikom.'};
+  if(!row) return {err:'Uporabnik ne obstaja.'};
+  if(row.pass!==hashPass(pass)) return {err:'Napačno geslo.'};
+  _account={username}; setSession({username,p:row.pass});
+  applyProgress(row.data);
+  return {ok:true};
+}
+async function accLogout(){ _account=null; setSession(null); }
+// shrani napredek v oblak (če prijavljen)
+let _syncTimer=null;
+function syncProgress(){
+  if(!_account) return;
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(async ()=>{
+    try{
+      await fetch(`${SUPA_URL}/rest/v1/accounts?username=eq.${encodeURIComponent(_account.username)}`,
+        {method:'PATCH',headers:{...SUPA_HEADERS,Prefer:'return=minimal'},body:JSON.stringify({data:localProgress()})});
+    }catch(e){}
+  }, 1200);
+}
+// ob zagonu: poskusi obnoviti sejo
+async function restoreSession(){
+  const s=getSession();
+  if(!s||!s.username) return;
+  try{
+    const row=await accFetch(s.username);
+    if(row && row.pass===s.p){ _account={username:s.username}; applyProgress(row.data); }
+  }catch(e){}
+}
+// ===================== KONEC RAČUNI =====================
+
 // ===================== TOČKE / EKONOMIJA =====================
 function getCoins(){ return parseInt(storeGet('hod-coins')||'0',10)||0; }
-function setCoins(n){ storeSet('hod-coins', String(Math.max(0,Math.round(n)))); }
+function setCoins(n){ storeSet('hod-coins', String(Math.max(0,Math.round(n)))); if(typeof syncProgress==='function') syncProgress(); }
 function addCoins(n){ setCoins(getCoins()+n); return n; }
 function spendCoins(n){ if(getCoins()<n) return false; setCoins(getCoins()-n); return true; }
 
@@ -2532,7 +2685,7 @@ const RARITY_DEFS={
 function getCollected(){
   try{ return JSON.parse(storeGet('hod-album')||'{}'); }catch(e){ return {}; }
 }
-function setCollected(obj){ storeSet('hod-album', JSON.stringify(obj)); }
+function setCollected(obj){ storeSet('hod-album', JSON.stringify(obj)); if(typeof syncProgress==='function') syncProgress(); }
 function isStuck(id){ const c=getCollected()[id]; return c&&c.stuck; }
 function hasCard(id){ return !!getCollected()[id]; }
 function unstuckCount(id){ const c=getCollected()[id]; return c?(c.count||0):0; }
@@ -2554,7 +2707,7 @@ function sellDuplicates(id, rarity){
 
 // neporavnani paketi (zasluženi, še neodprti)
 function getPendingPacks(){ return parseInt(storeGet('hod-packs')||'0',10)||0; }
-function setPendingPacks(n){ storeSet('hod-packs', String(Math.max(0,n))); }
+function setPendingPacks(n){ storeSet('hod-packs', String(Math.max(0,n))); if(typeof syncProgress==='function') syncProgress(); }
 function awardPack(n){ setPendingPacks(getPendingPacks()+(n||1)); }
 
 // izberi naključno kartico po teži redkosti (vključno z momenti)
@@ -3666,47 +3819,132 @@ function showPackOpening(){
   if(getPendingPacks()<=0){ showAlbum(); return; }
   setPendingPacks(getPendingPacks()-1);
   const results=openOnePack();
-  const N=results.length;
-  let idx=0;
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
-  ov.innerHTML=`<div class="hod-pack-card">
-    <div class="hod-pack-h">📦 Paket sličic <span id="hod-pack-count">1/${N}</span></div>
-    <div class="hod-pack-stage" id="hod-pack-stage"></div>
-    <div class="hod-pack-dots" id="hod-pack-dots"></div>
-    <button class="hod-btn gold" id="hod-pack-next" style="margin-top:14px">Razkrij naslednjo</button>
+  ov.innerHTML=`<div class="hod-pko-wrap">
+    <div class="hod-pko-stage" id="hod-pko-stage">
+      <div class="hod-pko-pack" id="hod-pko-pack">
+        <div class="hod-pko-rays"></div>
+        <div class="hod-pko-tear"></div>
+        <div class="hod-pko-logo">HALL <span>OF</span> DRAFT</div>
+        <div class="hod-pko-sub">PAKET SLIČIC</div>
+        <div class="hod-pko-tap">tapni za odpiranje</div>
+      </div>
+      <div class="hod-pko-fan" id="hod-pko-fan"></div>
+    </div>
+    <div class="hod-pko-ctrl" id="hod-pko-ctrl" style="display:none">
+      <button class="hod-btn gold" id="hod-pko-flipall">Obrni vse</button>
+      <button class="hod-btn secondary" id="hod-pko-done">Zaključi</button>
+    </div>
   </div>`;
   document.body.appendChild(ov);
-  const stage=ov.querySelector('#hod-pack-stage');
-  const dots=ov.querySelector('#hod-pack-dots');
-  const nextBtn=ov.querySelector('#hod-pack-next');
-  const counter=ov.querySelector('#hod-pack-count');
-  dots.innerHTML=results.map((r,i)=>`<span class="hod-pack-dot ${i===0?'on':''}" id="pdot${i}"></span>`).join('');
-  function reveal(){
-    const r=results[idx];
-    const c=r.card;
-    counter.textContent=`${idx+1}/${N}`;
-    stage.innerHTML=`<div class="hod-pack-reveal rar-${c.rarity}">
-      ${r.isNew?'<div class="hod-pack-new">NOVO!</div>':'<div class="hod-pack-dup">dvojnik</div>'}
-      <div class="hod-pack-photo">${avatarImg(c.pid,'')}</div>
-      <div class="hod-pack-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}${c.moment?' · '+escapeHtml(c.moment):''}</div>
-      <div class="hod-pack-nm">${escapeHtml(c.name)}</div>
-      <div class="hod-pack-meta">${escapeHtml(c.team||'')} · ${c.season}</div>
-      <div class="hod-pack-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
-    </div>`;
-    const dot=document.getElementById('pdot'+idx); if(dot) dot.classList.add('done');
-    idx++;
-    if(idx>=results.length){
-      nextBtn.textContent='Zaključi';
-      nextBtn.onclick=()=>{ ov.remove(); _albumTab='nove'; showAlbum(); };
-    } else {
-      const nd=document.getElementById('pdot'+idx); if(nd) nd.classList.add('on');
-    }
-  }
-  nextBtn.onclick=()=>reveal();
-  reveal();
+  const pack=ov.querySelector('#hod-pko-pack');
+  const fan=ov.querySelector('#hod-pko-fan');
+  const ctrl=ov.querySelector('#hod-pko-ctrl');
+  let flippedCount=0;
+  pack.onclick=()=>{
+    pack.classList.add('opening');
+    setTimeout(()=>{
+      pack.style.display='none';
+      fan.classList.add('show');
+      fan.innerHTML=results.map((r,i)=>{
+        const c=r.card;
+        return `<div class="hod-flip rar-${c.rarity}" data-i="${i}" style="animation-delay:${i*0.12}s">
+          <div class="hod-flip-inner">
+            <div class="hod-flip-face hod-flip-back"><div class="hod-flip-wreath"></div></div>
+            <div class="hod-flip-face hod-flip-front">
+              <div class="hod-leg-burst"></div><div class="hod-leg-rays"></div>
+              <div class="hod-flip-rays-top"></div>
+              ${r.isNew?'<div class="hod-flip-new">NOVO</div>':'<div class="hod-flip-dup">×2</div>'}
+              <div class="hod-flip-photo">${avatarImg(c.pid,'')}</div>
+              <div class="hod-flip-nm">${escapeHtml((c.name||'').split(' ').slice(-1)[0])}</div>
+              <div class="hod-flip-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
+              <div class="hod-flip-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}</div>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+      ctrl.style.display='flex';
+      fan.querySelectorAll('.hod-flip').forEach(el=>{
+        el.classList.add('pop');
+        el.onclick=()=>{ if(!el.classList.contains('flipped')){ el.classList.add('flipped'); flippedCount++; } };
+      });
+    }, 850);
+  };
+  ov.querySelector('#hod-pko-flipall').onclick=()=>{
+    fan.querySelectorAll('.hod-flip').forEach((el,i)=>setTimeout(()=>el.classList.add('flipped'), i*180));
+  };
+  ov.querySelector('#hod-pko-done').onclick=()=>{ ov.remove(); _albumTab='nove'; showAlbum(); };
 }
 // ===================== KONEC ALBUM UI =====================
+
+// ===================== AUTH UI =====================
+function showAuth(){
+  phase="auth";
+  const loggedIn=isLoggedIn();
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">Račun</div>
+      ${loggedIn?`
+        <div class="hod-auth-card">
+          <div class="hod-auth-hi">Prijavljen kot</div>
+          <div class="hod-auth-user">👤 ${escapeHtml(currentUser())}</div>
+          <div class="hod-auth-note">Tvoj album in točke se shranjujejo v oblak — dostopni so na vsaki napravi.</div>
+          <button class="hod-btn secondary" id="hod-auth-logout">Odjava</button>
+        </div>`
+      :`
+        <div class="hod-auth-tabs">
+          <button class="hod-auth-tab on" data-m="login">Prijava</button>
+          <button class="hod-auth-tab" data-m="register">Registracija</button>
+        </div>
+        <div class="hod-auth-card">
+          <input class="hod-auth-in" id="hod-auth-user" placeholder="Uporabniško ime" autocomplete="username" maxlength="20">
+          <input class="hod-auth-in" id="hod-auth-pass" type="password" placeholder="Geslo" autocomplete="current-password" maxlength="40">
+          <div class="hod-auth-err" id="hod-auth-err"></div>
+          <button class="hod-btn gold" id="hod-auth-go">Prijava</button>
+          <div class="hod-auth-note">Brez e-pošte — samo ime in geslo. Tvoj album se shrani v oblak.</div>
+        </div>`}
+      <div style="margin-top:18px"><button class="hod-btn secondary" id="hod-auth-back">← Domov</button></div>
+    </div>`;
+  document.getElementById('hod-auth-back').onclick=()=>goHome();
+  if(loggedIn){
+    document.getElementById('hod-auth-logout').onclick=async()=>{ await accLogout(); hodToast('Odjavljen'); goHome(); };
+    return;
+  }
+  let mode='login';
+  const tabs=screen.querySelectorAll('.hod-auth-tab');
+  const goBtn=document.getElementById('hod-auth-go');
+  tabs.forEach(t=>t.onclick=()=>{ tabs.forEach(x=>x.classList.remove('on')); t.classList.add('on'); mode=t.dataset.m; goBtn.textContent=mode==='login'?'Prijava':'Ustvari račun'; document.getElementById('hod-auth-err').textContent=''; });
+  goBtn.onclick=async()=>{
+    const u=document.getElementById('hod-auth-user').value;
+    const p=document.getElementById('hod-auth-pass').value;
+    const errEl=document.getElementById('hod-auth-err');
+    if(!u||!p){ errEl.textContent='Vpiši ime in geslo.'; return; }
+    goBtn.disabled=true; goBtn.textContent='...';
+    const res = mode==='login' ? await accLogin(u,p) : await accRegister(u,p);
+    goBtn.disabled=false; goBtn.textContent=mode==='login'?'Prijava':'Ustvari račun';
+    if(res.err){ errEl.textContent=res.err; return; }
+    hodToast(`✅ <b>${mode==='login'?'Prijavljen':'Račun ustvarjen'}!</b>`);
+    goHome();
+  };
+}
+// opozorilo za gosta
+function showGuestWarning(onContinue){
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-nick-card hod-pop">
+    <div class="hod-nick-title">Igraš kot gost</div>
+    <div class="hod-nick-sub">Kot gost <b style="color:var(--amber)">ne moreš shranjevati albuma in točk v oblak</b> — če zbrišeš podatke brskalnika ali zamenjaš napravo, je napredek izgubljen.<br><br>Ustvari račun (brez e-pošte), da obdržiš svojo zbirko.</div>
+    <div class="hod-nick-btns">
+      <button class="hod-btn gold" id="hod-gw-reg">Ustvari račun</button>
+      <button class="hod-btn secondary" id="hod-gw-guest">Nadaljuj kot gost</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  document.getElementById('hod-gw-reg').onclick=()=>{ ov.remove(); showAuth(); };
+  document.getElementById('hod-gw-guest').onclick=()=>{ ov.remove(); storeSet('hod-guest-ok','1'); if(onContinue) onContinue(); };
+}
+// ===================== KONEC AUTH UI =====================
 
 function goHome(){
   try{ if(quizState&&quizState.timer){clearInterval(quizState.timer);quizState.timer=null;} }catch(e){}
@@ -5431,6 +5669,7 @@ function showLoading(){
   }catch(e){}
   showLoading();
   await loadDataset();
+  await restoreSession();
   showLanding();
   const hdr=document.getElementById('hod-header-home');
   if(hdr) hdr.onclick=()=>goHome();
