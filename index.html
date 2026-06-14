@@ -562,6 +562,8 @@
 .hod-alb-teamtag{position:relative;z-index:1;font-family:'Bebas Neue';font-size:9px;letter-spacing:1px;
   color:var(--gold-d);line-height:1;margin-top:1px;}
 .hod-alb-cell.empty .hod-alb-teamtag{color:rgba(180,170,150,.5);}
+.hod-alb-team-h{padding-left:8px;}
+.hod-alb-team-nm{font-family:'Bebas Neue';letter-spacing:1px;}
 /* sezonske podtabe */
 .hod-szn-tabs{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:4px 0 12px;}
 .hod-szn-tab{position:relative;font-family:'Oswald';font-weight:600;font-size:12px;background:#13192a;
@@ -4005,19 +4007,17 @@ function renderAlbumGrid(byDec){
     if(/^\d+$/.test(q)){ const tn=parseInt(q,10); cards=cards.filter(c=>c.num===tn); }
     else cards=cards.filter(c=>c.name.toLowerCase().includes(q));
   }
-  // organizacija: po ratingu padajoče (zvezde spredaj)
-  cards.sort((a,b)=> (b.rating-a.rating) || (a.name||'').localeCompare(b.name||'') || (a.team||'').localeCompare(b.team||''));
-  const cellHtml=cards.map(c=>{
+  // celica
+  const cellOf=(c)=>{
     const st=col[c.uid]&&col[c.uid].stuck;
     const isTarget=target&&target==c.uid;
-    const ribbon=`<div class="hod-alb-ribbon" style="background:${teamColor(c.team)}" title="${escapeHtml(c.team)}"></div>`;
+    const ribbon=`<div class="hod-alb-ribbon" style="background:${teamColor(c.team)}"></div>`;
     if(!st){
       const waiting=col[c.uid]&&!col[c.uid].stuck&&(col[c.uid].count||0)>0;
       return `<div class="hod-alb-cell empty rar-${c.rarity} ${isTarget?'target':''} ${waiting&&!isTarget?'waiting':''}" data-stickid="${c.uid}">
         ${ribbon}
         <div class="hod-alb-num">${c.num}</div>
         <div class="hod-alb-ghost">${escapeHtml(c.name)}</div>
-        <div class="hod-alb-teamtag">${escapeHtml(c.team)}</div>
         ${isTarget?'<div class="hod-alb-here">tukaj!</div>':waiting?'<div class="hod-alb-waitmark">●</div>':''}
       </div>`;
     }
@@ -4026,12 +4026,32 @@ function renderAlbumGrid(byDec){
       <div class="hod-alb-num">${c.num}</div>
       <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
       <div class="hod-alb-fullnm">${escapeHtml(c.name)}</div>
-      <div class="hod-alb-teamtag">${escapeHtml(c.team)}</div>
       <div class="hod-alb-rt">${c.rating}</div>
     </div>`;
+  };
+  // grupiraj po EKIPI; znotraj ekipe po ratingu
+  const byTeam={};
+  cards.forEach(c=>{ (byTeam[c.team||'?']=byTeam[c.team||'?']||[]).push(c); });
+  const teamKeys=Object.keys(byTeam).sort((a,b)=>{
+    // ekipe z največ kartic / najboljšo zvezdo spredaj
+    const maxA=Math.max(...byTeam[a].map(c=>c.rating||0));
+    const maxB=Math.max(...byTeam[b].map(c=>c.rating||0));
+    return maxB-maxA || a.localeCompare(b);
+  });
+  grid.innerHTML=teamKeys.map(team=>{
+    const arr=byTeam[team].slice().sort((a,b)=>(b.rating-a.rating)||(a.name||'').localeCompare(b.name||''));
+    const got=arr.filter(c=>col[c.uid]&&col[c.uid].stuck).length;
+    const teamWait=arr.filter(c=>col[c.uid]&&!col[c.uid].stuck&&(col[c.uid].count||0)>0).length;
+    const col2=teamColor(team);
+    return `<div class="hod-alb-team">
+      <div class="hod-alb-team-h" style="border-left:5px solid ${col2}">
+        <span class="hod-alb-team-nm">${escapeHtml(team)}</span>
+        <span>${got}/${arr.length}</span>
+        ${teamWait>0?`<i class="hod-wait-dot sm">${teamWait}</i>`:''}
+      </div>
+      <div class="hod-alb-cells">${arr.map(cellOf).join('')}</div>
+    </div>`;
   }).join('');
-  const gotN=cards.filter(c=>col[c.uid]&&col[c.uid].stuck).length;
-  grid.innerHTML=`<div class="hod-alb-team"><div class="hod-alb-team-h">${_albumDecade} — najboljši igralci <span>${gotN}/${cards.length}</span></div><div class="hod-alb-cells">${cellHtml}</div></div>`;
   bindGridClicks(grid);
   if(target){
     const tEl=grid.querySelector('.hod-alb-cell.target');
