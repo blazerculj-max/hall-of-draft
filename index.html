@@ -196,9 +196,11 @@
 .hod-pk-card.spinning{animation:pkspin .32s ease;}
 @keyframes pkspin{0%{transform:rotateY(0) scale(1);opacity:1;}50%{transform:rotateY(90deg) scale(.9);opacity:.3;}100%{transform:rotateY(0) scale(1);opacity:1;}}
 .hod-pk-lock{position:absolute;top:5px;right:6px;font-size:13px;}
-.hod-pk-avatar{width:46px;height:46px;border-radius:50%;margin:0 auto 7px;display:flex;align-items:center;
+.hod-pk-avatar{position:relative;width:56px;height:56px;border-radius:50%;margin:0 auto 7px;display:flex;align-items:center;
   justify-content:center;font-family:'Anton';font-size:18px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);
-  border:2px solid rgba(255,255,255,.2);}
+  border:2px solid rgba(255,255,255,.25);overflow:hidden;}
+.hod-av-ini{position:absolute;z-index:1;}
+.hod-av-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%;z-index:2;background:transparent;}
 .hod-pk-name{font-family:'Bebas Neue';font-size:15px;letter-spacing:.3px;color:#fff;line-height:1.05;margin-bottom:2px;min-height:30px;display:flex;align-items:center;justify-content:center;}
 .hod-pk-meta{font-family:'Oswald';font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;line-height:1.3;}
 .hod-pk-rating{font-family:'Anton';font-size:30px;color:var(--gold);line-height:1;}
@@ -209,7 +211,7 @@
 .hod-pk-card.held .hod-pk-hold{color:var(--gold);}
 @media(max-width:560px){
   .hod-pk-card{flex:1 1 28%;max-width:none;min-width:0;}
-  .hod-pk-avatar{width:38px;height:38px;font-size:15px;}
+  .hod-pk-avatar{width:46px;height:46px;font-size:15px;}
   .hod-pk-rating{font-size:24px;}
   .hod-pk-name{font-size:13px;}
 }
@@ -2187,6 +2189,14 @@ function initials(name){
   if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
   return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
 }
+// avatar z NBA CDN sliko; če slike ni (starejši igralci), ostanejo inicialke kot ozadje
+function playerAvatar(p, cls){
+  const col=nameColor(p.name);
+  const ini=initials(p.name);
+  const pid=p.pid;
+  const img = pid ? `<img class="hod-av-img" src="https://cdn.nba.com/headshots/nba/latest/1040x760/${pid}.png" alt="" loading="lazy" onerror="this.style.display='none'">` : '';
+  return `<div class="${cls||'hod-pk-avatar'}" style="background:${col}"><span class="hod-av-ini">${ini}</span>${img}</div>`;
+}
 let pokerState=null;
 function startPoker(){
   const list=holPlayerList(); // ista baza igralcev (vse dekade)
@@ -2213,7 +2223,7 @@ function renderPoker(finished){
     const col=nameColor(c.name);
     return `<div class="hod-pk-card ${held?'held':''} ${finished?'done':''}" data-i="${i}">
       ${held?`<div class="hod-pk-lock">🔒</div>`:''}
-      <div class="hod-pk-avatar" style="background:${col}">${initials(c.name)}</div>
+      <div class="hod-pk-avatar" style="background:${col}"><span class="hod-av-ini">${initials(c.name)}</span>${c.pid?`<img class="hod-av-img" src="https://cdn.nba.com/headshots/nba/latest/1040x760/${c.pid}.png" alt="" loading="lazy" onerror="this.style.display='none'">`:''}</div>
       <div class="hod-pk-name">${escapeHtml(c.name)}</div>
       <div class="hod-pk-meta">${escapeHtml(c.team||'')} · ${c.season} · ${c.pos||''}</div>
       <div class="hod-pk-rating">${c.rating||0}</div>
