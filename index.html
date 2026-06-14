@@ -307,7 +307,16 @@
 .hod-pk-card:hover{border-color:var(--orange);transform:translateY(-3px);}
 .hod-pk-card.held{border-color:var(--orange);box-shadow:0 0 16px rgba(232,84,30,.5);cursor:default;}
 .hod-pk-card.held:hover{transform:none;}
-.hod-pk-card.spinning{animation:pkspin .32s ease;}
+.hod-pk-card.spinning{animation:pkSpinCine .55s cubic-bezier(.45,.05,.55,.95);}
+@keyframes pkSpinCine{
+  0%{transform:rotateY(0) scale(1);opacity:1;}
+  35%{transform:rotateY(90deg) scale(.88);opacity:.35;}
+  50%{transform:rotateY(90deg) scale(.88);opacity:.2;}
+  65%{transform:rotateY(0deg) scale(.92);opacity:.6;}
+  100%{transform:rotateY(0) scale(1);opacity:1;}
+}
+.hod-pk-card.swap-in{animation:pkSwapIn .4s ease;}
+@keyframes pkSwapIn{0%{filter:brightness(2);}100%{filter:brightness(1);}}
 .hod-pk-rays{height:12px;background:repeating-linear-gradient(125deg,var(--orange) 0,var(--orange) 10px,#d8481a 10px,#d8481a 20px);position:relative;z-index:1;}
 .hod-pk-head{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:9px 9px 0;}
 .hod-pk-lock{flex:1;text-align:center;font-size:15px;filter:grayscale(1) brightness(0);line-height:1;}
@@ -2925,7 +2934,7 @@ function startPoker(){
   // prvi delež: 5 naključnih kart
   pokerState.cards=[0,1,2,3,4].map(()=>pokerPick());
   pokerState.spinsLeft=5;
-  renderPoker(false);
+  renderPoker(false, true);
   pokerPreload(16);
 }
 function pokerPick(){
@@ -2992,7 +3001,7 @@ function pokerScore(cards){
   const total=base+pos.bonus+chem.bonus;
   return {base, pos, chem, total};
 }
-function renderPoker(finished){
+function renderPoker(finished, firstRender){
   const st=pokerState;
   const total=pokerTotal();
   const avg=Math.round(total/5);
@@ -3000,7 +3009,7 @@ function renderPoker(finished){
     const held=st.held[i];
     const col=nameColor(c.name);
     const showOvr = held || !pokerFog;
-    return `<div class="hod-pk-card ${held?'held':''} ${finished?'done':''} hod-pk-enter" data-i="${i}" style="animation-delay:${i*0.06}s">
+    return `<div class="hod-pk-card ${held?'held':''} ${finished?'done':''} ${firstRender?'hod-pk-enter':''}" data-i="${i}" style="${firstRender?`animation-delay:${i*0.06}s`:''}">
       <div class="hod-pk-rays"></div>
       <div class="hod-pk-head"><span class="hod-pk-pos">${posLabel(c)}</span><span class="hod-pk-lock">${held?'🔒':''}</span><span class="hod-pk-ovr ${showOvr?'':'fog'}">${showOvr?(c.rating||0):'?'}</span></div>
       <div class="hod-pk-avatar" style="background:${col}">${avatarImg(c.pid)}</div>
@@ -3074,25 +3083,56 @@ function renderPoker(finished){
 }
 function pokerSpin(){
   const st=pokerState;
+  if(st._spinning) return; st._spinning=true;
   // zavrti vse nezaklenjene
-  st.cards=st.cards.map((c,i)=> st.held[i] ? c : pokerPick());
+  const newCards=st.cards.map((c,i)=> st.held[i] ? c : pokerPick());
   st.spinsLeft--;
-  // animacija vrtenja: kratko pokaži "?" pa nato rezultat
   const grid=screen.querySelector('.hod-pk-grid');
+  // onemogoči gumbe med vrtenjem
+  const spinBtn=document.getElementById('hod-pk-spin'); if(spinBtn) spinBtn.disabled=true;
+  const stopBtn=document.getElementById('hod-pk-stop'); if(stopBtn) stopBtn.disabled=true;
+  const spinningIdx=[];
   if(grid){
     st.cards.forEach((c,i)=>{
       if(!st.held[i]){
         const el=grid.querySelector(`.hod-pk-card[data-i="${i}"]`);
-        if(el) el.classList.add('spinning');
+        if(el){
+          spinningIdx.push(i);
+          // zamik za "val" učinek
+          el.style.animationDelay=(i*0.08)+'s';
+          el.classList.add('spinning');
+        }
       }
     });
   }
+  // sredi obrata (ko je karta obrnjena ~90°) zamenjaj vsebino vsake posebej
+  spinningIdx.forEach(i=>{
+    const delay=200 + i*80; // ujemi z 35% od 550ms + zamik
+    setTimeout(()=>{
+      const el=grid && grid.querySelector(`.hod-pk-card[data-i="${i}"]`);
+      if(!el) return;
+      const c=newCards[i];
+      const col=nameColor(c.name);
+      const showOvr = !pokerFog;
+      el.querySelector('.hod-pk-pos').textContent=posLabel(c);
+      const ovr=el.querySelector('.hod-pk-ovr'); ovr.textContent=showOvr?(c.rating||0):'?'; ovr.className='hod-pk-ovr '+(showOvr?'':'fog');
+      el.querySelector('.hod-pk-avatar').style.background=col;
+      el.querySelector('.hod-pk-avatar').innerHTML=avatarImg(c.pid);
+      el.querySelector('.hod-pk-name').textContent=c.name;
+      el.querySelector('.hod-pk-meta').innerHTML=escapeHtml(c.team||'')+' · '+c.season;
+      el.querySelector('.hod-pk-stats').innerHTML=`${(c.pts||0).toFixed(1)} <span>PTS</span> · ${(c.reb||0).toFixed(1)} <span>REB</span> · ${(c.ast||0).toFixed(1)} <span>AST</span>`;
+      el.classList.add('swap-in');
+    }, delay);
+  });
+  st.cards=newCards;
+  // po koncu animacije: posodobi bar/handlerje (cel re-render, a brez enter animacije)
+  const totalWait=600 + (spinningIdx.length?Math.max(...spinningIdx)*80:0);
   setTimeout(()=>{
-    // konec igre: ni več vrtljajev ALI vse zaklenjene
+    st._spinning=false;
     if(st.spinsLeft<=0 || st.held.every(h=>h)){ endPoker(); return; }
     renderPoker(false);
     pokerPreload(10);
-  }, 320);
+  }, totalWait);
 }
 function endPoker(){
   pokerState.held=[true,true,true,true,true];
