@@ -471,6 +471,55 @@
   opacity:0;transition:.3s;max-width:90vw;text-align:center;pointer-events:none;}
 .hod-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .hod-toast b{color:var(--amber);}
+/* ===== ALBUM ===== */
+.hod-pack-badge{background:var(--orange);color:#fff;border-radius:20px;padding:0 7px;font-size:13px;margin-left:4px;}
+.hod-alb-summary{font-family:'Oswald';font-size:15px;color:var(--ink);margin:4px 0 8px;}
+.hod-alb-summary b{color:var(--amber);font-family:'Anton';font-size:20px;}
+.hod-alb-hint{font-size:12px;color:var(--muted);max-width:420px;margin:4px auto 8px;line-height:1.4;font-style:italic;}
+.hod-alb-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0;}
+.hod-alb-tab{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;background:#161b2a;border:1px solid var(--gold-warm);
+  color:var(--amber);border-radius:9px;padding:5px 11px;cursor:pointer;line-height:1;display:flex;flex-direction:column;gap:2px;align-items:center;}
+.hod-alb-tab span{font-size:9px;color:var(--muted);font-family:'Oswald';}
+.hod-alb-tab.on{background:var(--orange);color:#fff;border-color:var(--orange);}
+.hod-alb-tab.on span{color:rgba(255,255,255,.85);}
+.hod-alb-grid{display:flex;flex-direction:column;gap:14px;}
+.hod-alb-team{background:#161b2a;border:1px solid var(--gold-warm);border-radius:12px;padding:10px;box-shadow:0 6px 18px rgba(0,0,0,.5);}
+.hod-alb-team-h{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;color:var(--amber);margin-bottom:8px;display:flex;justify-content:space-between;}
+.hod-alb-team-h span{color:var(--muted);}
+.hod-alb-cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;}
+.hod-alb-cell{background:var(--card-tex);background-size:cover;border-radius:8px;border:2px solid var(--gold-warm);
+  padding:6px 3px 5px;text-align:center;position:relative;overflow:hidden;aspect-ratio:3/4;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.hod-alb-cell::after{content:'';position:absolute;inset:0;background:rgba(244,234,210,.16);pointer-events:none;}
+.hod-alb-cell.empty{background:#10141e;border-style:dashed;border-color:#3a2e20;}
+.hod-alb-cell.empty::after{display:none;}
+.hod-alb-q{font-family:'Anton';font-size:24px;color:#3a4356;position:relative;z-index:1;}
+.hod-alb-cell.rar-rare{border-color:#9ec5e8;}
+.hod-alb-cell.rar-legendary{border-color:#ffd166;box-shadow:0 0 12px rgba(255,209,102,.5);}
+.hod-alb-photo{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--orange);position:relative;z-index:1;margin-bottom:3px;}
+.hod-alb-nm{font-family:'Anton';font-size:9px;color:var(--navy);position:relative;z-index:1;line-height:1;}
+.hod-alb-rt{font-family:'Anton';font-size:14px;color:var(--orange);position:relative;z-index:1;line-height:1;}
+/* paket odpiranje */
+.hod-pack-card{background:linear-gradient(180deg,#2e3340,#23262f);border:2px solid var(--gold);border-radius:18px;
+  padding:22px 24px;max-width:340px;width:90%;text-align:center;box-shadow:0 14px 50px rgba(0,0,0,.7);color:#fff;}
+.hod-pack-h{font-family:'Anton';font-size:20px;letter-spacing:1px;color:var(--gold);margin-bottom:14px;}
+.hod-pack-stage{min-height:240px;display:flex;align-items:center;justify-content:center;}
+.hod-pack-reveal{background:var(--card-tex);background-size:cover;border:3px solid var(--gold-warm);border-radius:14px;
+  padding:16px 12px;width:170px;position:relative;overflow:hidden;animation:packFlip .5s cubic-bezier(.3,1.2,.5,1);}
+.hod-pack-reveal::after{content:'';position:absolute;inset:0;background:rgba(244,234,210,.18);pointer-events:none;}
+.hod-pack-reveal.rar-rare{border-color:#9ec5e8;box-shadow:0 0 20px rgba(158,197,232,.5);}
+.hod-pack-reveal.rar-legendary{border-color:#ffd166;box-shadow:0 0 28px rgba(255,209,102,.7);}
+@keyframes packFlip{0%{transform:rotateY(90deg) scale(.8);opacity:0;}100%{transform:rotateY(0) scale(1);opacity:1;}}
+.hod-pack-new{position:relative;z-index:2;font-family:'Anton';font-size:13px;color:#fff;background:var(--orange);border-radius:6px;display:inline-block;padding:1px 10px;margin-bottom:6px;}
+.hod-pack-dup{position:relative;z-index:2;font-family:'Oswald';font-size:10px;color:var(--gold-d);margin-bottom:6px;}
+.hod-pack-photo{position:relative;z-index:2;width:74px;height:74px;border-radius:50%;margin:0 auto 7px;overflow:hidden;border:3px solid var(--orange);}
+.hod-pack-rar{position:relative;z-index:2;font-family:'Bebas Neue';font-size:13px;letter-spacing:1px;}
+.hod-pack-nm{position:relative;z-index:2;font-family:'Anton';font-size:16px;color:var(--navy);line-height:1.05;margin-top:2px;}
+.hod-pack-meta{position:relative;z-index:2;font-family:'Oswald';font-weight:600;font-size:9px;color:var(--gold-d);text-transform:uppercase;letter-spacing:.5px;}
+.hod-pack-rt{position:relative;z-index:2;font-family:'Anton';font-size:30px;line-height:1;margin-top:4px;}
+.hod-pack-dots{display:flex;gap:6px;justify-content:center;margin-top:12px;}
+.hod-pack-dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.2);}
+.hod-pack-dot.on{background:var(--amber);}
+.hod-pack-dot.done{background:var(--orange);}
 .hod-howto-card{position:relative;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;
   background:linear-gradient(165deg,#1e1e2c 0%,#16161f 100%);
   border:1px solid rgba(255,182,39,.35);border-radius:20px;padding:0 0 22px;
@@ -1761,13 +1810,17 @@ function showLanding(){
           <span class="hod-landing-sub">hold & spin · overall</span>
         </button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:18px;letter-spacing:1px">
+      <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="hod-btn secondary" id="hod-go-album">📒 Album sličic${getPendingPacks()>0?` <span class="hod-pack-badge">${getPendingPacks()}</span>`:''}</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:1px">
         vir: ${DATA_SOURCE}
       </div>
     </div>`;
   document.getElementById('hod-go-draft').onclick=()=>{ showIntro(); };
   document.getElementById('hod-go-quiz').onclick=()=>{ showQuizMenu(); };
   document.getElementById('hod-go-poker').onclick=()=>{ showPokerMenu(); };
+  document.getElementById('hod-go-album').onclick=()=>{ showAlbum(); };
   renderProgress();
 }
 
@@ -2131,6 +2184,7 @@ function endMillionaire(won, wrong){
     </div>`;
   document.getElementById('hod-quiz-again').onclick=()=>startMillionaire();
   document.getElementById('hod-quiz-home').onclick=()=>goHome();
+  if(reached>=5) awardPack(1);
   autoSubmitScore("kviz", score, reached);
 }
 
@@ -2387,6 +2441,76 @@ function countUp(el, target, dur){
   }
   requestAnimationFrame(step);
 }
+// ===================== PANINI ALBUM =====================
+// Redkost po rating: navadni <75, redki 75-84, legendarni 85+
+function cardRarity(rating){
+  if(rating>=85) return 'legendary';
+  if(rating>=75) return 'rare';
+  return 'common';
+}
+const RARITY_DEFS={
+  common:{name:'Navaden', col:'#b89a78', weight:70},
+  rare:{name:'Redek', col:'#9ec5e8', weight:25},
+  legendary:{name:'Legendaren', col:'#ffd166', weight:5}
+};
+const DECADE_ORDER=['70s','80s','90s','2000s','2010s','2020s'];
+
+// zbirka unikatnih kartic iz POOL-a: ena kartica = unikaten pid (najboljša sezona)
+let _albumCatalog=null;
+function albumCatalog(){
+  if(_albumCatalog) return _albumCatalog;
+  const byPid={};
+  POOL.forEach(s=>s.players.forEach(p=>{
+    if(!p.pid) return;
+    const ex=byPid[p.pid];
+    // obdrži sezono z najvišjim ratingom kot "kartico"
+    if(!ex || (p.rating||0)>(ex.rating||0)){
+      byPid[p.pid]={pid:p.pid,name:p.name,team:p.team||'',season:p.season,
+        rating:p.rating||0,era:p.era,pos:p.pos,pts:p.pts,reb:p.reb,ast:p.ast,
+        rarity:cardRarity(p.rating||0)};
+    }
+  }));
+  _albumCatalog=Object.values(byPid);
+  return _albumCatalog;
+}
+// zbrani pid-i (lokalno; kasneje sinhronizacija)
+function getCollected(){
+  try{ return JSON.parse(storeGet('hod-album')||'{}'); }catch(e){ return {}; }
+}
+function setCollected(obj){ storeSet('hod-album', JSON.stringify(obj)); }
+function isCollected(pid){ return !!getCollected()[pid]; }
+function collectCount(){ return Object.keys(getCollected()).length; }
+
+// neporavnani paketi (zasluženi, še neodprti)
+function getPendingPacks(){ return parseInt(storeGet('hod-packs')||'0',10)||0; }
+function setPendingPacks(n){ storeSet('hod-packs', String(Math.max(0,n))); }
+function awardPack(n){ setPendingPacks(getPendingPacks()+(n||1)); }
+
+// izberi naključno kartico po teži redkosti
+function rollCard(){
+  const cat=albumCatalog();
+  if(!cat.length) return null;
+  const r=Math.random()*100;
+  let want = r<RARITY_DEFS.legendary.weight ? 'legendary'
+           : r<RARITY_DEFS.legendary.weight+RARITY_DEFS.rare.weight ? 'rare' : 'common';
+  let pool=cat.filter(c=>c.rarity===want);
+  if(!pool.length) pool=cat;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+// odpri en paket = 4 kartice
+function openOnePack(){
+  const cards=[]; for(let i=0;i<4;i++){ const c=rollCard(); if(c) cards.push(c); }
+  const col=getCollected();
+  const result=cards.map(c=>{
+    const isNew=!col[c.pid];
+    if(isNew) col[c.pid]={t:Date.now()};
+    return {card:c, isNew};
+  });
+  setCollected(col);
+  return result;
+}
+// ===================== KONEC ALBUM LOGIKA =====================
+
 // NBA-slogovna silhueta (možiček) kot fallback, ko ni fotografije
 const SILHOUETTE="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23223'/%3E%3Cg fill='%23556'%3E%3Ccircle cx='50' cy='38' r='19'/%3E%3Cpath d='M18 92c0-20 14-32 32-32s32 12 32 32z'/%3E%3C/g%3E%3C/svg%3E";
 function avatarImg(pid, cls){
@@ -2605,6 +2729,7 @@ function renderPoker(finished){
     if(ovEl){ ovEl.textContent='0'; countUp(ovEl, sc.total, 900); }
     document.getElementById('hod-pk-again').onclick=()=>startPoker();
     document.getElementById('hod-pk-home').onclick=()=>goHome();
+    if(sc.total>=380) awardPack(1);
     autoSubmitScore(pokerFog?"poker_fog":"poker", sc.total, Math.round(sc.base/5));
     return;
   }
@@ -2951,7 +3076,7 @@ function paintVsResult(youSc, botSc){
   const youTotal=youSc.total, botTotal=botSc.total;
   const win = youTotal>botTotal;
   const tie = youTotal===botTotal;
-  if(win) savePokerProgress(st.aiIdx);
+  if(win){ savePokerProgress(st.aiIdx); awardPack(1); }
   const ai=st.ai;
   const isLast = st.aiIdx===POKER_AI.length-1;
   const nextUnlocked = win && !isLast;
@@ -3083,6 +3208,7 @@ function endClimb(){
   countUp(document.getElementById('hod-climb-score'), st.score, 900);
   document.getElementById('hod-climb-again').onclick=()=>startClimb();
   document.getElementById('hod-climb-home').onclick=()=>goHome();
+  if(st.score>=50) awardPack(1);
   autoSubmitScore("climb", st.score, st.answered-3);
 }
 
@@ -3278,6 +3404,105 @@ function startQuickfire(){
   renderProgress();
   startSpin();
 }
+// ===================== ALBUM UI =====================
+let _albumDecade='80s';
+function showAlbum(){
+  phase="album";
+  const cat=albumCatalog();
+  const col=getCollected();
+  const total=cat.length;
+  const have=Object.keys(col).length;
+  const packs=getPendingPacks();
+  // razdeli katalog po dekadah
+  const byDec={}; DECADE_ORDER.forEach(d=>byDec[d]=[]);
+  cat.forEach(c=>{ if(byDec[c.era]) byDec[c.era].push(c); });
+  const decTabs=DECADE_ORDER.map(d=>{
+    const tot=byDec[d].length; if(!tot) return '';
+    const got=byDec[d].filter(c=>col[c.pid]).length;
+    return `<button class="hod-alb-tab ${d===_albumDecade?'on':''}" data-dec="${d}">${d}<span>${got}/${tot}</span></button>`;
+  }).join('');
+  screen.innerHTML=`
+    <div class="hod-result hod-fade">
+      <div class="hod-stage-label">📒 Album sličic</div>
+      <div class="hod-alb-summary">Zbranih <b>${have}</b> / ${total} kartic</div>
+      ${packs>0?`<button class="hod-btn" id="hod-alb-open" style="margin:6px auto 4px">📦 Odpri paket (${packs})</button>`:`<div class="hod-alb-hint">Paketke zaslužiš z zmagami v igrah — premagaj AI, dokončaj Climb, dosezi visok rezultat.</div>`}
+      <div class="hod-alb-tabs">${decTabs}</div>
+      <div class="hod-alb-grid" id="hod-alb-grid"></div>
+      <div style="margin-top:18px"><button class="hod-btn secondary" id="hod-alb-back">← Domov</button></div>
+    </div>`;
+  document.getElementById('hod-alb-back').onclick=()=>goHome();
+  const openBtn=document.getElementById('hod-alb-open');
+  if(openBtn) openBtn.onclick=()=>showPackOpening();
+  screen.querySelectorAll('.hod-alb-tab').forEach(b=>b.onclick=()=>{ _albumDecade=b.dataset.dec; renderAlbumGrid(byDec); });
+  renderAlbumGrid(byDec);
+}
+function renderAlbumGrid(byDec){
+  const grid=document.getElementById('hod-alb-grid'); if(!grid) return;
+  const col=getCollected();
+  const cards=(byDec[_albumDecade]||[]).slice();
+  // razvrsti po ekipi, nato po ratingu
+  cards.sort((a,b)=> (a.team||'').localeCompare(b.team||'') || (b.rating-a.rating));
+  // skupiniraj po ekipah
+  const byTeam={};
+  cards.forEach(c=>{ (byTeam[c.team||'?']=byTeam[c.team||'?']||[]).push(c); });
+  grid.innerHTML=Object.keys(byTeam).sort().map(team=>{
+    const got=byTeam[team].filter(c=>col[c.pid]).length;
+    const cells=byTeam[team].map(c=>{
+      const has=!!col[c.pid];
+      if(!has) return `<div class="hod-alb-cell empty rar-${c.rarity}"><div class="hod-alb-q">?</div></div>`;
+      return `<div class="hod-alb-cell rar-${c.rarity}" data-pid="${c.pid}">
+        <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
+        <div class="hod-alb-nm">${escapeHtml(c.name.split(' ').slice(-1)[0])}</div>
+        <div class="hod-alb-rt">${c.rating}</div>
+      </div>`;
+    }).join('');
+    return `<div class="hod-alb-team"><div class="hod-alb-team-h">${escapeHtml(team)} <span>${got}/${byTeam[team].length}</span></div><div class="hod-alb-cells">${cells}</div></div>`;
+  }).join('');
+}
+// odpiranje paketa z animacijo razkrivanja
+function showPackOpening(){
+  if(getPendingPacks()<=0){ showAlbum(); return; }
+  setPendingPacks(getPendingPacks()-1);
+  const results=openOnePack();
+  let idx=0;
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-pack-card">
+    <div class="hod-pack-h">📦 Paket sličic</div>
+    <div class="hod-pack-stage" id="hod-pack-stage"></div>
+    <div class="hod-pack-dots" id="hod-pack-dots"></div>
+    <button class="hod-btn" id="hod-pack-next" style="margin-top:14px">Razkrij</button>
+  </div>`;
+  document.body.appendChild(ov);
+  const stage=ov.querySelector('#hod-pack-stage');
+  const dots=ov.querySelector('#hod-pack-dots');
+  const nextBtn=ov.querySelector('#hod-pack-next');
+  dots.innerHTML=results.map((r,i)=>`<span class="hod-pack-dot ${i===0?'on':''}" id="pdot${i}"></span>`).join('');
+  function reveal(){
+    const r=results[idx];
+    const c=r.card;
+    stage.innerHTML=`<div class="hod-pack-reveal rar-${c.rarity}">
+      ${r.isNew?'<div class="hod-pack-new">NOVO!</div>':'<div class="hod-pack-dup">že imaš · dvojnik</div>'}
+      <div class="hod-pack-photo">${avatarImg(c.pid,'')}</div>
+      <div class="hod-pack-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}</div>
+      <div class="hod-pack-nm">${escapeHtml(c.name)}</div>
+      <div class="hod-pack-meta">${escapeHtml(c.team||'')} · ${c.season}</div>
+      <div class="hod-pack-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.rating}</div>
+    </div>`;
+    const dot=document.getElementById('pdot'+idx); if(dot) dot.classList.add('done');
+    idx++;
+    if(idx>=results.length){
+      nextBtn.textContent='Zaključi';
+      nextBtn.onclick=()=>{ ov.remove(); showAlbum(); };
+    } else {
+      const nd=document.getElementById('pdot'+idx); if(nd) nd.classList.add('on');
+    }
+  }
+  nextBtn.onclick=()=>reveal();
+  reveal(); // razkrij prvo takoj
+}
+// ===================== KONEC ALBUM UI =====================
+
 function goHome(){
   try{ if(quizState&&quizState.timer){clearInterval(quizState.timer);quizState.timer=null;} }catch(e){}
   dailyMode=false; quickMode=false; mp=null; numPlayers=1;
