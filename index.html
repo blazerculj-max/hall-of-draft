@@ -228,6 +228,9 @@
 .hod-hol-card.ok{border-color:var(--green);box-shadow:0 0 22px rgba(46,196,182,.4);}
 .hod-hol-card.bad{border-color:var(--red);box-shadow:0 0 22px rgba(230,57,70,.4);}
 .hod-hol-name{font-family:'Bebas Neue';font-size:22px;letter-spacing:.5px;color:#fff;line-height:1.1;margin-bottom:4px;}
+.hod-hol-avatar{position:relative;width:80px;height:80px;border-radius:50%;margin:0 auto 10px;display:flex;
+  align-items:center;justify-content:center;font-family:'Anton';font-size:26px;color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.4);border:3px solid rgba(255,255,255,.22);overflow:hidden;}
 .hod-hol-team{font-family:'Oswald';font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
 .hod-hol-stat{font-family:'Anton';font-size:42px;color:var(--gold);line-height:1;}
 .hod-hol-stat.hidden{color:var(--line);}
@@ -246,6 +249,7 @@
   .hod-hol-cards{gap:8px;}
   .hod-hol-card{padding:14px 8px;}
   .hod-hol-name{font-size:17px;}
+  .hod-hol-avatar{width:62px;height:62px;font-size:20px;}
   .hod-hol-stat{font-size:32px;}
   .hod-hol-vs{font-size:15px;}
 }
@@ -2089,8 +2093,22 @@ function startHigherLower(){
   holState.left=holPick();
   holState.right=holPickDifferent(holState.left);
   renderHigherLower(false);
+  holPreload(14);
 }
+// predhodno naloži slike (manj zamika)
+let _holPreloaded=new Set();
 function holPick(){ return holState.list[Math.floor(Math.random()*holState.list.length)]; }
+function holPreload(n){
+  const l=holState&&holState.list; if(!l) return;
+  for(let i=0;i<(n||10);i++){
+    const p=l[Math.floor(Math.random()*l.length)];
+    if(p.pid && !_holPreloaded.has(p.pid)){
+      _holPreloaded.add(p.pid);
+      const im=new Image();
+      im.src=`https://cdn.nba.com/headshots/nba/latest/1040x760/${p.pid}.png`;
+    }
+  }
+}
 function holPickDifferent(other){
   // izberi igralca z jasno različno vrednostjo (ne enako), da ni dvoumno
   const stat=holState.stat.key;
@@ -2114,6 +2132,7 @@ function renderHigherLower(revealRight){
       <div class="hod-hol-sub">Kdo ima višje povprečje · <b>${stat.short}</b></div>
       <div class="hod-hol-cards">
         <div class="hod-hol-card">
+          ${playerAvatar(st.left,'hod-hol-avatar')}
           <div class="hod-hol-name">${escapeHtml(st.left.name)}</div>
           <div class="hod-hol-team">${escapeHtml(st.left.team||'')} · ${st.left.season}</div>
           <div class="hod-hol-stat">${lv.toFixed(1)}</div>
@@ -2121,6 +2140,7 @@ function renderHigherLower(revealRight){
         </div>
         <div class="hod-hol-vs">VS</div>
         <div class="hod-hol-card right">
+          ${playerAvatar(st.right,'hod-hol-avatar')}
           <div class="hod-hol-name">${escapeHtml(st.right.name)}</div>
           <div class="hod-hol-team">${escapeHtml(st.right.team||'')} · ${st.right.season}</div>
           ${revealRight
@@ -2156,6 +2176,7 @@ function holGuess(dir){
     st.left=st.right;
     st.right=holPickDifferent(st.left);
     renderHigherLower(false);
+    holPreload(8);
   }, 1300);
 }
 function endHigherLower(){
