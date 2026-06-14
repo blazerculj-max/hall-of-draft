@@ -2821,7 +2821,13 @@ function albumCatalogRaw(){
   return _albumCatalog;
 }
 // --- preverjanje slik: NBA fotografije so 1040x760; manjkajoče vrnejo manjšo privzeto sliko ---
-function getImgCache(){ try{ return JSON.parse(storeGet('hod-imgok')||'{}'); }catch(e){ return {}; } }
+function getImgCache(){
+  try{
+    // verzija cache: če metoda preverjanja se spremeni, ponastavi
+    if(storeGet('hod-imgok-v')!=='2'){ storeSet('hod-imgok','{}'); storeSet('hod-imgok-v','2'); return {}; }
+    return JSON.parse(storeGet('hod-imgok')||'{}');
+  }catch(e){ return {}; }
+}
 function setImgCache(c){ storeSet('hod-imgok', JSON.stringify(c)); }
 function pidHasPhoto(pid){ const c=getImgCache(); return c[pid]===1; }
 function pidChecked(pid){ const c=getImgCache(); return c[pid]!==undefined; }
@@ -2829,9 +2835,38 @@ function pidChecked(pid){ const c=getImgCache(); return c[pid]!==undefined; }
 function checkOnePid(pid){
   return new Promise(resolve=>{
     const img=new Image();
+    img.crossOrigin='anonymous';
     let done=false;
     const finish=(ok)=>{ if(done) return; done=true; resolve(ok); };
-    img.onload=()=>finish(img.naturalWidth>=1000 && img.naturalHeight>=600);
+    img.onload=()=>{
+      if(img.naturalWidth<200 || img.naturalHeight<150){ finish(false); return; }
+      try{
+        // nariši pomanjšano na canvas in analiziraj vsebino
+        const W=64,H=48;
+        const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+        const ctx=cv.getContext('2d');
+        ctx.drawImage(img,0,0,W,H);
+        const data=ctx.getImageData(0,0,W,H).data;
+        let colorful=0, total=0;
+        for(let i=0;i<data.length;i+=4){
+          const r=data[i],g=data[i+1],b=data[i+2],a=data[i+3];
+          if(a<30) continue; // prosojno
+          total++;
+          const mx=Math.max(r,g,b), mn=Math.min(r,g,b);
+          const sat=mx-mn; // nasičenost
+          // "barvit" piksel: opazna nasičenost (koža, dres) ali zelo svetel/temn kontrast
+          if(sat>28) colorful++;
+        }
+        if(total<50){ finish(false); return; }
+        const colorRatio=colorful/total;
+        // prava fotografija ima precej barvitih pikslov (koža, dres, ozadje);
+        // privzeta siva silhueta je skoraj brez nasičenosti
+        finish(colorRatio>0.12);
+      }catch(e){
+        // CORS tainted canvas -> ne moremo brati; vrni true (ne izloči po nepotrebnem)
+        finish(true);
+      }
+    };
     img.onerror=()=>finish(false);
     setTimeout(()=>finish(false), 9000);
     img.src=`https://cdn.nba.com/headshots/nba/latest/1040x760/${pid}.png`;
