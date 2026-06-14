@@ -4015,28 +4015,42 @@ function renderAlbumTabsMain(){
   tabs.forEach(t=>t.classList.toggle('on', t.dataset.t===_albumTab));
 }
 // TRGOVINA — nakup paketov, prodaja dvojnikov
-// DIAGNOSTIKA: kateri igralci (rating 80+) nimajo slike po preverjanju
+// DIAGNOSTIKA: kateri igralci nimajo slike po preverjanju
 function missingPhotosReport(minRating){
-  minRating=minRating||80;
+  minRating=minRating||0;
   const cache=getImgCache();
   const raw=albumCatalogRaw();
   const missing=raw.filter(c=>c.rating>=minRating && cache[c.pid]===0)
     .sort((a,b)=>b.rating-a.rating);
   const checked=Object.keys(cache).length;
-  let txt=`Preverjenih slik: ${checked} / ${raw.length+MOMENTS.length}\n`;
-  txt+=`Brez slike (rating ${minRating}+): ${missing.length}\n\n`;
+  const haveCnt=raw.filter(c=>cache[c.pid]===1).length;
+  const missCnt=raw.filter(c=>cache[c.pid]===0).length;
+  // razrez po dekadah
+  function dec(c){return c.era||'?';}
+  const decStat={};
+  raw.forEach(c=>{
+    const d=dec(c); decStat[d]=decStat[d]||{have:0,miss:0,tot:0};
+    decStat[d].tot++;
+    if(cache[c.pid]===1) decStat[d].have++;
+    else if(cache[c.pid]===0) decStat[d].miss++;
+  });
+  let txt=`Preverjenih: ${checked} / ${raw.length+MOMENTS.length}\n`;
+  txt+=`S sliko: ${haveCnt} · Brez slike: ${missCnt}\n\n`;
+  txt+=`Po dekadah (s sliko / skupaj, manjka):\n`;
+  DECADE_ORDER.forEach(d=>{ if(decStat[d]) txt+=`  ${d}: ${decStat[d].have}/${decStat[d].tot} (manjka ${decStat[d].miss})\n`; });
+  txt+=`\nBrez slike (rating ${minRating}+):\n`;
   txt+=missing.map(c=>`${c.name} | ${c.team} | ${c.season} | ${c.rating} | pid:${c.pid}`).join('\n');
-  return {txt, missing, checked, total:raw.length};
+  return {txt, missing, checked, total:raw.length, haveCnt, missCnt};
 }
 function showMissingReport(){
-  const r=missingPhotosReport(80);
+  const r=missingPhotosReport(0);
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
-  ov.innerHTML=`<div class="hod-pack-card" style="max-width:420px">
-    <div class="hod-pack-h">🔍 Manjkajoče slike</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Legende (rating 80+) brez NBA fotografije. Kopiraj in pošlji Claudu za iskanje na Wikimedia.</div>
-    <textarea readonly style="width:100%;height:200px;background:#0e0f15;color:#cfc;border:1px solid var(--gold-warm);border-radius:8px;padding:8px;font-size:11px;font-family:monospace">${escapeHtml(r.txt)}</textarea>
-    <div style="font-size:11px;color:var(--muted);margin:8px 0">${r.checked<r.total?`⚠️ Preverjanje še teče (${r.checked}/${r.total}). Počakaj, da se zaključi, za popoln seznam.`:'✅ Preverjanje končano.'}</div>
+  ov.innerHTML=`<div class="hod-pack-card" style="max-width:440px">
+    <div class="hod-pack-h">🔍 Vse manjkajoče slike</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">S sliko: <b style="color:var(--green)">${r.haveCnt}</b> · Brez: <b style="color:#ff6b6b">${r.missCnt}</b></div>
+    <textarea readonly style="width:100%;height:240px;background:#0e0f15;color:#cfc;border:1px solid var(--gold-warm);border-radius:8px;padding:8px;font-size:11px;font-family:monospace">${escapeHtml(r.txt)}</textarea>
+    <div style="font-size:11px;color:var(--muted);margin:8px 0">${r.checked<r.total?`⚠️ Preverjanje še teče (${r.checked}/${r.total}).`:'✅ Preverjanje končano.'}</div>
     <button class="hod-btn gold" id="hod-mr-copy" style="margin-top:6px">Kopiraj</button>
     <button class="hod-btn secondary" id="hod-mr-close" style="margin-top:8px">Zapri</button>
   </div>`;
