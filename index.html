@@ -643,7 +643,7 @@
 const P=(pos,name,season,pts,reb,ast,rating)=>({pos,name,season,pts,reb,ast,rating,
   era:seasonEra(season),positions:[pos]});
 function seasonEra(s){const y=parseInt(s);const d=Math.floor(y/10)*10;
-  return({1980:"80s",1990:"90s",2000:"2000s",2010:"2010s",2020:"2020s"})[d]||d+"s";}
+  return({1970:"70s",1980:"80s",1990:"90s",2000:"2000s",2010:"2010s",2020:"2020s"})[d]||d+"s";}
 let POOL=[
   // 1995-96
   {year:"1995-96",era:"Jordan's return",players:[
@@ -1484,7 +1484,7 @@ function playerCost(p){
 }
 function budgetLeft(){ return budgetTotal-budgetSpent; }
 
-const ERA_ORDER=["80s","90s","2000s","2010s","2020s"];
+const ERA_ORDER=["70s","80s","90s","2000s","2010s","2020s"];
 function availableEras(){
   const present=new Set(POOL.map(s=>s.era));
   return ERA_ORDER.filter(e=>present.has(e));
