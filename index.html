@@ -750,7 +750,7 @@
 
 <div id="hod-root">
   <div class="hod-wrap">
-    <div class="hod-header">
+    <div class="hod-header" id="hod-header-home" title="Domov" style="cursor:pointer">
       <div class="hod-crest"><img class="hod-crest-img" src="assets/wreath.png" alt=""><span class="hod-crest-in">HOD</span></div>
       <div class="hod-title"><span class="hod-title-o">Hall</span> of Draft</div>
       <div class="hod-sub">Spin · Draft · Dominate</div>
@@ -2154,8 +2154,10 @@ function renderClimb(){
       <div class="hod-climb-diff ${dl.cls}">${'★'.repeat(dl.stars)} ${dl.txt} · do ${climbPoints(qd.d,10)} točk</div>
       <div class="hod-quiz-q">${qd.q}</div>
       <div class="hod-quiz-opts">${optBtns}</div>
+      <button class="hod-btn secondary" id="hod-climb-exit" style="margin-top:14px">← Končaj</button>
     </div>`;
   screen.querySelectorAll('.hod-quiz-opt').forEach(b=>b.onclick=()=>answerClimb(+b.dataset.i,b));
+  document.getElementById('hod-climb-exit').onclick=()=>{ if(st.timer){clearInterval(st.timer);st.timer=null;} showQuizMenu(); };
   updateClimbTimer();
 }
 function updateClimbTimer(){
@@ -3201,6 +3203,7 @@ function startQuickfire(){
   startSpin();
 }
 function goHome(){
+  try{ if(quizState&&quizState.timer){clearInterval(quizState.timer);quizState.timer=null;} }catch(e){}
   dailyMode=false; quickMode=false; mp=null; numPlayers=1;
   roster=[]; chosenSeason=null; currentOffer=[];
   budgetMode=false; budgetTotal=0; budgetSpent=0;
@@ -4921,6 +4924,8 @@ function showLoading(){
   showLoading();
   await loadDataset();
   showLanding();
+  const hdr=document.getElementById('hod-header-home');
+  if(hdr) hdr.onclick=()=>goHome();
 })();
 })();
 </script>
