@@ -2002,7 +2002,7 @@ function showLanding(){
   document.getElementById('hod-go-quiz').onclick=()=>{ showQuizMenu(); };
   document.getElementById('hod-go-poker').onclick=()=>{ showPokerMenu(); };
   document.getElementById('hod-go-album').onclick=()=>{
-    if(!isLoggedIn() && !storeGet('hod-guest-ok')){ showGuestWarning(()=>showAlbum()); }
+    if(!isLoggedIn()){ showAlbumLocked(); }
     else showAlbum();
   };
   document.getElementById('hod-go-auth').onclick=()=>{ showAuth(); };
@@ -3827,6 +3827,7 @@ let _albumDecade='80s';
 let _albumTab='album'; // 'album' | 'nove' | 'trgovina'
 let _pendingStick=null, _pendingStickName='', _albumSearch='', _albumSeason='';
 function showAlbum(){
+  if(!isLoggedIn()){ showAlbumLocked(); return; }
   phase="album";
   // ob vstopu: dnevni paket
   const gotDaily=claimDailyPack();
@@ -4318,6 +4319,22 @@ function showGuestWarning(onContinue){
   document.body.appendChild(ov);
   document.getElementById('hod-gw-reg').onclick=()=>{ ov.remove(); showAuth(); };
   document.getElementById('hod-gw-guest').onclick=()=>{ ov.remove(); storeSet('hod-guest-ok','1'); if(onContinue) onContinue(); };
+}
+// album/sličice zahtevajo račun — gost ne more
+function showAlbumLocked(){
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-nick-card hod-pop">
+    <div class="hod-nick-title">📒 Album zahteva račun</div>
+    <div class="hod-nick-sub">Za zbiranje sličic, odpiranje paketov in shranjevanje albuma <b style="color:var(--amber)">potrebuješ račun</b>.<br><br>Registracija je brezplačna in brez e-pošte — samo ime in geslo. Tvoja zbirka se shrani v oblak in je dostopna na vsaki napravi.</div>
+    <div class="hod-nick-btns">
+      <button class="hod-btn gold" id="hod-al-reg">Ustvari račun / Prijava</button>
+      <button class="hod-btn secondary" id="hod-al-close">Nazaj</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  document.getElementById('hod-al-reg').onclick=()=>{ ov.remove(); showAuth(); };
+  document.getElementById('hod-al-close').onclick=()=>ov.remove();
 }
 // ===================== KONEC AUTH UI =====================
 
