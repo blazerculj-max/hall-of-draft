@@ -473,7 +473,8 @@
 
 /* kako igrati */
 .hod-howto-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;
-  padding:16px;background:rgba(6,6,12,.88);backdrop-filter:blur(4px);}
+  padding:16px;background:rgba(6,6,12,.88);backdrop-filter:blur(4px);overflow-y:auto;}
+.hod-howto-overlay>*{max-height:none;}
 .hod-toast{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:500;
   background:linear-gradient(180deg,#2e3340,#23262f);border:2px solid var(--orange);border-radius:12px;
   padding:11px 20px;font-family:'Oswald';font-size:14px;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.6);
@@ -629,8 +630,8 @@
 .hod-shop-sell-d{font-size:13px;color:var(--ink);margin-bottom:10px;}
 .hod-shop-sell-d b{color:var(--amber);}
 /* PACK OPENING animacije */
-.hod-pko-wrap{display:flex;flex-direction:column;align-items:center;padding:16px;}
-.hod-pko-stage{width:100%;max-width:420px;min-height:300px;display:flex;align-items:center;justify-content:center;position:relative;}
+.hod-pko-wrap{display:flex;flex-direction:column;align-items:center;padding:16px;width:100%;}
+.hod-pko-stage{width:100%;max-width:420px;min-height:240px;display:flex;align-items:center;justify-content:center;position:relative;}
 .hod-pko-pack{width:160px;height:226px;border-radius:14px;cursor:pointer;position:relative;
   background:linear-gradient(150deg,#e8541e,#b03410 60%,#7a2408);border:3px solid var(--amber);
   box-shadow:0 14px 40px rgba(0,0,0,.6),inset 0 2px 10px rgba(255,255,255,.2);
@@ -686,6 +687,8 @@
 .hod-flip.rar-legendary.flipped .hod-leg-rays,.hod-flip.rar-moment.flipped .hod-leg-rays{animation:pkoLegRays 1.4s linear forwards;}
 @keyframes pkoLegRays{0%{opacity:0;transform:rotate(0) scale(.5);}30%{opacity:.8;}100%{opacity:0;transform:rotate(80deg) scale(1.3);}}
 .hod-pko-ctrl{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center;}
+.hod-pko-overlay{align-items:flex-start;}
+.hod-pko-overlay .hod-pko-wrap{margin:auto;}
 /* AUTH */
 .hod-auth-tabs{display:flex;gap:8px;justify-content:center;margin:10px 0;}
 .hod-auth-tab{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;background:#161b2a;border:1px solid var(--gold-warm);
@@ -4196,7 +4199,7 @@ function showPackOpening(){
   setPendingPacks(getPendingPacks()-1);
   const results=openOnePack();
   const ov=document.createElement('div');
-  ov.className='hod-howto-overlay';
+  ov.className='hod-howto-overlay hod-pko-overlay';
   ov.innerHTML=`<div class="hod-pko-wrap">
     <div class="hod-pko-stage" id="hod-pko-stage">
       <div class="hod-pko-pack" id="hod-pko-pack">
