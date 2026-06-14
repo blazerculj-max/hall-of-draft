@@ -564,6 +564,42 @@
 .hod-alb-cell.empty .hod-alb-teamtag{color:rgba(180,170,150,.5);}
 .hod-alb-team-h{padding-left:8px;}
 .hod-alb-team-nm{font-family:'Bebas Neue';letter-spacing:1px;}
+.hod-alb-cell.filled{cursor:pointer;}
+/* povečana kartica z obračanjem */
+.hod-cd-overlay{align-items:center;}
+.hod-cd-wrap{display:flex;flex-direction:column;align-items:center;}
+.hod-cd-flip{width:260px;height:368px;perspective:1200px;cursor:pointer;}
+.hod-cd-inner{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d;}
+.hod-cd-flip.flipped .hod-cd-inner{transform:rotateY(180deg);}
+.hod-cd-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;overflow:hidden;
+  box-shadow:0 18px 50px rgba(0,0,0,.7);}
+.hod-cd-front{background:var(--card-tex);background-size:cover;border:3px solid var(--gold-warm);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:18px 14px;text-align:center;}
+.hod-cd-front::after{content:'';position:absolute;inset:0;background:rgba(244,234,210,.12);pointer-events:none;}
+.hod-cd-front.rar-legendary{border-color:#ffd166;box-shadow:0 0 30px rgba(255,209,102,.6),0 18px 50px rgba(0,0,0,.7);}
+.hod-cd-front.rar-rare{border-color:#9ec5e8;}
+.hod-cd-front.rar-moment{border-color:#ff4d6d;box-shadow:0 0 30px rgba(255,77,109,.6),0 18px 50px rgba(0,0,0,.7);}
+.hod-cd-ribbon{position:absolute;top:0;right:0;width:10px;height:100%;z-index:2;}
+.hod-cd-num{position:absolute;top:10px;left:12px;font-family:'Anton';font-size:14px;color:var(--gold-d);
+  background:rgba(255,240,220,.8);border-radius:5px;padding:1px 6px;z-index:3;}
+.hod-cd-photo{width:130px;height:130px;border-radius:50%;border:3px solid var(--orange);overflow:hidden;margin:14px auto 10px;position:relative;z-index:1;}
+.hod-cd-photo img{width:100%;height:100%;object-fit:cover;}
+.hod-cd-name{font-family:'Anton';font-size:21px;color:var(--navy);line-height:1.05;position:relative;z-index:1;}
+.hod-cd-team-szn{font-family:'Bebas Neue';font-size:13px;letter-spacing:1px;color:var(--gold-d);margin:4px 0;position:relative;z-index:1;}
+.hod-cd-rating{font-family:'Anton';font-size:46px;line-height:1;margin:6px 0;position:relative;z-index:1;}
+.hod-cd-stats{display:flex;gap:16px;position:relative;z-index:1;margin-top:4px;}
+.hod-cd-stats b{font-family:'Anton';font-size:18px;color:var(--navy);display:block;}
+.hod-cd-stats span{font-family:'Oswald';font-size:9px;color:var(--gold-d);letter-spacing:1px;}
+.hod-cd-hint{position:absolute;bottom:10px;left:0;right:0;font-family:'Oswald';font-size:10px;color:var(--gold-d);opacity:.75;z-index:1;}
+.hod-cd-back{transform:rotateY(180deg);background:linear-gradient(180deg,#1a2236,#0d1119);border:3px solid var(--gold-warm);
+  display:flex;flex-direction:column;align-items:center;padding:22px 16px;}
+.hod-cd-back-title{font-family:'Anton';font-size:18px;letter-spacing:3px;color:var(--amber);}
+.hod-cd-back-nm{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:#fff;margin-bottom:14px;}
+.hod-cd-career{width:100%;display:flex;flex-direction:column;gap:8px;overflow-y:auto;}
+.hod-cd-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border-radius:8px;padding:7px 10px;}
+.hod-cd-dot{width:14px;height:14px;border-radius:50%;flex:none;border:1px solid rgba(255,255,255,.3);}
+.hod-cd-team{font-family:'Anton';font-size:15px;color:#fff;flex:none;min-width:46px;}
+.hod-cd-per{font-family:'Oswald';font-size:13px;color:var(--gold-warm);margin-left:auto;}
 /* sezonske podtabe */
 .hod-szn-tabs{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:4px 0 12px;}
 .hod-szn-tab{position:relative;font-family:'Oswald';font-weight:600;font-size:12px;background:#13192a;
@@ -2919,6 +2955,29 @@ function albumCatalogRaw(){
   return _albumCatalog;
 }
 let _albumByNum={};
+// kariera igralca: strnjena obdobja po klubih
+let _careerCache=null;
+function buildCareerCache(){
+  if(_careerCache) return _careerCache;
+  const byPid={};
+  POOL.forEach(s=>s.players.forEach(p=>{
+    if(!p.pid) return;
+    (byPid[p.pid]=byPid[p.pid]||[]).push({season:p.season, team:p.team||'?'});
+  }));
+  _careerCache={};
+  Object.keys(byPid).forEach(pid=>{
+    const rows=byPid[pid].slice().sort((a,b)=>(a.season||'').localeCompare(b.season||''));
+    const spans=[];
+    rows.forEach(r=>{
+      const last=spans[spans.length-1];
+      if(last && last.team===r.team) last.to=r.season;
+      else spans.push({team:r.team, from:r.season, to:r.season});
+    });
+    _careerCache[pid]=spans;
+  });
+  return _careerCache;
+}
+function playerCareer(pid){ return buildCareerCache()[pid]||[]; }
 // album katalog (slike so zdaj fiksno določene — NBA CDN ali assets/legende)
 function albumCatalog(){ return albumCatalogRaw(); }
 // (opuščeno) staro živo preverjanje slik — ohranjeno kot prazne funkcije za združljivost
@@ -4021,7 +4080,7 @@ function renderAlbumGrid(byDec){
         ${isTarget?'<div class="hod-alb-here">tukaj!</div>':waiting?'<div class="hod-alb-waitmark">●</div>':''}
       </div>`;
     }
-    return `<div class="hod-alb-cell rar-${c.rarity}">
+    return `<div class="hod-alb-cell rar-${c.rarity} filled" data-card="${c.uid}">
       ${ribbon}
       <div class="hod-alb-num">${c.num}</div>
       <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
@@ -4093,6 +4152,62 @@ function bindGridClicks(grid){
   grid.querySelectorAll('.moment-cell').forEach(el=>{
     el.onclick=()=>{ const m=MOMENTS.find(x=>x.id===el.dataset.moment); if(m) showMomentDetail(m); };
   });
+  // klik na prilepljeno kartico = povečana kartica s kariero (obrni)
+  grid.querySelectorAll('.hod-alb-cell.filled[data-card]').forEach(el=>{
+    el.onclick=()=>{
+      const uid=el.dataset.card;
+      const c=albumCatalog().find(x=>x.uid===uid);
+      if(c) showCardDetail(c);
+    };
+  });
+}
+// povečana kartica: sprednja stran foto+rating, hrbtna = kariera po klubih
+function showCardDetail(c){
+  const career=playerCareer(c.pid);
+  const careerRows=career.map(sp=>{
+    const col=teamColor(sp.team);
+    const period=sp.from===sp.to?sp.from:`${sp.from} – ${sp.to}`;
+    return `<div class="hod-cd-row">
+      <span class="hod-cd-dot" style="background:${col}"></span>
+      <span class="hod-cd-team">${escapeHtml(sp.team)}</span>
+      <span class="hod-cd-per">${period}</span>
+    </div>`;
+  }).join('');
+  const rarCol=(RARITY_DEFS[c.rarity]&&RARITY_DEFS[c.rarity].col)||'#e8541e';
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay hod-cd-overlay';
+  ov.innerHTML=`<div class="hod-cd-wrap">
+    <div class="hod-cd-flip" id="hod-cd-flip">
+      <div class="hod-cd-inner">
+        <div class="hod-cd-face hod-cd-front rar-${c.rarity}">
+          <div class="hod-cd-ribbon" style="background:${teamColor(c.team)}"></div>
+          <div class="hod-cd-num">#${c.num}</div>
+          <div class="hod-cd-photo">${avatarImg(c.pid,'')}</div>
+          <div class="hod-cd-name">${escapeHtml(c.name)}</div>
+          <div class="hod-cd-team-szn">${escapeHtml(c.team)} · ${c.season||''}</div>
+          <div class="hod-cd-rating" style="color:${rarCol}">${c.rating}</div>
+          <div class="hod-cd-stats">
+            <div><b>${c.pts??'–'}</b><span>PPG</span></div>
+            <div><b>${c.reb??'–'}</b><span>RPG</span></div>
+            <div><b>${c.ast??'–'}</b><span>APG</span></div>
+          </div>
+          <div class="hod-cd-hint">tapni za kariero ↻</div>
+        </div>
+        <div class="hod-cd-face hod-cd-back">
+          <div class="hod-cd-back-title">KARIERA</div>
+          <div class="hod-cd-back-nm">${escapeHtml(c.name)}</div>
+          <div class="hod-cd-career">${careerRows||'<div class="hod-cd-row">ni podatkov</div>'}</div>
+          <div class="hod-cd-hint">tapni za sliko ↻</div>
+        </div>
+      </div>
+    </div>
+    <button class="hod-btn secondary" id="hod-cd-close" style="margin-top:14px">Zapri</button>
+  </div>`;
+  document.body.appendChild(ov);
+  const flip=ov.querySelector('#hod-cd-flip');
+  flip.onclick=()=>flip.classList.toggle('flipped');
+  ov.querySelector('#hod-cd-close').onclick=()=>ov.remove();
+  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
 }
 function showMomentDetail(m){
   const ov=document.createElement('div');
