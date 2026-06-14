@@ -486,7 +486,7 @@
 .hod-alb-team{background:#161b2a;border:1px solid var(--gold-warm);border-radius:12px;padding:10px;box-shadow:0 6px 18px rgba(0,0,0,.5);}
 .hod-alb-team-h{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;color:var(--amber);margin-bottom:8px;display:flex;justify-content:space-between;}
 .hod-alb-team-h span{color:var(--muted);}
-.hod-alb-cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;}
+.hod-alb-cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px;}
 .hod-alb-cell{background:var(--card-tex);background-size:cover;border-radius:8px;border:2px solid var(--gold-warm);
   padding:6px 3px 5px;text-align:center;position:relative;overflow:hidden;aspect-ratio:3/4;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 .hod-alb-cell::after{content:'';position:absolute;inset:0;background:rgba(244,234,210,.16);pointer-events:none;}
@@ -497,6 +497,12 @@
 .hod-alb-cell.rar-legendary{border-color:#ffd166;box-shadow:0 0 12px rgba(255,209,102,.5);}
 .hod-alb-photo{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--orange);position:relative;z-index:1;margin-bottom:3px;}
 .hod-alb-nm{font-family:'Anton';font-size:9px;color:var(--navy);position:relative;z-index:1;line-height:1;}
+.hod-alb-fullnm{font-family:'Anton';font-size:9px;color:var(--navy);position:relative;z-index:1;line-height:1.02;padding:0 2px;}
+.hod-alb-szn{font-family:'Oswald';font-weight:600;font-size:7px;color:var(--gold-d);position:relative;z-index:1;line-height:1;margin-top:1px;}
+.hod-unst-filters{display:flex;gap:8px;justify-content:center;margin:10px 0;flex-wrap:wrap;}
+.hod-unst-sel{background:#161b2a;border:1px solid var(--gold-warm);color:var(--amber);border-radius:8px;
+  padding:7px 12px;font-family:'Oswald';font-size:13px;cursor:pointer;}
+.hod-landing-action{font-size:18px;padding:11px 26px;}
 .hod-alb-rt{font-family:'Anton';font-size:14px;color:var(--orange);position:relative;z-index:1;line-height:1;}
 /* paket odpiranje */
 .hod-pack-card{background:linear-gradient(180deg,#2e3340,#23262f);border:2px solid var(--gold);border-radius:18px;
@@ -1912,8 +1918,8 @@ function showLanding(){
         </button>
       </div>
       <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="hod-btn secondary" id="hod-go-album">📒 Album${getPendingPacks()>0?` <span class="hod-pack-badge">${getPendingPacks()} 📦</span>`:''}</button>
-        <button class="hod-btn secondary" id="hod-go-auth">${isLoggedIn()?'👤 '+escapeHtml(currentUser()):'🔑 Prijava'}</button>
+        <button class="hod-btn gold hod-landing-action" id="hod-go-album">📒 Album${getPendingPacks()>0?` <span class="hod-pack-badge">${getPendingPacks()} 📦</span>`:''}</button>
+        <button class="hod-btn hod-landing-action" id="hod-go-auth" style="background:linear-gradient(180deg,#3a4356,#252c3a);box-shadow:0 5px 0 #161b2a,0 8px 18px rgba(0,0,0,.4);color:var(--amber)">${isLoggedIn()?'👤 '+escapeHtml(currentUser()):'🔑 Prijava'}</button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:1px">
         vir: ${DATA_SOURCE}
@@ -2681,6 +2687,7 @@ const RARITY_DEFS={
   legendary:{name:'Legendaren', col:'#ffd166', weight:7.5},
   moment:{name:'MOMENT', col:'#ff4d6d', weight:0.5}
 };
+const DECADE_ORDER=['70s','80s','90s','2000s','2010s','2020s'];
 // zbrane kartice: { pid: {stuck:bool, count:int} }  stuck=prilepljena v album
 function getCollected(){
   try{ return JSON.parse(storeGet('hod-album')||'{}'); }catch(e){ return {}; }
@@ -2727,7 +2734,8 @@ function rollCard(){
 }
 // odpri en paket = 4 kartice (nove gredo med nenalepljene)
 function openOnePack(){
-  const cards=[]; for(let i=0;i<4;i++){ const c=rollCard(); if(c) cards.push(c); }
+  const n = Math.random()<0.10 ? 4 : 3; // 90% tri, 10% štiri
+  const cards=[]; for(let i=0;i<n;i++){ const c=rollCard(); if(c) cards.push(c); }
   const col=getCollected();
   const result=cards.map(c=>{
     const id=c.id||c.pid;
@@ -2755,7 +2763,7 @@ function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:'momen
 
 // zbirka unikatnih kartic iz POOL-a: rating 70+, ena kartica = unikaten pid (najboljša sezona)
 let _albumCatalog=null;
-function albumCatalog(){
+function albumCatalogRaw(){
   if(_albumCatalog) return _albumCatalog;
   const byPid={};
   POOL.forEach(s=>s.players.forEach(p=>{
@@ -2770,6 +2778,54 @@ function albumCatalog(){
   }));
   _albumCatalog=Object.values(byPid);
   return _albumCatalog;
+}
+// --- preverjanje slik: NBA fotografije so 1040x760; manjkajoče vrnejo manjšo privzeto sliko ---
+function getImgCache(){ try{ return JSON.parse(storeGet('hod-imgok')||'{}'); }catch(e){ return {}; } }
+function setImgCache(c){ storeSet('hod-imgok', JSON.stringify(c)); }
+function pidHasPhoto(pid){ const c=getImgCache(); return c[pid]===1; }
+function pidChecked(pid){ const c=getImgCache(); return c[pid]!==undefined; }
+// preveri en pid
+function checkOnePid(pid){
+  return new Promise(resolve=>{
+    const img=new Image();
+    let done=false;
+    const finish=(ok)=>{ if(done) return; done=true; resolve(ok); };
+    img.onload=()=>finish(img.naturalWidth>=1000 && img.naturalHeight>=600);
+    img.onerror=()=>finish(false);
+    setTimeout(()=>finish(false), 9000);
+    img.src=`https://cdn.nba.com/headshots/nba/latest/1040x760/${pid}.png`;
+  });
+}
+// preveri vse nepreverjene v serijah (v ozadju), pokliče onProgress
+let _imgCheckRunning=false;
+async function ensureImagesChecked(onProgress){
+  if(_imgCheckRunning) return;
+  _imgCheckRunning=true;
+  const raw=albumCatalogRaw();
+  const cache=getImgCache();
+  const todo=raw.filter(c=>cache[c.pid]===undefined).map(c=>c.pid);
+  // dodaj moment pid-e
+  MOMENTS.forEach(m=>{ if(cache[m.pid]===undefined) todo.push(m.pid); });
+  const BATCH=12;
+  for(let i=0;i<todo.length;i+=BATCH){
+    const chunk=todo.slice(i,i+BATCH);
+    const res=await Promise.all(chunk.map(pid=>checkOnePid(pid)));
+    const c=getImgCache();
+    chunk.forEach((pid,j)=>{ c[pid]=res[j]?1:0; });
+    setImgCache(c);
+    _albumCatalog=null; // invalidiraj filtriran katalog
+    if(onProgress) onProgress(Math.min(todo.length, i+BATCH), todo.length);
+  }
+  _imgCheckRunning=false;
+}
+// filtriran katalog: samo kartice s preverjeno sliko (če ni preverjeno, jih ZAČASNO vključi)
+function albumCatalog(){
+  const raw=albumCatalogRaw();
+  const cache=getImgCache();
+  // če sploh še nič preverjeno, vrni raw (da album ni prazen ob prvem zagonu)
+  const anyChecked=Object.keys(cache).length>0;
+  if(!anyChecked) return raw;
+  return raw.filter(c=>cache[c.pid]!==0); // izloči potrjeno brez slike
 }
 // NBA-slogovna silhueta (možiček) kot fallback, ko ni fotografije
 const SILHOUETTE="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23223'/%3E%3Cg fill='%23556'%3E%3Ccircle cx='50' cy='38' r='19'/%3E%3Cpath d='M18 92c0-20 14-32 32-32s32 12 32 32z'/%3E%3C/g%3E%3C/svg%3E";
@@ -3674,6 +3730,8 @@ function showAlbum(){
   phase="album";
   // ob vstopu: dnevni paket
   const gotDaily=claimDailyPack();
+  // preveri slike v ozadju (enkrat); ko konča serijo, osveži če smo še v albumu
+  ensureImagesChecked(()=>{ if(phase==='album') renderAlbumBody(); });
   const cat=albumCatalog();
   const total=cat.length+MOMENTS.length;
   const stuck=stuckCount();
@@ -3751,31 +3809,45 @@ function renderAlbumGrid(byDec){
       if(!st) return `<div class="hod-alb-cell empty rar-${c.rarity}"><div class="hod-alb-q">?</div></div>`;
       return `<div class="hod-alb-cell rar-${c.rarity}">
         <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
-        <div class="hod-alb-nm">${escapeHtml(c.name.split(' ').slice(-1)[0])}</div>
+        <div class="hod-alb-fullnm">${escapeHtml(c.name)}</div>
+        <div class="hod-alb-szn">${c.season||''}</div>
         <div class="hod-alb-rt">${c.rating}</div>
       </div>`;
     }).join('');
     return `<div class="hod-alb-team"><div class="hod-alb-team-h">${escapeHtml(team)} <span>${got}/${byTeam[team].length}</span></div><div class="hod-alb-cells">${cells}</div></div>`;
   }).join('');
 }
-// NENALEPLJENE kartice — klik prilepi
+// NENALEPLJENE kartice — klik prilepi, filtri po ekipi in dekadi
+let _unstuckTeam='', _unstuckDec='';
 function renderUnstuck(body){
   const col=getCollected();
   const catMap={}; albumCatalog().forEach(c=>catMap[c.pid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
-  const items=Object.keys(col).filter(k=>!col[k].stuck && (col[k].count||0)>0).map(k=>catMap[k]).filter(Boolean);
-  if(!items.length){ body.innerHTML=`<div class="hod-alb-hint">Nimaš nenalepljenih kartic. Odpri paket v Trgovini ali zaslužiš v igrah!</div>`; return; }
-  items.sort((a,b)=>(b.rating||0)-(a.rating||0));
-  body.innerHTML=`<div class="hod-alb-hint">Tapni kartico, da jo <b>prilepiš</b> v album. Dvojnike lahko prodaš za 🪙 v Trgovini.</div>
-    <div class="hod-alb-cells stick">`+items.map(c=>{
+  let items=Object.keys(col).filter(k=>!col[k].stuck && (col[k].count||0)>0).map(k=>catMap[k]).filter(Boolean);
+  if(!items.length){ body.innerHTML=`<div class="hod-alb-hint">Nimaš nenalepljenih kartic. Odpri paket ali zaslužiš v igrah!</div>`; return; }
+  // možnosti filtrov iz nenalepljenih
+  const teams=[...new Set(items.map(c=>c.team).filter(Boolean))].sort();
+  const decs=DECADE_ORDER.filter(d=>items.some(c=>c.era===d));
+  // uporabi filtre
+  let shown=items.filter(c=>(!_unstuckTeam||c.team===_unstuckTeam)&&(!_unstuckDec||c.era===_unstuckDec));
+  shown.sort((a,b)=>(b.rating||0)-(a.rating||0));
+  body.innerHTML=`<div class="hod-alb-hint">Tapni kartico, da jo <b>prilepiš</b>. Filtriraj po ekipi/dekadi.</div>
+    <div class="hod-unst-filters">
+      <select class="hod-unst-sel" id="hod-unst-team"><option value="">Vse ekipe</option>${teams.map(t=>`<option value="${escapeHtml(t)}" ${t===_unstuckTeam?'selected':''}>${escapeHtml(t)}</option>`).join('')}</select>
+      <select class="hod-unst-sel" id="hod-unst-dec"><option value="">Vse dekade</option>${decs.map(d=>`<option value="${d}" ${d===_unstuckDec?'selected':''}>${d}</option>`).join('')}</select>
+    </div>
+    <div class="hod-alb-cells stick">`+shown.map(c=>{
     const id=c.id||c.pid; const cnt=col[id].count||1;
     return `<div class="hod-alb-cell rar-${c.rarity} stickable" data-id="${id}">
       ${cnt>1?`<div class="hod-alb-dup">×${cnt}</div>`:''}
       <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
-      <div class="hod-alb-nm">${escapeHtml((c.name||'').split(' ').slice(-1)[0])}</div>
+      <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
+      <div class="hod-alb-szn">${c.season||''}</div>
       <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
       <div class="hod-alb-stick">prilepi</div>
     </div>`;
   }).join('')+`</div>`;
+  const ts=document.getElementById('hod-unst-team'); if(ts) ts.onchange=()=>{ _unstuckTeam=ts.value; renderUnstuck(body); };
+  const ds=document.getElementById('hod-unst-dec'); if(ds) ds.onchange=()=>{ _unstuckDec=ds.value; renderUnstuck(body); };
   body.querySelectorAll('.stickable').forEach(el=>el.onclick=()=>{
     const id=el.dataset.id;
     if(stickCard(id)){ hodToast('✅ <b>Prilepljeno v album!</b>'); renderAlbumBody(); }
