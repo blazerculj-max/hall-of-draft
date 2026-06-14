@@ -83,10 +83,10 @@
   color:#1a1200;border:none;padding:14px 40px;border-radius:50px;cursor:pointer;
   box-shadow:0 5px 0 #9c6400, 0 8px 20px rgba(0,0,0,.4);transition:.1s;text-transform:uppercase;
 }
-.hod-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #9c6400,0 4px 12px rgba(0,0,0,.4);}
+.hod-btn:active{transform:translateY(4px) scale(.97);box-shadow:0 1px 0 #9c6400,0 4px 12px rgba(0,0,0,.4);}
 .hod-btn:disabled{opacity:.4;cursor:not-allowed;}
 .hod-btn.secondary{background:transparent;color:var(--muted);border:1px solid var(--line);box-shadow:none;font-size:16px;padding:8px 22px;}
-.hod-btn.secondary:active{transform:none;}
+.hod-btn.secondary:active{transform:scale(.95);}
 
 .hod-season-choices{display:flex;flex-direction:column;gap:10px;margin:8px 0 20px;}
 .hod-season-card{
@@ -315,6 +315,16 @@
 .hod-pk-ovr{font-family:'Anton';font-size:30px;color:var(--orange);line-height:.8;text-shadow:0 1px 0 rgba(255,255,255,.4);}
 .hod-pk-ovr.fog{color:#b89a78;}
 @keyframes pkspin{0%{transform:rotateY(0) scale(1);opacity:1;}50%{transform:rotateY(90deg) scale(.9);opacity:.3;}100%{transform:rotateY(0) scale(1);opacity:1;}}
+.hod-pk-enter{animation:pkEnter .4s ease backwards;}
+@keyframes pkEnter{0%{opacity:0;transform:translateY(18px) scale(.92);}100%{opacity:1;transform:translateY(0) scale(1);}}
+.hod-pk-card.just-locked{animation:pkStamp .35s cubic-bezier(.3,1.4,.5,1);}
+@keyframes pkStamp{0%{transform:scale(1);}30%{transform:scale(1.12) rotate(-2deg);}60%{transform:scale(.96) rotate(1deg);}100%{transform:scale(1) rotate(0);}}
+.hod-pk-lock-stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-14deg) scale(0);
+  z-index:6;font-family:'Anton';font-size:22px;color:var(--orange);border:3px solid var(--orange);
+  padding:2px 10px;border-radius:8px;letter-spacing:1px;pointer-events:none;text-shadow:0 1px 0 rgba(255,255,255,.4);
+  background:rgba(244,234,210,.85);animation:stampIn .4s cubic-bezier(.3,1.5,.5,1) forwards;}
+@keyframes stampIn{0%{transform:translate(-50%,-50%) rotate(-14deg) scale(2.2);opacity:0;}
+  60%{opacity:1;}100%{transform:translate(-50%,-50%) rotate(-14deg) scale(1);opacity:1;}}
 .hod-pk-avatar{position:relative;z-index:2;width:62px;height:62px;border-radius:50%;margin:2px auto 7px;display:flex;align-items:center;
   justify-content:center;font-family:'Anton';font-size:20px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);
   border:3px solid var(--orange);overflow:hidden;}
@@ -2356,6 +2366,21 @@ function initials(name){
   return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
 }
 // avatar z NBA CDN sliko; če slike ni (starejši igralci), ostanejo inicialke kot ozadje
+// animacija štetja številke navzgor
+function countUp(el, target, dur){
+  if(!el) return;
+  target=Math.round(target); dur=dur||600;
+  const start=performance.now();
+  const from=parseInt(el.textContent)||0;
+  function step(now){
+    const t=Math.min(1,(now-start)/dur);
+    const eased=1-Math.pow(1-t,3); // ease-out
+    el.textContent=Math.round(from+(target-from)*eased);
+    if(t<1) requestAnimationFrame(step);
+    else el.textContent=target;
+  }
+  requestAnimationFrame(step);
+}
 // NBA-slogovna silhueta (možiček) kot fallback, ko ni fotografije
 const SILHOUETTE="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23223'/%3E%3Cg fill='%23556'%3E%3Ccircle cx='50' cy='38' r='19'/%3E%3Cpath d='M18 92c0-20 14-32 32-32s32 12 32 32z'/%3E%3C/g%3E%3C/svg%3E";
 function avatarImg(pid, cls){
@@ -2529,7 +2554,7 @@ function renderPoker(finished){
     const held=st.held[i];
     const col=nameColor(c.name);
     const showOvr = held || !pokerFog;
-    return `<div class="hod-pk-card ${held?'held':''} ${finished?'done':''}" data-i="${i}">
+    return `<div class="hod-pk-card ${held?'held':''} ${finished?'done':''} hod-pk-enter" data-i="${i}" style="animation-delay:${i*0.06}s">
       <div class="hod-pk-rays"></div>
       <div class="hod-pk-head"><span class="hod-pk-pos">${posLabel(c)}</span><span class="hod-pk-lock">${held?'🔒':''}</span><span class="hod-pk-ovr ${showOvr?'':'fog'}">${showOvr?(c.rating||0):'?'}</span></div>
       <div class="hod-pk-avatar" style="background:${col}">${avatarImg(c.pid)}</div>
@@ -2545,7 +2570,7 @@ function renderPoker(finished){
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">NBA Poker</div>
       <div class="hod-pk-bar">
-        <span>Overall: <b>${(pokerFog && !finished)?'?':total}</b></span>
+        <span>Overall: <b id="hod-pk-overall">${(pokerFog && !finished)?'?':total}</b></span>
         <span class="${livePos.covered===5?'pos-full':''}">Položaji: ${livePos.covered}/5</span>
         <span>Vrtljaji: ${'●'.repeat(st.spinsLeft)}${'○'.repeat(5-st.spinsLeft)}</span>
       </div>
@@ -2570,6 +2595,8 @@ function renderPoker(finished){
            </div>`}
     </div>`;
   if(finished){
+    const ovEl=document.getElementById('hod-pk-overall');
+    if(ovEl){ ovEl.textContent='0'; countUp(ovEl, sc.total, 900); }
     document.getElementById('hod-pk-again').onclick=()=>startPoker();
     document.getElementById('hod-pk-home').onclick=()=>goHome();
     autoSubmitScore(pokerFog?"poker_fog":"poker", sc.total, Math.round(sc.base/5));
@@ -2580,9 +2607,17 @@ function renderPoker(finished){
       const i=+el.dataset.i;
       if(st.held[i]) return; // že zaklenjen - lock je dokončen (gamble!)
       st.held[i]=true;
-      // če so zdaj vse zaklenjene, je igra konec
-      if(st.held.every(h=>h)){ endPoker(); return; }
-      renderPoker(false);
+      // žig efekt na karti
+      el.classList.add('just-locked');
+      const stamp=document.createElement('div');
+      stamp.className='hod-pk-lock-stamp';
+      stamp.textContent='LOCK';
+      el.appendChild(stamp);
+      const allLocked=st.held.every(h=>h);
+      setTimeout(()=>{
+        if(allLocked){ endPoker(); return; }
+        renderPoker(false);
+      }, 360);
     };
   });
   document.getElementById('hod-pk-spin').onclick=()=>pokerSpin();
@@ -3015,7 +3050,7 @@ function endClimb(){
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">Climb končan</div>
-      <div class="hod-grade hod-pop" style="color:var(--gold)">${st.score}</div>
+      <div class="hod-grade hod-pop" id="hod-climb-score" style="color:var(--gold)">0</div>
       <div class="hod-overall">${st.answered} odgovorov · ${st.answered-3} pravilnih</div>
       <div class="hod-verdict">Hitrost prinaša točke — naslednjič še hitreje!</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
@@ -3024,6 +3059,7 @@ function endClimb(){
       </div>
       <div id="hod-leaderboard"></div>
     </div>`;
+  countUp(document.getElementById('hod-climb-score'), st.score, 900);
   document.getElementById('hod-climb-again').onclick=()=>startClimb();
   document.getElementById('hod-climb-home').onclick=()=>goHome();
   autoSubmitScore("climb", st.score, st.answered-3);
