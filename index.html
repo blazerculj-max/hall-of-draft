@@ -556,6 +556,12 @@
 .hod-alb-numinfo{max-width:380px;margin:6px auto;background:rgba(255,209,102,.12);border:1px solid var(--gold-warm);
   border-radius:8px;padding:7px 12px;font-size:13px;color:var(--amber);}
 .hod-alb-numinfo b{color:#fff;}
+/* ekipni barvni trak na kartici */
+.hod-alb-ribbon{position:absolute;top:0;right:0;width:6px;height:100%;z-index:2;opacity:.9;}
+.hod-alb-cell.empty .hod-alb-ribbon{opacity:.5;}
+.hod-alb-teamtag{position:relative;z-index:1;font-family:'Bebas Neue';font-size:9px;letter-spacing:1px;
+  color:var(--gold-d);line-height:1;margin-top:1px;}
+.hod-alb-cell.empty .hod-alb-teamtag{color:rgba(180,170,150,.5);}
 /* sezonske podtabe */
 .hod-szn-tabs{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:4px 0 12px;}
 .hod-szn-tab{position:relative;font-family:'Oswald';font-weight:600;font-size:12px;background:#13192a;
@@ -649,8 +655,17 @@
 .hod-pko-sub{font-family:'Bebas Neue';font-size:12px;letter-spacing:3px;color:var(--navy);position:relative;z-index:1;}
 .hod-pko-tap{font-family:'Oswald';font-size:10px;color:rgba(255,255,255,.85);margin-top:8px;position:relative;z-index:1;letter-spacing:1px;}
 .hod-pko-fan{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;opacity:0;pointer-events:none;}
-.hod-pko-fan.show{opacity:1;pointer-events:auto;}
+.hod-pko-fan.show{opacity:1;pointer-events:auto;position:relative;inset:auto;width:100%;padding:10px 0;}
+.hod-pko-stage:has(.hod-pko-fan.show){min-height:0;height:auto;}
+.hod-pko-stage.opened{min-height:0;height:auto;display:block;}
 .hod-flip{width:96px;height:138px;perspective:800px;cursor:pointer;flex:none;}
+@media(max-width:430px){
+  .hod-flip{width:72px;height:104px;}
+  .hod-pko-fan.show{gap:5px;}
+  .hod-flip-photo{width:36px;height:36px;}
+  .hod-flip-rt{font-size:17px;}
+  .hod-flip-nm{font-size:9px;}
+}
 .hod-flip.pop{animation:pkoCardPop .5s cubic-bezier(.2,1.3,.4,1) backwards;}
 @keyframes pkoCardPop{0%{transform:translateY(50px) scale(.4);opacity:0;}100%{transform:translateY(0) scale(1);opacity:1;}}
 .hod-flip-inner{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d;}
@@ -2814,7 +2829,7 @@ function openOnePack(){
   const cards=[]; for(let i=0;i<n;i++){ const c=rollCard(); if(c) cards.push(c); }
   const col=getCollected();
   const result=cards.map(c=>{
-    const id=c.id||c.pid;
+    const id=c.id||c.uid||(''+c.pid);
     const ex=col[id];
     const isNew=!ex;
     if(!ex){ col[id]={stuck:false, count:1}; }
@@ -2839,29 +2854,62 @@ function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:'momen
 
 // zbirka unikatnih kartic iz POOL-a: rating 70+, ena kartica = unikaten pid (najboljša sezona)
 let _albumCatalog=null;
+// barve ekip (za barvni trak na kartici)
+const TEAM_COLORS={
+  ATL:'#e03a3e',BOS:'#007a33',BKN:'#000000',NJN:'#002a60',CHA:'#1d1160',CHH:'#00788c',CHI:'#ce1141',
+  CLE:'#860038',DAL:'#00538c',DEN:'#0e2240',DET:'#c8102e',GSW:'#1d428a',GOS:'#1d428a',SFW:'#1d428a',
+  HOU:'#ce1141',IND:'#002d62',LAC:'#c8102e',SDC:'#c8102e',LAL:'#552583',MEM:'#5d76a9',VAN:'#5d76a9',
+  MIA:'#98002e',MIL:'#00471b',MIN:'#0c2340',NOP:'#0c2340',NOH:'#0c2340',NOK:'#0c2340',NOJ:'#5d76a9',
+  NYK:'#006bb6',OKC:'#007ac1',SEA:'#006bb6',ORL:'#0077c0',PHI:'#006bb6',PHL:'#006bb6',PHX:'#1d1160',
+  POR:'#e03a3e',SAC:'#5a2d81',KCK:'#5a2d81',SAS:'#c4ced4',SAN:'#c4ced4',TOR:'#ce1141',UTA:'#002b5c',
+  UTH:'#002b5c',WAS:'#002b5c',BLT:'#002b5c',CAP:'#002b5c',BUF:'#002a60',SDR:'#552583',CIN:'#006bb6',
+  PHW:'#1d428a',NYN:'#006bb6'
+};
+function teamColor(t){ return TEAM_COLORS[t]||'#b89a78'; }
+const STAR_MULTI_RATING=90; // zvezde s tem ratingom+ dobijo kartico pri vsaki ekipi
 function albumCatalogRaw(){
   if(_albumCatalog) return _albumCatalog;
-  const byPid={};
+  // 1) najboljša sezona na (pid) — za rating in osnovne podatke
+  const bestByPid={};
+  // 2) za zvezde: najboljša sezona na (pid+ekipa)
+  const bestByPidTeam={};
   POOL.forEach(s=>s.players.forEach(p=>{
     if(!p.pid) return;
-    if((p.rating||0)<70) return; // samo kvalitetne kartice
-    // izloči igralce brez slike (NBA CDN nima, Wikimedia ni našla)
+    if((p.rating||0)<70) return;
     if(typeof NO_PHOTO_PIDS!=='undefined' && NO_PHOTO_PIDS.has(p.pid) && !(typeof LEGEND_PIDS!=='undefined' && LEGEND_PIDS.has(p.pid))) return;
-    const ex=byPid[p.pid];
-    if(!ex || (p.rating||0)>(ex.rating||0)){
-      byPid[p.pid]={pid:p.pid,name:p.name,team:p.team||'',season:p.season,
-        rating:p.rating||0,era:p.era,pos:p.pos,pts:p.pts,reb:p.reb,ast:p.ast,
-        rarity:cardRarity(p.rating||0)};
-    }
+    const b=bestByPid[p.pid];
+    if(!b || (p.rating||0)>(b.rating||0)) bestByPid[p.pid]={...p, rating:p.rating||0};
+    const key=p.pid+'|'+(p.team||'');
+    const bt=bestByPidTeam[key];
+    if(!bt || (p.rating||0)>(bt.rating||0)) bestByPidTeam[key]={...p, rating:p.rating||0};
   }));
-  let arr=Object.values(byPid);
-  // dodeli FIKSNE globalne številke: po dekadi -> ekipi -> rating -> ime (stabilno)
+  const arr=[];
+  const decadeFromSeason=(s,fallback)=>{ const e=(typeof seasonEra==='function')?seasonEra(s):null; return (e&&/^(70s|80s|90s|2000s|2010s|2020s)$/.test(e))?e:fallback; };
+  Object.keys(bestByPid).forEach(pid=>{
+    const best=bestByPid[pid];
+    const isStar=(best.rating||0)>=STAR_MULTI_RATING;
+    if(isStar){
+      // kartica pri VSAKI ekipi, kjer je igral (z dovolj sliko)
+      Object.keys(bestByPidTeam).filter(k=>k.startsWith(pid+'|')).forEach(k=>{
+        const p=bestByPidTeam[k];
+        arr.push({pid:p.pid,name:p.name,team:p.team||'',season:p.season,
+          rating:p.rating||0,era:decadeFromSeason(p.season,p.era),pos:p.pos,pts:p.pts,reb:p.reb,ast:p.ast,
+          rarity:cardRarity(p.rating||0), uid:p.pid+'_'+(p.team||''), multiTeam:true});
+      });
+    } else {
+      const p=best;
+      arr.push({pid:p.pid,name:p.name,team:p.team||'',season:p.season,
+        rating:p.rating||0,era:decadeFromSeason(p.season,p.era),pos:p.pos,pts:p.pts,reb:p.reb,ast:p.ast,
+        rarity:cardRarity(p.rating||0), uid:''+p.pid, multiTeam:false});
+    }
+  });
+  // FIKSNE globalne številke: po dekadi -> rating -> ime -> ekipa (zvezde spredaj)
   const decIdx={'70s':0,'80s':1,'90s':2,'2000s':3,'2010s':4,'2020s':5};
   arr.sort((a,b)=>{
     const da=(decIdx[a.era]??9)-(decIdx[b.era]??9); if(da) return da;
-    const t=(a.team||'').localeCompare(b.team||''); if(t) return t;
     if(b.rating!==a.rating) return b.rating-a.rating;
-    return (a.name||'').localeCompare(b.name||'');
+    const nm=(a.name||'').localeCompare(b.name||''); if(nm) return nm;
+    return (a.team||'').localeCompare(b.team||'');
   });
   arr.forEach((c,i)=>{ c.num=i+1; });
   _albumCatalog=arr;
@@ -3879,7 +3927,7 @@ function renderAlbumBody(){
   const waitByDec=albumWaitByDecade();
   const decTabs=DECADE_ORDER.map(d=>{
     const tot=byDec[d].length; if(!tot) return '';
-    const got=byDec[d].filter(c=>col[c.pid]&&col[c.pid].stuck).length;
+    const got=byDec[d].filter(c=>col[c.uid]&&col[c.uid].stuck).length;
     const wait=waitByDec[d]||0;
     return `<button class="hod-alb-tab ${d===_albumDecade?'on':''}" data-dec="${d}">${d}<span>${got}/${tot}</span>${wait>0?`<i class="hod-wait-dot">${wait}</i>`:''}</button>`;
   }).join('');
@@ -3891,7 +3939,7 @@ function renderAlbumBody(){
   if(/^\d+$/.test(qs)){
     const c=_albumByNum[parseInt(qs,10)];
     if(c){
-      const have=col[c.pid]; const status=have&&have.stuck?'✅ prilepljena':(have&&(have.count||0)>0?'📥 imaš, ni prilepljena':'❌ še nimaš');
+      const have=col[c.uid]; const status=have&&have.stuck?'✅ prilepljena':(have&&(have.count||0)>0?'📥 imaš, ni prilepljena':'❌ še nimaš');
       numInfo=`<div class="hod-alb-numinfo">#${c.num} · <b>${escapeHtml(c.name)}</b> — ${c.era} · ${escapeHtml(c.team)} · ${status}</div>`;
     } else {
       numInfo=`<div class="hod-alb-numinfo">Številka #${qs} ne obstaja (album ima ${albumCatalog().length} kartic).</div>`;
@@ -3921,7 +3969,7 @@ function renderAlbumBody(){
 // koliko nenalepljenih čaka po dekadi (za rdečo piko + številko)
 function albumWaitByDecade(){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.pid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,era:'moments'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,era:'moments'});
   const out={};
   Object.keys(col).forEach(k=>{
     if(!col[k].stuck && (col[k].count||0)>0){
@@ -3952,70 +4000,38 @@ function renderAlbumGrid(byDec){
     return;
   }
   let cards=(byDec[_albumDecade]||[]).slice();
-  // iskanje (po imenu ali številki) — če aktivno, prikaže čez vse sezone
-  let searching=false;
+  // iskanje (po imenu ali številki)
   if(q){
-    searching=true;
     if(/^\d+$/.test(q)){ const tn=parseInt(q,10); cards=cards.filter(c=>c.num===tn); }
     else cards=cards.filter(c=>c.name.toLowerCase().includes(q));
   }
-  // sezone v tej dekadi (z rdečo piko, kjer čaka nenalepljena)
-  const seasons=[...new Set((byDec[_albumDecade]||[]).map(c=>c.season))].sort();
-  // če izbrana sezona ni v tej dekadi, resetiraj
-  if(_albumSeason && !seasons.includes(_albumSeason)) _albumSeason='';
-  const waitInSeason=(szn)=>(byDec[_albumDecade]||[]).filter(c=>c.season===szn && col[c.pid]&&!col[c.pid].stuck&&(col[c.pid].count||0)>0).length;
-  let seasonTabs='';
-  if(!searching && seasons.length>1){
-    seasonTabs=`<div class="hod-szn-tabs">
-      <button class="hod-szn-tab ${_albumSeason===''?'on':''}" data-szn="">Vse</button>`+
-      seasons.map(s=>{
-        const w=waitInSeason(s);
-        const stuckN=(byDec[_albumDecade]||[]).filter(c=>c.season===s && col[c.pid]&&col[c.pid].stuck).length;
-        const totN=(byDec[_albumDecade]||[]).filter(c=>c.season===s).length;
-        return `<button class="hod-szn-tab ${_albumSeason===s?'on':''}" data-szn="${s}">${s}<span>${stuckN}/${totN}</span>${w>0?`<i class="hod-wait-dot sm">${w}</i>`:''}</button>`;
-      }).join('')+`</div>`;
-  }
-  // filtriraj po izbrani sezoni
-  if(!searching && _albumSeason) cards=cards.filter(c=>c.season===_albumSeason);
-  // grupiranje: sezona -> ekipa
-  cards.sort((a,b)=> (a.season||'').localeCompare(b.season||'') || (a.team||'').localeCompare(b.team||'') || (b.rating-a.rating));
-  const bySeason={};
-  cards.forEach(c=>{ (bySeason[c.season||'?']=bySeason[c.season||'?']||[]).push(c); });
-  const sznKeys=Object.keys(bySeason).sort();
-  const gridHtml=sznKeys.map(szn=>{
-    const sznCards=bySeason[szn];
-    const byTeam={};
-    sznCards.forEach(c=>{ (byTeam[c.team||'?']=byTeam[c.team||'?']||[]).push(c); });
-    const teamsHtml=Object.keys(byTeam).sort().map(team=>{
-      const got=byTeam[team].filter(c=>col[c.pid]&&col[c.pid].stuck).length;
-      const teamWait=byTeam[team].filter(c=>col[c.pid]&&!col[c.pid].stuck&&(col[c.pid].count||0)>0).length;
-      const cells=byTeam[team].map(c=>{
-        const st=col[c.pid]&&col[c.pid].stuck;
-        const isTarget=target&&target==c.pid;
-        if(!st){
-          const waiting=col[c.pid]&&!col[c.pid].stuck&&(col[c.pid].count||0)>0;
-          // prazno polje: pokaži ime igralca za orientacijo
-          return `<div class="hod-alb-cell empty rar-${c.rarity} ${isTarget?'target':''} ${waiting&&!isTarget?'waiting':''}" data-stickid="${c.pid}">
-            <div class="hod-alb-num">${c.num}</div>
-            <div class="hod-alb-ghost">${escapeHtml(c.name)}</div>
-            ${isTarget?'<div class="hod-alb-here">tukaj!</div>':waiting?'<div class="hod-alb-waitmark">●</div>':''}
-          </div>`;
-        }
-        return `<div class="hod-alb-cell rar-${c.rarity}">
-          <div class="hod-alb-num">${c.num}</div>
-          <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
-          <div class="hod-alb-fullnm">${escapeHtml(c.name)}</div>
-          <div class="hod-alb-szn">${c.season||''}</div>
-          <div class="hod-alb-rt">${c.rating}</div>
-        </div>`;
-      }).join('');
-      return `<div class="hod-alb-team"><div class="hod-alb-team-h">${escapeHtml(team)} <span>${got}/${byTeam[team].length}</span>${teamWait>0?`<i class="hod-wait-dot sm">${teamWait}</i>`:''}</div><div class="hod-alb-cells">${cells}</div></div>`;
-    }).join('');
-    return `<div class="hod-szn-group"><div class="hod-szn-head">${szn}</div>${teamsHtml}</div>`;
+  // organizacija: po ratingu padajoče (zvezde spredaj)
+  cards.sort((a,b)=> (b.rating-a.rating) || (a.name||'').localeCompare(b.name||'') || (a.team||'').localeCompare(b.team||''));
+  const cellHtml=cards.map(c=>{
+    const st=col[c.uid]&&col[c.uid].stuck;
+    const isTarget=target&&target==c.uid;
+    const ribbon=`<div class="hod-alb-ribbon" style="background:${teamColor(c.team)}" title="${escapeHtml(c.team)}"></div>`;
+    if(!st){
+      const waiting=col[c.uid]&&!col[c.uid].stuck&&(col[c.uid].count||0)>0;
+      return `<div class="hod-alb-cell empty rar-${c.rarity} ${isTarget?'target':''} ${waiting&&!isTarget?'waiting':''}" data-stickid="${c.uid}">
+        ${ribbon}
+        <div class="hod-alb-num">${c.num}</div>
+        <div class="hod-alb-ghost">${escapeHtml(c.name)}</div>
+        <div class="hod-alb-teamtag">${escapeHtml(c.team)}</div>
+        ${isTarget?'<div class="hod-alb-here">tukaj!</div>':waiting?'<div class="hod-alb-waitmark">●</div>':''}
+      </div>`;
+    }
+    return `<div class="hod-alb-cell rar-${c.rarity}">
+      ${ribbon}
+      <div class="hod-alb-num">${c.num}</div>
+      <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
+      <div class="hod-alb-fullnm">${escapeHtml(c.name)}</div>
+      <div class="hod-alb-teamtag">${escapeHtml(c.team)}</div>
+      <div class="hod-alb-rt">${c.rating}</div>
+    </div>`;
   }).join('');
-  grid.innerHTML=seasonTabs+gridHtml;
-  // sezonski tab handlerji
-  grid.querySelectorAll('.hod-szn-tab').forEach(b=>b.onclick=()=>{ _albumSeason=b.dataset.szn; renderAlbumGrid(byDec); });
+  const gotN=cards.filter(c=>col[c.uid]&&col[c.uid].stuck).length;
+  grid.innerHTML=`<div class="hod-alb-team"><div class="hod-alb-team-h">${_albumDecade} — najboljši igralci <span>${gotN}/${cards.length}</span></div><div class="hod-alb-cells">${cellHtml}</div></div>`;
   bindGridClicks(grid);
   if(target){
     const tEl=grid.querySelector('.hod-alb-cell.target');
@@ -4033,7 +4049,7 @@ function bindGridClicks(grid){
       }
       if(stickCard(id)){
         if(_pendingStick===id) _pendingStick=null;
-        const cat={}; albumCatalog().forEach(c=>cat[c.pid]=c); MOMENTS.forEach(m=>cat[m.id]={...m,rarity:'moment'});
+        const cat={}; albumCatalog().forEach(c=>cat[c.uid]=c); MOMENTS.forEach(m=>cat[m.id]={...m,rarity:'moment'});
         const c=cat[id];
         if(c){
           el.classList.remove('empty','target','waiting');
@@ -4077,7 +4093,7 @@ function showMomentDetail(m){
 let _unstuckTeam='', _unstuckDec='';
 function renderUnstuck(body){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.pid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
   let items=Object.keys(col).filter(k=>!col[k].stuck && (col[k].count||0)>0).map(k=>catMap[k]).filter(Boolean);
   if(!items.length){ body.innerHTML=`<div class="hod-alb-hint">Nimaš nenalepljenih kartic. Odpri paket ali zaslužiš v igrah!</div>`; return; }
   const teams=[...new Set(items.map(c=>c.team).filter(Boolean))].sort();
@@ -4090,7 +4106,7 @@ function renderUnstuck(body){
       <select class="hod-unst-sel" id="hod-unst-dec"><option value="">Vse dekade</option>${decs.map(d=>`<option value="${d}" ${d===_unstuckDec?'selected':''}>${d}</option>`).join('')}</select>
     </div>
     <div class="hod-alb-cells stick">`+shown.map(c=>{
-    const id=c.id||c.pid; const cnt=col[id].count||1;
+    const id=c.id||c.uid||(''+c.pid); const cnt=(col[id]&&col[id].count)||1;
     return `<div class="hod-alb-cell rar-${c.rarity} stickable" data-id="${id}" data-era="${c.era||'moments'}">
       ${c.num?`<div class="hod-alb-num">${c.num}</div>`:''}
       ${cnt>1?`<div class="hod-alb-dup">×${cnt}</div>`:''}
@@ -4163,7 +4179,7 @@ function showMissingReport(){
 }
 function renderShop(body){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.pid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
   const dups=Object.keys(col).filter(k=>(col[k].count||0)>0).map(k=>({c:catMap[k],n:col[k].count})).filter(x=>x.c);
   const dupValue=dups.reduce((a,x)=>a+(DUP_VALUE[x.c.rarity]||3)*x.n,0);
   body.innerHTML=`
@@ -4226,6 +4242,7 @@ function showPackOpening(){
     setTimeout(()=>{
       pack.style.display='none';
       fan.classList.add('show');
+      const stageEl=document.getElementById('hod-pko-stage'); if(stageEl) stageEl.classList.add('opened');
       fan.innerHTML=results.map((r,i)=>{
         const c=r.card;
         return `<div class="hod-flip rar-${c.rarity}" data-i="${i}" style="animation-delay:${i*0.12}s">
