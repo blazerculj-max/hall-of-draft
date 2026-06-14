@@ -6,7 +6,7 @@
 
 #hod-root {
   --bg:#1a120a;
-  --panel:#21283a;
+  --panel:#171d2c;
   --gold:#ffb627;
   --gold-deep:#e89200;
   --red:#e63946;
@@ -197,7 +197,7 @@
 .hod-pk-ai-title{font-family:'Oswald';font-size:11px;color:var(--muted);}
 .hod-pk-ai-card.beaten .hod-pk-ai-title{color:var(--green);}
 /* Vs AI dvoboj */
-.hod-vs-side{max-width:520px;margin:0 auto;padding:10px 12px;border-radius:14px;background:var(--panel);border:1px solid var(--line);}
+.hod-vs-side{max-width:520px;margin:0 auto;padding:10px 12px;border-radius:14px;background:#161b2a;border:1px solid var(--gold-warm);box-shadow:0 8px 22px rgba(0,0,0,.55);}
 .hod-vs-side.you{border-color:var(--gold);}
 .hod-vs-head{font-family:'Bebas Neue';font-size:16px;letter-spacing:.5px;color:var(--ink);display:flex;align-items:center;gap:8px;margin-bottom:8px;}
 .hod-vs-emoji{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;}
@@ -299,10 +299,11 @@
 .hod-pk-bar b{color:var(--gold);font-family:'Anton';font-size:18px;}
 .hod-pk-hint{font-family:'Oswald';font-weight:300;font-size:12px;color:var(--muted);margin-bottom:14px;}
 .hod-pk-grid{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;max-width:600px;margin:0 auto;}
-.hod-pk-card{position:relative;flex:1 1 100px;max-width:108px;min-width:92px;background:var(--panel);
-  border:2px solid var(--line);border-radius:14px;padding:12px 7px 10px;cursor:pointer;transition:.15s;overflow:hidden;}
-.hod-pk-card:hover{border-color:var(--gold);transform:translateY(-3px);}
-.hod-pk-card.held{border-color:var(--gold);background:rgba(255,182,39,.1);box-shadow:0 0 14px rgba(255,182,39,.3);cursor:default;}
+.hod-pk-card{position:relative;flex:1 1 100px;max-width:108px;min-width:92px;background:#161b2a;
+  border:2px solid var(--gold-warm);border-radius:14px;padding:12px 7px 10px;cursor:pointer;transition:.15s;overflow:hidden;
+  box-shadow:0 8px 22px rgba(0,0,0,.6);}
+.hod-pk-card:hover{border-color:var(--orange);transform:translateY(-3px);}
+.hod-pk-card.held{border-color:var(--gold);background:#1f2233;box-shadow:0 0 16px rgba(255,182,39,.4);cursor:default;}
 .hod-pk-card.held:hover{transform:none;}
 .hod-pk-card.spinning{animation:pkspin .32s ease;}
 @keyframes pkspin{0%{transform:rotateY(0) scale(1);opacity:1;}50%{transform:rotateY(90deg) scale(.9);opacity:.3;}100%{transform:rotateY(0) scale(1);opacity:1;}}
@@ -625,7 +626,7 @@
 .hod-mp-detail-block .hod-mp-team-head span:first-child{color:var(--tc);}
 .hod-pos-overlay{position:absolute;inset:0;background:rgba(10,10,15,.92);display:flex;
   align-items:center;justify-content:center;border-radius:14px;z-index:20;backdrop-filter:blur(3px);}
-.hod-pos-modal{background:var(--panel);border:1px solid var(--gold);border-radius:16px;padding:20px 24px;max-width:360px;}
+.hod-pos-modal{background:#161b2a;border:2px solid var(--gold);border-radius:16px;padding:20px 24px;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.85);}
 .hod-pos-pick-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 .hod-btn.hod-pos-pick{padding:12px 18px;line-height:1.1;}
 .hod-pick-rt{display:block;font-family:'Bebas Neue';font-size:16px;margin:3px 0;padding:1px 6px;border-radius:5px;}
@@ -2528,6 +2529,7 @@ function renderPoker(finished){
         : `<div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
              <button class="hod-btn" id="hod-pk-spin">${st.spinsLeft<=1?'Zadnji vrtljaj':'Zavrti ('+st.spinsLeft+')'}</button>
              <button class="hod-btn secondary" id="hod-pk-stop">Ustavi & shrani</button>
+             <button class="hod-btn secondary" id="hod-pk-exit">← Nazaj</button>
            </div>`}
     </div>`;
   if(finished){
@@ -2548,6 +2550,7 @@ function renderPoker(finished){
   });
   document.getElementById('hod-pk-spin').onclick=()=>pokerSpin();
   document.getElementById('hod-pk-stop').onclick=()=>endPoker();
+  const pkExit=document.getElementById('hod-pk-exit'); if(pkExit) pkExit.onclick=()=>showPokerMenu();
 }
 function pokerSpin(){
   const st=pokerState;
@@ -2696,6 +2699,7 @@ function renderPokerVsAI(){
       <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn" id="hod-vs-spin">${st.you.spins<=1?'Zadnji vrtljaj':'Zavrti ('+st.you.spins+')'}</button>
         <button class="hod-btn secondary" id="hod-vs-stop">Ustavi</button>
+        <button class="hod-btn secondary" id="hod-vs-exit">← Nazaj</button>
       </div>
     </div>`;
   // klik na tvojo karto: normalno LOCK, ali reroll če je pending
@@ -2736,6 +2740,7 @@ function renderPokerVsAI(){
   }
   document.getElementById('hod-vs-spin').onclick=()=>{ if(st.pending){st.pending=null;} vsAISpin(); };
   document.getElementById('hod-vs-stop').onclick=()=>vsAIFinish();
+  const vsExit=document.getElementById('hod-vs-exit'); if(vsExit) vsExit.onclick=()=>showPokerLadder();
   // power-up gumbi
   ['reroll','steal','peek'].forEach(key=>{
     const b=document.getElementById('hod-pu-'+key);
