@@ -600,7 +600,7 @@
   background:rgba(0,0,0,.28);border-radius:5px;padding:1px 6px;z-index:3;}
 .hod-cd-photo{width:120px;height:120px;border-radius:50%;border:3px solid #fff;overflow:hidden;margin:34px auto 0;
   position:relative;z-index:1;box-shadow:0 4px 16px rgba(0,0,0,.35);}
-.hod-cd-photo img{width:100%;height:100%;object-fit:cover;}
+.hod-cd-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%;}
 /* svetla plošča s podatki (berljivost čez barvno ozadje) */
 .hod-cd-plate{position:relative;z-index:1;margin:10px 10px 0;background:rgba(244,234,210,.95);
   border-radius:12px;padding:10px 8px 12px;box-shadow:0 4px 14px rgba(0,0,0,.25);}
@@ -611,15 +611,18 @@
 .hod-cd-stats b{font-family:'Anton';font-size:16px;color:var(--navy);display:block;}
 .hod-cd-stats span{font-family:'Oswald';font-size:9px;color:var(--gold-d);letter-spacing:1px;}
 .hod-cd-hint{position:absolute;bottom:8px;left:0;right:0;font-family:'Oswald';font-size:10px;color:rgba(255,255,255,.85);z-index:2;}
-.hod-cd-back{transform:rotateY(180deg);background:linear-gradient(180deg,#1a2236,#0d1119);border:3px solid var(--gold-warm);
+.hod-cd-back{transform:rotateY(180deg);background:
+  linear-gradient(180deg,rgba(10,12,20,.82),rgba(10,12,20,.92)),
+  linear-gradient(160deg,var(--tc1,#1a2236),var(--tc2,#0d1119));
+  border:3px solid var(--gold-warm);
   display:flex;flex-direction:column;align-items:center;padding:22px 16px;}
-.hod-cd-back-title{font-family:'Anton';font-size:18px;letter-spacing:3px;color:var(--amber);}
+.hod-cd-back-title{font-family:'Anton';font-size:18px;letter-spacing:3px;color:var(--amber);text-shadow:0 1px 3px rgba(0,0,0,.6);}
 .hod-cd-back-nm{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:#fff;margin-bottom:14px;}
 .hod-cd-career{width:100%;display:flex;flex-direction:column;gap:8px;overflow-y:auto;}
-.hod-cd-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border-radius:8px;padding:7px 10px;}
-.hod-cd-dot{width:14px;height:14px;border-radius:50%;flex:none;border:1px solid rgba(255,255,255,.3);}
-.hod-cd-team{font-family:'Anton';font-size:15px;color:#fff;flex:none;min-width:46px;}
-.hod-cd-per{font-family:'Oswald';font-size:13px;color:var(--gold-warm);margin-left:auto;}
+.hod-cd-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border-radius:8px;padding:7px 10px;}
+.hod-cd-dot{width:14px;height:14px;border-radius:50%;flex:none;border:1px solid rgba(255,255,255,.4);}
+.hod-cd-team{font-family:'Anton';font-size:15px;color:#fff;flex:none;min-width:46px;text-shadow:0 1px 2px rgba(0,0,0,.5);}
+.hod-cd-per{font-family:'Oswald';font-size:13px;color:#ffe0b8;margin-left:auto;text-shadow:0 1px 2px rgba(0,0,0,.5);}
 /* sezonske podtabe */
 .hod-szn-tabs{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:4px 0 12px;}
 .hod-szn-tab{position:relative;font-family:'Oswald';font-weight:600;font-size:12px;background:#13192a;
@@ -636,8 +639,8 @@
 .hod-moment-card{background:linear-gradient(180deg,#2a1820,#1a1015);border:2px solid #ff4d6d;border-radius:18px;
   padding:22px;max-width:330px;width:90%;text-align:center;box-shadow:0 14px 50px rgba(0,0,0,.7),0 0 30px rgba(255,77,109,.4);color:#fff;}
 .hod-moment-badge{font-family:'Anton';font-size:12px;letter-spacing:1px;color:#ff4d6d;margin-bottom:12px;}
-.hod-moment-photo{width:90px;height:90px;border-radius:50%;border:3px solid #ff4d6d;overflow:hidden;margin:0 auto 8px;box-shadow:0 0 20px rgba(255,77,109,.6);}
-.hod-moment-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.hod-moment-photo{width:90px;height:90px;border-radius:50%;border:3px solid #ff4d6d;overflow:hidden;margin:0 auto 8px;box-shadow:0 0 20px rgba(255,77,109,.6);position:relative;}
+.hod-moment-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%;display:block;}
 .hod-moment-val{font-family:'Anton';font-size:44px;color:#ff4d6d;line-height:1;}
 .hod-moment-nm{font-family:'Anton';font-size:22px;color:#fff;margin-top:4px;}
 .hod-moment-mom{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;color:var(--amber);margin:4px 0 12px;}
@@ -4227,8 +4230,8 @@ function showCardDetail(c){
   ov.className='hod-howto-overlay hod-cd-overlay';
   ov.innerHTML=`<div class="hod-cd-wrap">
     <div class="hod-cd-flip" id="hod-cd-flip">
-      <div class="hod-cd-inner">
-        <div class="hod-cd-face hod-cd-front rar-${c.rarity}" style="--tc1:${col1};--tc2:${col2}">
+      <div class="hod-cd-inner" style="--tc1:${col1};--tc2:${col2}">
+        <div class="hod-cd-face hod-cd-front rar-${c.rarity}">
           <div class="hod-cd-bg">
             <div class="hod-cd-bg-base"></div>
             <div class="hod-cd-bg-diag"></div>
