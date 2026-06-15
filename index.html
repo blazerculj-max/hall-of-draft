@@ -3791,7 +3791,7 @@ function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:m.lowl
 // momenti, ki imajo custom ilustracijo v assets/moments/{id}.png
 const MOMENT_IMG=new Set(['kobe81','wilt100','mj63','magic42','klay37','lebron','tmac','malice','artest','barkley','sprewell','mj_retire','tonya']);
 // slike, ki imajo SVOJ okvir/ozadje (rahlo povečamo, da rob "uide" čez kartico)
-const MOMENT_FRAMED=new Set(['kobe81','magic42','wilt100','mj63']);
+const MOMENT_FRAMED=new Set(['kobe81','magic42','wilt100','mj63','tonya']);
 function hasMomentImg(id){ return MOMENT_IMG.has(id); }
 function momentImgTag(m){
   if(hasMomentImg(m.id)){
