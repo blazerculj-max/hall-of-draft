@@ -6938,7 +6938,7 @@ async function postToLeaderboard(ev, sim, btn){
   const g=dailyMode?dailyGoal():null;
   const goalDone=g?!!g.test(ev,sim):false;
   // dnevni rezultat za lestvico = overall + 30 (če opravljen izziv)
-  const lbScore = dailyMode ? (ev.overall + (goalDone?30:0)) : ev.overall;
+  const lbScore = Math.round(dailyMode ? (ev.overall + (goalDone?30:0)) : ev.overall);
   const row={
     mode, challenge_day:todayKey(), nickname:nick,
     goal_id:g?g.id:null, goal_done:goalDone,
