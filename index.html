@@ -2251,9 +2251,11 @@ async function showLeadersPage(mode){
   if(!rows.length){ listBox.innerHTML=`<div style="color:var(--muted);font-size:12px">še ni rezultatov — bodi prvi!</div>`; return; }
   _leadersRows=rows;
   const medals=["🥇","🥈","🥉"];
+  const ranks2=[];
+  rows.forEach((r,i)=>{ if(i>0 && rows[i].overall===rows[i-1].overall) ranks2.push(ranks2[i-1]); else ranks2.push(i+1); });
   const list=rows.slice(0,20).map((r,i)=>`
     <div class="hod-lb-row" data-i="${i}">
-      <span class="hod-lb-rank">${medals[i]||(i+1)}</span>
+      <span class="hod-lb-rank">${ranks2[i]<=3?medals[ranks2[i]-1]:ranks2[i]}</span>
       <span class="hod-lb-nick">${escapeHtml(r.nickname)} ${r.goal_done?'<span style="color:var(--green)">✓</span>':''}</span>
       <span class="hod-lb-ovr">${r.overall}</span>
     </div>`).join('');
@@ -5957,9 +5959,15 @@ function showResult(){
     </div>`;
   document.getElementById('hod-edit').onclick=()=>{ renderCourt(); };
   document.getElementById('hod-home').onclick=()=>goHome();
-  if(dailyMode) saveDailyResult(ev, res);
+  let dailyOutcome=null;
+  if(dailyMode) dailyOutcome=saveDailyResult(ev, res);
   { const gp={'A+':25,'A':18,'A-':15,'B+':13,'B':12,'B-':9,'C+':7,'C':6,'C-':5,'D':3,'F':2}[gr.g]||5;
     const pl=rewardPlay(); const pts=earnCoins(gp); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),600); }
+  // dnevni izziv opravljen: paket kot nagrada + obvestilo (točke +30 gredo na LESTVICO, ne v fond)
+  if(dailyOutcome && dailyOutcome.firstWinToday){
+    awardPack(1);
+    setTimeout(()=>hodToast(`🏆 <b>Dnevni izziv opravljen!</b> +30 na lestvici + 📦 paket`),1100);
+  }
   const sh=document.getElementById('hod-share');
   if(sh) sh.onclick=()=>shareDaily(ev, res);
   const po=document.getElementById('hod-post');
@@ -5992,6 +6000,7 @@ function saveDailyResult(ev, sim){
   const rec=dailyRecord();
   const key=todayKey();
   const prev=rec[key];
+  const firstWinToday = done && (!prev || !prev.done);
   // shrani najboljši dosežek dneva
   if(!prev || score>prev.score || (done&&!prev.done)){
     rec[key]={score, done:done||(prev&&prev.done)||false, goal:g.id};
@@ -6004,6 +6013,7 @@ function saveDailyResult(ev, sim){
     rec._lastWin=key;
   }
   saveDailyRecord(rec);
+  return {done, firstWinToday};
 }
 
 function shareDaily(ev, sim){
@@ -6055,10 +6065,13 @@ async function postToLeaderboard(ev, sim, btn){
   if(btn){ btn.disabled=true; btn.textContent="Objavljam…"; }
   const mode=currentMode();
   const g=dailyMode?dailyGoal():null;
+  const goalDone=g?!!g.test(ev,sim):false;
+  // dnevni rezultat za lestvico = overall + 30 (če opravljen izziv)
+  const lbScore = dailyMode ? (ev.overall + (goalDone?30:0)) : ev.overall;
   const row={
     mode, challenge_day:todayKey(), nickname:nick,
-    goal_id:g?g.id:null, goal_done:g?!!g.test(ev,sim):false,
-    overall:ev.overall, chem:ev.chem.chem,
+    goal_id:g?g.id:null, goal_done:goalDone,
+    overall:lbScore, chem:ev.chem.chem,
     sim_wins: sim?sim.avgWins:null, sim_title: sim?sim.titlePct:null,
     daily_budget: dailyMode?(dailyBudget()||"neomejen"):null,
     roster: rosterForSave()
@@ -6066,7 +6079,7 @@ async function postToLeaderboard(ev, sim, btn){
   try{
     await supaSubmit(row);
     if(btn){ btn.textContent="✓ Objavljeno"; }
-    _myLastPost={nick, overall:ev.overall, mode};   // za označitev v lestvici
+    _myLastPost={nick, overall:lbScore, mode};   // za označitev v lestvici
     showLeaderboard();
   }catch(e){
     if(btn){ btn.disabled=false; btn.textContent="📊 Objavi rezultat"; }
@@ -6089,16 +6102,26 @@ async function showLeaderboard(){
   _lbRows=rows;
   const medals=["🥇","🥈","🥉"];
 
+  // izračunaj DEJANSKI rang (deljeno mesto: enak overall = isti rang, naslednji preskoči)
+  // npr. 95,95,90 -> rang 1,1,3
+  const ranks=[];
+  rows.forEach((r,i)=>{
+    if(i>0 && rows[i].overall===rows[i-1].overall) ranks.push(ranks[i-1]);
+    else ranks.push(i+1);
+  });
+  const rankDisplay=(i)=>{ const rk=ranks[i]; return (rk<=3?medals[rk-1]:rk); };
+
   // poišči moj rang (zadnji objavljeni overall v tem načinu)
   let myIdx=-1;
   if(_myLastPost && _myLastPost.mode===mode){
     myIdx=rows.findIndex(r=>r.nickname===_myLastPost.nick && r.overall===_myLastPost.overall);
   }
 
+  const isDaily=(mode==="daily"||mode==="quickfire");
   const rowHtml=(r,i)=>`
     <div class="hod-lb-row ${i===myIdx?'me':''}" data-i="${i}">
-      <span class="hod-lb-rank">${medals[i]||(i+1)}</span>
-      <span class="hod-lb-nick">${escapeHtml(r.nickname)} ${r.goal_done?'<span style="color:var(--green)">✓</span>':''}</span>
+      <span class="hod-lb-rank">${rankDisplay(i)}</span>
+      <span class="hod-lb-nick">${escapeHtml(r.nickname)} ${isDaily&&r.goal_done?'<span style="color:var(--green);font-size:11px">✓</span>':''}</span>
       <span class="hod-lb-ovr">${r.overall}</span>
     </div>`;
 
@@ -6113,7 +6136,7 @@ async function showLeaderboard(){
   }
 
   const myRankLine = myIdx>=0
-    ? `<div class="hod-lb-myrank">Tvoja uvrstitev: <b>${myIdx+1}.</b> od ${rows.length}</div>` : '';
+    ? `<div class="hod-lb-myrank">Tvoja uvrstitev: <b>${ranks[myIdx]}.</b> od ${rows.length}</div>` : '';
 
   box.innerHTML=`<div class="hod-lb-title">${title}</div>
     ${myRankLine}
