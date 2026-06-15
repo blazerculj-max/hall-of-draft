@@ -34,8 +34,12 @@
   position:relative;
   overflow-x:hidden;
 }
+#hod-sfx-btn{position:fixed;top:12px;right:12px;z-index:400;width:42px;height:42px;border-radius:50%;
+  border:2px solid var(--gold-warm);background:rgba(20,26,42,.9);color:#fff;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.5);transition:transform .12s;}
+#hod-sfx-btn:hover{transform:scale(1.08);border-color:var(--orange);}
 #hod-root::before{
-  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(ellipse 62% 52% at 50% 36%, transparent 26%, rgba(12,8,4,0.78) 100%);
 }
 .hod-wrap{max-width:760px;margin:0 auto;position:relative;z-index:1;}
@@ -1091,6 +1095,7 @@
 </style>
 
 <div id="hod-root">
+  <button id="hod-sfx-btn" onclick="toggleSfx()" title="Zvok vklop/izklop" aria-label="Zvok">🔊</button>
   <div class="hod-wrap">
     <div class="hod-header" id="hod-header-home" title="Domov" style="cursor:pointer">
       <div class="hod-crest"><img class="hod-crest-img" src="assets/wreath.png" alt=""><span class="hod-crest-in">HOD</span></div>
@@ -1669,6 +1674,27 @@ function dailyBudget(){
 const _memStore={};
 function storeGet(k){ try{const v=localStorage.getItem(k);return v;}catch(e){return _memStore[k]||null;} }
 function storeSet(k,v){ try{localStorage.setItem(k,v);}catch(e){_memStore[k]=v;} }
+
+// ===== ZVOK =====
+const SFX_LIST=['correct','wrong','tick','tense','pack','flip','legendary','moment','stick','coins','win','click'];
+const _sfxCache={};
+let _sfxOn = (storeGet('hod-sfx')!=='0'); // privzeto vklopljeno
+function sfxEnabled(){ return _sfxOn; }
+function setSfx(on){ _sfxOn=!!on; storeSet('hod-sfx', on?'1':'0'); updateSfxBtn(); }
+function toggleSfx(){ setSfx(!_sfxOn); if(_sfxOn) playSfx('click'); }
+function playSfx(name, vol){
+  if(!_sfxOn) return;
+  try{
+    let a=_sfxCache[name];
+    if(!a){ a=new Audio(`assets/sounds/${name}.mp3`); a.preload='auto'; _sfxCache[name]=a; }
+    a.currentTime=0; a.volume=(vol!=null?vol:0.6);
+    a.play().catch(()=>{});
+  }catch(e){}
+}
+function updateSfxBtn(){
+  const b=document.getElementById('hod-sfx-btn');
+  if(b) b.textContent=_sfxOn?'🔊':'🔇';
+}
 function dailyRecord(){ try{return JSON.parse(storeGet("hod-daily")||"{}");}catch(e){return {};} }
 function saveDailyRecord(r){ storeSet("hod-daily",JSON.stringify(r)); }
 
@@ -2417,6 +2443,7 @@ function explainHtml(cur){
 function answerMillionaire(i, btn){
   const st=quizState; const cur=st.qs[st.idx];
   const correct=cur.opts[i].correct;
+  playSfx(correct?'correct':'wrong');
   // pokaži pravilnega/napačnega
   screen.querySelectorAll('.hod-quiz-opt').forEach(b=>{
     const bi=+b.dataset.i; b.disabled=true;
@@ -2496,7 +2523,10 @@ function nextClimb(){
   renderClimb();
   if(st.timer) clearInterval(st.timer);
   st.timer=setInterval(()=>{
+    const prev=Math.ceil(st.timeLeft);
     st.timeLeft-=0.1;
+    const now=Math.ceil(st.timeLeft);
+    if(st.timeLeft<=3 && st.timeLeft>0 && now!==prev) playSfx('tick',0.4);
     if(st.timeLeft<=0){ clearInterval(st.timer); climbTimeout(); }
     else updateClimbTimer();
   },100);
@@ -2540,6 +2570,7 @@ function answerClimb(i, btn){
   const st=quizState; if(!st.timer) return;
   clearInterval(st.timer); st.timer=null;
   const cur=st.cur; const qd=cur.qd; const correct=cur.opts[i].correct;
+  playSfx(correct?'correct':'wrong');
   const speed=Math.max(0, st.timeLeft);
   screen.querySelectorAll('.hod-quiz-opt').forEach(b=>{
     const bi=+b.dataset.i; b.disabled=true;
@@ -4228,6 +4259,7 @@ function bindGridClicks(grid){
             <div class="hod-stick-hand"></div>`;
         }
         hodToast('✅ <b>Prilepljeno!</b>');
+        playSfx('stick');
         updateUnstuckBadge();
         setTimeout(()=>renderAlbumBody(), 900);
       }
@@ -4480,6 +4512,7 @@ function showPackOpening(){
   let flippedCount=0;
   pack.onclick=()=>{
     pack.classList.add('opening');
+    playSfx('pack');
     setTimeout(()=>{
       pack.style.display='none';
       fan.classList.add('show');
@@ -4504,14 +4537,20 @@ function showPackOpening(){
       ctrl.style.display='flex';
       fan.querySelectorAll('.hod-flip').forEach(el=>{
         el.classList.add('pop');
-        el.onclick=()=>{ if(!el.classList.contains('flipped')){ el.classList.add('flipped'); flippedCount++; } };
+        el.onclick=()=>{ if(!el.classList.contains('flipped')){ el.classList.add('flipped'); flippedCount++; flipSound(el); } };
       });
     }, 850);
   };
   ov.querySelector('#hod-pko-flipall').onclick=()=>{
-    fan.querySelectorAll('.hod-flip').forEach((el,i)=>setTimeout(()=>el.classList.add('flipped'), i*180));
+    fan.querySelectorAll('.hod-flip').forEach((el,i)=>setTimeout(()=>{ if(!el.classList.contains('flipped')){ el.classList.add('flipped'); flipSound(el); } }, i*180));
   };
   ov.querySelector('#hod-pko-done').onclick=()=>{ ov.remove(); _albumTab='nove'; showAlbum(); };
+}
+// zvok ob obratu kartice glede na redkost
+function flipSound(el){
+  if(el.classList.contains('rar-moment')) playSfx('moment');
+  else if(el.classList.contains('rar-legendary')) playSfx('legendary');
+  else playSfx('flip');
 }
 // ===================== KONEC ALBUM UI =====================
 
@@ -5966,6 +6005,7 @@ function showResult(){
   // dnevni izziv opravljen: paket kot nagrada + obvestilo (točke +30 gredo na LESTVICO, ne v fond)
   if(dailyOutcome && dailyOutcome.firstWinToday){
     awardPack(1);
+    playSfx('win');
     setTimeout(()=>hodToast(`🏆 <b>Dnevni izziv opravljen!</b> +30 na lestvici + 📦 paket`),1100);
   }
   const sh=document.getElementById('hod-share');
@@ -6346,6 +6386,12 @@ function showLoading(){
   await loadDataset();
   await restoreSession();
   showLanding();
+  updateSfxBtn();
+  // klik zvok na vse gumbe (delegacija)
+  document.addEventListener('click', (e)=>{
+    const b=e.target.closest('.hod-btn, .hod-alb-tab, .hod-alb-tabm');
+    if(b && !b.disabled) playSfx('click', 0.3);
+  }, true);
   const hdr=document.getElementById('hod-header-home');
   if(hdr) hdr.onclick=()=>goHome();
 })();
