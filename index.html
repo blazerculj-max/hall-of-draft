@@ -590,6 +590,32 @@
 .hod-wins-row{display:flex;gap:16px;justify-content:center;}
 .hod-wins-stat b{font-family:'Anton';font-size:22px;color:#fff;display:block;}
 .hod-wins-stat span{font-family:'Oswald';font-size:11px;color:var(--muted);}
+/* sekcijski naslov */
+.hod-rew-secth{font-family:'Anton';font-size:16px;color:var(--amber);max-width:480px;margin:18px auto 8px;text-align:left;
+  border-bottom:1px solid var(--gold-warm);padding-bottom:4px;}
+/* kapica */
+.hod-cap-card{background:rgba(12,16,26,.9);border:1px solid var(--gold-warm);border-radius:12px;padding:14px;max-width:480px;margin:0 auto 6px;}
+.hod-cap-h{font-family:'Anton';font-size:15px;color:var(--gold);margin-bottom:8px;}
+.hod-cap-lbl{font-family:'Oswald';font-size:13px;color:#f0e6d2;margin-bottom:4px;}
+.hod-cap-lbl b{color:#fff;}
+.hod-cap-bar{height:9px;background:rgba(255,255,255,.1);border-radius:5px;overflow:hidden;}
+.hod-cap-fill{height:100%;background:linear-gradient(90deg,var(--gold-deep),var(--gold));border-radius:5px;transition:width .4s;}
+.hod-cap-fill.alt{background:linear-gradient(90deg,#2a7a99,#4cc9f0);}
+.hod-cap-hint{font-family:'Oswald';font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4;}
+/* naloge */
+.hod-tasks-list{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:8px;}
+.hod-task-row{display:flex;align-items:center;gap:11px;background:rgba(12,16,26,.85);border:1px solid var(--line);
+  border-radius:10px;padding:9px 12px;}
+.hod-task-row.done{border-color:var(--green);}
+.hod-task-ico{font-size:20px;flex:none;}
+.hod-task-info{flex:1;min-width:0;text-align:left;}
+.hod-task-lbl{font-family:'Oswald';font-weight:600;font-size:13px;color:#f0e6d2;}
+.hod-task-bar{height:6px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-top:4px;}
+.hod-task-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--gold));border-radius:4px;transition:width .4s;}
+.hod-task-amt{flex:none;}
+.hod-task-prog{font-family:'Anton';font-size:13px;color:var(--muted);}
+.hod-task-done{font-family:'Oswald';font-size:12px;color:var(--green);font-weight:600;}
+.hod-task-claim{font-size:12px;padding:6px 11px;}
 /* MARKET */
 .hod-mkt-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0 12px;}
 .hod-mkt-tab{font-family:'Oswald';font-weight:600;font-size:13px;background:#13192a;border:1px solid var(--gold-warm);
@@ -2417,11 +2443,13 @@ function showLanding(){
   const rb=document.getElementById('hod-go-rewards'); if(rb) rb.onclick=()=>showRewards();
   document.getElementById('hod-go-auth').onclick=()=>{ showAuth(); };
   renderProgress();
-  // preveri nagrade v ozadju -> rdeča pika
+  // preveri nagrade v ozadju -> rdeča pika (tudi dnevne naloge)
   if(isLoggedIn()){
+    const dot=document.getElementById('hod-rew-dot');
+    if(dot && tasksPendingClaim()>0) dot.style.display='block';
     computePendingRewards().then(list=>{
       const dot=document.getElementById('hod-rew-dot');
-      if(dot && list.length>0) dot.style.display='block';
+      if(dot && (list.length>0 || tasksPendingClaim()>0)) dot.style.display='block';
     }).catch(()=>{});
   }
 }
@@ -2431,16 +2459,21 @@ async function showRewards(){
   screen.innerHTML=`<div class="hod-result hod-fade">
     <div class="hod-alb-header">
       <button class="hod-alb-backtop" id="hod-rew-back">← Nazaj</button>
-      <div class="hod-stage-label" style="margin:0">🎁 Nagrade</div>
+      <div class="hod-stage-label" style="margin:0">🎁 Nagrade in naloge</div>
       <span style="width:90px"></span>
     </div>
-    <div class="hod-verdict" style="max-width:480px;margin:0 auto 14px">
-      Nagrade za uvrstitve na lestvicah. Dnevne (Climb, Daily Challenge) pobereš naslednji dan, mesečne (Draft, Higher-Lower) prvi dan novega meseca.
+    <div id="hod-cap-box"></div>
+    <div id="hod-tasks-box"></div>
+    <div class="hod-rew-secth">🏅 Nagrade za uvrstitve</div>
+    <div class="hod-verdict" style="max-width:480px;margin:0 auto 14px;font-size:13px">
+      Dnevne (Climb, Daily Challenge) pobereš naslednji dan, mesečne (Draft, Higher-Lower) prvi dan novega meseca.
     </div>
     <div id="hod-rew-list"><div class="hod-alb-hint">Preverjam nagrade…</div></div>
     <div id="hod-rew-profile" style="margin-top:18px"></div>
   </div>`;
   document.getElementById('hod-rew-back').onclick=()=>goHome();
+  renderCapBox();
+  renderTasksBox();
   // profil zmag
   renderWinsProfile();
   // izračun nagrad
@@ -2473,6 +2506,59 @@ async function showRewards(){
     hodToast(`🎁 <b>Nagrada pobrana!</b> ${r.coins?`🪙 +${r.coins} `:''}${r.packs?`📦 +${r.packs}`:''}`);
     showRewards(); // osveži
   });
+}
+function renderCapBox(){
+  const box=document.getElementById('hod-cap-box'); if(!box) return;
+  const d=dailyData();
+  const pct=Math.min(100, Math.round((d.earned/DAILY_EARN_CAP)*100));
+  const left=Math.max(0, DAILY_EARN_CAP-d.earned);
+  const taskPct=Math.min(100, Math.round((d.taskBonus/DAILY_TASK_CAP)*100));
+  box.innerHTML=`<div class="hod-cap-card">
+    <div class="hod-cap-h">🪙 Dnevni zaslužek</div>
+    <div class="hod-cap-lbl">Z igranjem: <b>${d.earned}</b> / ${DAILY_EARN_CAP}${left>0?` · še ${left} na voljo`:` · 🔒 kapica dosežena`}</div>
+    <div class="hod-cap-bar"><div class="hod-cap-fill" style="width:${pct}%"></div></div>
+    <div class="hod-cap-lbl" style="margin-top:8px">Bonus iz nalog: <b>${d.taskBonus}</b> / ${DAILY_TASK_CAP} <span style="color:var(--muted)">(mimo kapice)</span></div>
+    <div class="hod-cap-bar"><div class="hod-cap-fill alt" style="width:${taskPct}%"></div></div>
+    <div class="hod-cap-hint">Kapico polniš z igranjem (draft, kviz, poker). Bonus iz nalog je dodaten — največ ${DAILY_TASK_CAP} 🪙/dan.</div>
+  </div>`;
+}
+function renderTasksBox(){
+  const box=document.getElementById('hod-tasks-box'); if(!box) return;
+  const d=dailyData();
+  box.innerHTML=`<div class="hod-rew-secth">📋 Dnevne naloge</div>`+
+    `<div class="hod-tasks-list">`+DAILY_TASKS.map(t=>{
+      const prog=Math.min(t.goal, d.tasks[t.id]||0);
+      const done=prog>=t.goal;
+      const claimed=!!d.taskClaimed[t.id];
+      const capFull=(d.taskBonus>=DAILY_TASK_CAP);
+      let btn;
+      if(claimed) btn=`<span class="hod-task-done">✓ pobrano</span>`;
+      else if(done) btn=`<button class="hod-btn gold hod-task-claim" data-id="${t.id}" ${capFull?'disabled title="Dosegel si dnevni bonus limit"':''}>Poberi 🪙${t.reward}</button>`;
+      else btn=`<span class="hod-task-prog">${prog}/${t.goal}</span>`;
+      return `<div class="hod-task-row ${done?'done':''}">
+        <div class="hod-task-ico">${done?'✅':t.icon}</div>
+        <div class="hod-task-info">
+          <div class="hod-task-lbl">${t.label}</div>
+          <div class="hod-task-bar"><div class="hod-task-fill" style="width:${Math.round(prog/t.goal*100)}%"></div></div>
+        </div>
+        <div class="hod-task-amt">${btn}</div>
+      </div>`;
+    }).join('')+`</div>`;
+  box.querySelectorAll('.hod-task-claim').forEach(b=>b.onclick=()=>claimTask(b.dataset.id));
+}
+function claimTask(id){
+  const d=dailyData();
+  const t=DAILY_TASKS.find(x=>x.id===id); if(!t) return;
+  if((d.tasks[id]||0)<t.goal || d.taskClaimed[id]) return;
+  const room=Math.max(0, DAILY_TASK_CAP - d.taskBonus);
+  if(room<=0){ hodToast('Dosegel si dnevni bonus limit (100 🪙).'); return; }
+  const give=Math.min(t.reward, room);
+  d.taskClaimed[id]=true; d.taskBonus+=give; saveDailyData(d);
+  earnCoins(give, true); // bonus gre mimo kapice
+  playSfx('coins');
+  hodToast(`🎁 <b>+${give} 🪙</b> za nalogo: ${t.label}`);
+  renderCapBox(); renderTasksBox();
+  // osveži rdečo piko stanje
 }
 function renderWinsProfile(){
   const box=document.getElementById('hod-rew-profile'); if(!box) return;
@@ -2856,6 +2942,7 @@ function endMillionaire(won, wrong){
   document.getElementById('hod-quiz-again').onclick=()=>startMillionaire();
   document.getElementById('hod-quiz-home').onclick=()=>goHome();
   { const pl=rewardPlay(); const pts=earnCoins(reached*3); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),400); }
+  taskProgress('quiz3');
   autoSubmitScore("kviz", score, reached);
 }
 
@@ -3087,6 +3174,7 @@ function endHigherLower(){
   document.getElementById('hod-hol-again').onclick=()=>startHigherLower();
   document.getElementById('hod-hol-home').onclick=()=>goHome();
   { const pl=rewardPlay(); const pts=earnCoins(score*1); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),400); }
+  taskProgress('quiz3');
   autoSubmitScore("hol", score, score);
 }
 
@@ -3203,11 +3291,41 @@ function spendCoins(n){ if(getCoins()<n) return false; setCoins(getCoins()-n); r
 function dailyData(){
   const key=todayKey();
   let d; try{ d=JSON.parse(storeGet('hod-daily')||'{}'); }catch(e){ d={}; }
-  if(d.day!==key){ d={day:key, earned:0, games:0, loginPack:false}; storeSet('hod-daily', JSON.stringify(d)); }
+  if(d.day!==key){ d={day:key, earned:0, games:0, loginPack:false, tasks:{}, taskClaimed:{}, taskBonus:0}; storeSet('hod-daily', JSON.stringify(d)); }
+  if(!d.tasks) d.tasks={};
+  if(!d.taskClaimed) d.taskClaimed={};
+  if(d.taskBonus==null) d.taskBonus=0;
   return d;
 }
 function saveDailyData(d){ storeSet('hod-daily', JSON.stringify(d)); }
-const DAILY_EARN_CAP=120; // največ zasluženih točk na dan (brez daily challenge nagrad)
+const DAILY_EARN_CAP=200; // največ zasluženih točk na dan z igranjem
+const DAILY_TASK_CAP=100;  // največ bonusa iz dnevnih nalog (mimo kapice)
+// definicije dnevnih nalog
+const DAILY_TASKS=[
+  {id:'draft3', label:'Odigraj 3 drafte', goal:3, reward:15, icon:'🏀'},
+  {id:'climb1', label:'Odigraj Daily Climb', goal:1, reward:15, icon:'🧗'},
+  {id:'quiz3', label:'Odigraj 3 kvize', goal:3, reward:15, icon:'❓'},
+  {id:'poker2', label:'Odigraj 2 pokra', goal:2, reward:15, icon:'🃏'},
+  {id:'challenge1', label:'Opravi Daily Challenge', goal:1, reward:20, icon:'🏆'},
+  {id:'stick5', label:'Prilepi 5 sličic', goal:5, reward:20, icon:'🏷️'},
+];
+// zabeleži napredek naloge
+function taskProgress(id, inc){
+  const d=dailyData();
+  d.tasks[id]=(d.tasks[id]||0)+(inc||1);
+  saveDailyData(d);
+  // preveri, ali je naloga pravkar dosežena -> obvestilo
+  const t=DAILY_TASKS.find(x=>x.id===id);
+  if(t && d.tasks[id]>=t.goal && !d.taskClaimed[id] && !d._notified?.[id]){
+    d._notified=d._notified||{}; d._notified[id]=true; saveDailyData(d);
+    setTimeout(()=>hodToast(`✅ <b>Naloga opravljena!</b> ${t.label} — poberi v 🎁 Nagrade`),700);
+  }
+}
+// koliko nalog je opravljenih in nepobranih
+function tasksPendingClaim(){
+  const d=dailyData();
+  return DAILY_TASKS.filter(t=>(d.tasks[t.id]||0)>=t.goal && !d.taskClaimed[t.id]).length;
+}
 // dodeli točke z dnevno omejitvijo; vrne dejansko dodano
 function earnCoins(n, ignoreCap){
   const d=dailyData();
@@ -3217,7 +3335,7 @@ function earnCoins(n, ignoreCap){
   if(give>0){ addCoins(give); d.earned+=give; saveDailyData(d); }
   return give;
 }
-// prvih 5 iger na dan = 5 točk vsaka
+// prvih 8 iger na dan = 6 točk vsaka
 function rewardPlay(){
   const d=dailyData();
   if(d.games<8){ d.games++; saveDailyData(d); return earnCoins(6); }
@@ -3661,6 +3779,7 @@ function renderPoker(finished, firstRender){
     document.getElementById('hod-pk-again').onclick=()=>startPoker();
     document.getElementById('hod-pk-home').onclick=()=>goHome();
     { const pl=rewardPlay(); const bonus=sc.total>360?Math.floor((sc.total-360)/10)*4:0; const pts=earnCoins(bonus); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
+    taskProgress('poker2');
     autoSubmitScore(pokerFog?"poker_fog":"poker", sc.total, Math.round(sc.base/5));
     return;
   }
@@ -4052,6 +4171,7 @@ function paintVsResult(youSc, botSc){
   const youTotal=youSc.total, botTotal=botSc.total;
   const win = youTotal>botTotal;
   const tie = youTotal===botTotal;
+  taskProgress('poker2');
   if(win){ savePokerProgress(st.aiIdx); const tier=[12,18,26,36,50][st.aiIdx]||12; const pl=rewardPlay(); const pts=earnCoins(tier); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
   else { const pl=rewardPlay(); if(pl>0) setTimeout(()=>hodToast(`🪙 <b>+${pl} točk</b>`),900); }
   const ai=st.ai;
@@ -4186,6 +4306,7 @@ function endClimb(){
   document.getElementById('hod-climb-again').onclick=()=>startClimb();
   document.getElementById('hod-climb-home').onclick=()=>goHome();
   { const pl=rewardPlay(); const pts=earnCoins(Math.floor(st.score/14)); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
+  taskProgress('climb1');
   autoSubmitScore("climb", st.score, st.answered-3);
 }
 
@@ -4620,6 +4741,7 @@ function bindGridClicks(grid){
         }
         hodToast('✅ <b>Prilepljeno!</b>');
         playSfx('stick');
+        taskProgress('stick5');
         updateUnstuckBadge();
         setTimeout(()=>renderAlbumBody(), 900);
       }
@@ -6517,10 +6639,12 @@ function showResult(){
   document.getElementById('hod-home').onclick=()=>goHome();
   let dailyOutcome=null;
   if(dailyMode) dailyOutcome=saveDailyResult(ev, res);
+  taskProgress('draft3');
   { const gp={'A+':25,'A':18,'A-':15,'B+':13,'B':12,'B-':9,'C+':7,'C':6,'C-':5,'D':3,'F':2}[gr.g]||5;
     const pl=rewardPlay(); const pts=earnCoins(gp); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),600); }
   // dnevni izziv opravljen: +30 na LESTVICO + bonus točke v fond (obide kapico)
   if(dailyOutcome && dailyOutcome.firstWinToday){
+    taskProgress('challenge1');
     const b=earnCoins(25, true);
     playSfx('win');
     setTimeout(()=>hodToast(`🏆 <b>Dnevni izziv opravljen!</b> +30 na lestvici · 🪙 +${b} točk`),1100);
