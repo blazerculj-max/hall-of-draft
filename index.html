@@ -1884,6 +1884,7 @@ function unlockAudio(){
 function sfxEnabled(){ return _sfxOn; }
 function setSfx(on){ _sfxOn=!!on; storeSet('hod-sfx', on?'1':'0'); updateSfxBtn(); }
 function toggleSfx(){ unlockAudio(); setSfx(!_sfxOn); if(_sfxOn) playSfx('click'); }
+try{ window.toggleSfx=toggleSfx; }catch(e){}
 function playSfx(name, vol){
   if(!_sfxOn) return;
   const ctx=_getCtx();
@@ -1948,6 +1949,7 @@ function toggleMusic(){
   if(_musicOn){ setMusic(false); }
   else { unlockAudio(); setMusic(true); }
 }
+try{ window.toggleMusic=toggleMusic; }catch(e){}
 function updateMusicBtn(){
   const b=document.getElementById('hod-music-btn');
   if(b){ b.textContent=_musicOn?'🎵':'🔇'; b.classList.toggle('off', !_musicOn); }
@@ -7222,6 +7224,11 @@ function showLoading(){
   }, true);
   const hdr=document.getElementById('hod-header-home');
   if(hdr) hdr.onclick=()=>goHome();
+  // izpostavi funkcije za inline onclick (skripta je v IIFE, onclick išče global)
+  try{
+    window.toggleSfx=toggleSfx;
+    window.toggleMusic=toggleMusic;
+  }catch(e){}
 })();
 })();
 </script>
