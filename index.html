@@ -6832,9 +6832,12 @@ function showResult(){
   taskProgress('draft3');
   { const gp={'A+':25,'A':18,'A-':15,'B+':13,'B':12,'B-':9,'C+':7,'C':6,'C-':5,'D':3,'F':2}[gr.g]||5;
     const pl=rewardPlay(); const pts=earnCoins(gp); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),600); }
-  // dnevni izziv opravljen: +30 na LESTVICO + bonus točke v fond (obide kapico)
-  if(dailyOutcome && dailyOutcome.firstWinToday){
+  // naloga "Opravi Daily Challenge" se označi ob igranju (ne glede na cilj)
+  if(dailyOutcome && dailyOutcome.firstPlayToday){
     taskProgress('challenge1');
+  }
+  // dnevni izziv CILJ dosežen: +30 na LESTVICO + bonus točke v fond (obide kapico)
+  if(dailyOutcome && dailyOutcome.firstWinToday){
     const b=earnCoins(25, true);
     playSfx('win');
     setTimeout(()=>hodToast(`🏆 <b>Dnevni izziv opravljen!</b> +30 na lestvici · 🪙 +${b} točk`),1100);
@@ -6872,6 +6875,7 @@ function saveDailyResult(ev, sim){
   const key=todayKey();
   const prev=rec[key];
   const firstWinToday = done && (!prev || !prev.done);
+  const firstPlayToday = !prev;  // danes prvič odigran daily challenge
   // shrani najboljši dosežek dneva
   if(!prev || score>prev.score || (done&&!prev.done)){
     rec[key]={score, done:done||(prev&&prev.done)||false, goal:g.id};
@@ -6884,7 +6888,7 @@ function saveDailyResult(ev, sim){
     rec._lastWin=key;
   }
   saveDailyRecord(rec);
-  return {done, firstWinToday};
+  return {done, firstWinToday, firstPlayToday};
 }
 
 function shareDaily(ev, sim){
