@@ -567,6 +567,16 @@
 .hod-alb-cell.filled{cursor:pointer;}
 /* povečana kartica z obračanjem */
 .hod-cd-overlay{align-items:center;}
+/* lebdeči gumb nenalepljene */
+.hod-unstuck-fab{position:fixed;right:14px;bottom:20px;z-index:250;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:1px;width:64px;height:64px;border-radius:50%;border:2px solid var(--gold-warm);
+  background:linear-gradient(180deg,#e8541e,#c43d12);color:#fff;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5);
+  font-family:'Oswald';animation:fabPulse 2.4s ease-in-out infinite;}
+.hod-unstuck-fab:hover{transform:scale(1.06);}
+.hod-fab-ico{font-size:18px;line-height:1;}
+.hod-fab-count{font-family:'Anton';font-size:15px;line-height:1;}
+.hod-fab-lbl{font-size:6.5px;letter-spacing:.5px;text-transform:uppercase;opacity:.9;}
+@keyframes fabPulse{0%,100%{box-shadow:0 6px 18px rgba(0,0,0,.5);}50%{box-shadow:0 6px 24px rgba(232,84,30,.8);}}
 .hod-cd-wrap{display:flex;flex-direction:column;align-items:center;}
 .hod-cd-flip{width:260px;height:368px;perspective:1200px;cursor:pointer;}
 .hod-cd-inner{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d;}
@@ -723,9 +733,9 @@
 .hod-flip-back{background:linear-gradient(150deg,#e8541e,#c43d12);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;}
 .hod-flip-back::after{content:'HOD';font-family:'Anton';font-size:20px;color:#fff;opacity:.85;}
 .hod-flip-wreath{position:absolute;width:62px;height:62px;border-radius:50%;border:2px solid var(--gold-d);opacity:.4;}
-.hod-flip-front{transform:rotateY(180deg);background:var(--cream);background-image:var(--card-tex);background-size:cover;border:2px solid var(--gold-warm);
+.hod-flip-front{transform:rotateY(180deg);background-color:#f4ead2;background-image:var(--card-tex);background-size:cover;background-blend-mode:normal;border:2px solid var(--gold-warm);
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;text-align:center;}
-.hod-flip-front::after{content:'';position:absolute;inset:0;background:rgba(244,234,210,.16);}
+.hod-flip-front::after{content:'';position:absolute;inset:0;background:rgba(244,234,210,.08);}
 .hod-flip-rays-top{height:8px;width:100%;position:absolute;top:0;left:0;z-index:2;background:repeating-linear-gradient(125deg,var(--orange) 0 8px,#d8481a 8px 16px);}
 .hod-flip-photo{width:46px;height:46px;border-radius:50%;border:2px solid var(--orange);margin:6px auto 4px;overflow:hidden;position:relative;z-index:1;}
 .hod-flip-nm{font-family:'Anton';font-size:11px;color:var(--navy);line-height:1;position:relative;z-index:1;}
@@ -3997,7 +4007,14 @@ function showAlbum(){
       </div>
       <div id="hod-alb-body"></div>
       <div style="margin-top:18px"><button class="hod-btn secondary" id="hod-alb-back">← Domov</button></div>
-    </div>`;
+    </div>
+    <button id="hod-unstuck-fab" class="hod-unstuck-fab" style="display:${unstuckTotal>0?'flex':'none'}">
+      <span class="hod-fab-ico">📥</span>
+      <span class="hod-fab-count">${unstuckTotal}</span>
+      <span class="hod-fab-lbl">nenalepljene</span>
+    </button>`;
+  const fab=document.getElementById('hod-unstuck-fab');
+  if(fab) fab.onclick=()=>{ _albumTab='nove'; renderAlbumTabsMain(); renderAlbumBody(); window.scrollTo({top:0,behavior:'smooth'}); };
   document.getElementById('hod-alb-back').onclick=()=>goHome();
   const ob=document.getElementById('hod-alb-open'); if(ob) ob.onclick=()=>showPackOpening();
   screen.querySelectorAll('.hod-alb-tabm').forEach(b=>b.onclick=()=>{ _albumTab=b.dataset.t; renderAlbumBody(); });
@@ -4005,6 +4022,8 @@ function showAlbum(){
 }
 function renderAlbumBody(){
   const body=document.getElementById('hod-alb-body'); if(!body) return;
+  const fab=document.getElementById('hod-unstuck-fab');
+  if(fab) fab.style.display=(_albumTab==='nove')?'none':(Object.keys(getCollected()).reduce((a,k)=>a+(getCollected()[k].stuck?0:(getCollected()[k].count||0)),0)>0?'flex':'none');
   if(_albumTab==='nove'){ renderUnstuck(body); return; }
   if(_albumTab==='trgovina'){ renderShop(body); return; }
   // ALBUM tab
@@ -4172,6 +4191,7 @@ function bindGridClicks(grid){
             <div class="hod-stick-hand"></div>`;
         }
         hodToast('✅ <b>Prilepljeno!</b>');
+        updateUnstuckBadge();
         setTimeout(()=>renderAlbumBody(), 900);
       }
     };
@@ -4303,6 +4323,19 @@ function renderUnstuck(body){
 function renderAlbumTabsMain(){
   const tabs=screen.querySelectorAll('.hod-alb-tabm');
   tabs.forEach(t=>t.classList.toggle('on', t.dataset.t===_albumTab));
+}
+// osveži števec "Nenalepljene (N)" v zavihku po lepljenju/prodaji
+function updateUnstuckBadge(){
+  const col=getCollected();
+  const n=Object.keys(col).reduce((a,k)=>a+(col[k].stuck?0:(col[k].count||0)),0);
+  const tab=screen.querySelector('.hod-alb-tabm[data-t="nove"]');
+  if(tab) tab.textContent='Nenalepljene'+(n>0?` (${n})`:'');
+  // osveži tudi "Prilepljenih X/Y"
+  const sum=screen.querySelector('.hod-alb-summary b');
+  if(sum) sum.textContent=stuckCount();
+  // lebdeči gumb
+  const fab=document.getElementById('hod-unstuck-fab');
+  if(fab){ const c=fab.querySelector('.hod-fab-count'); if(c) c.textContent=n; fab.style.display=n>0?'flex':'none'; }
 }
 // TRGOVINA — nakup paketov, prodaja dvojnikov
 // DIAGNOSTIKA: kateri igralci nimajo slike po preverjanju
