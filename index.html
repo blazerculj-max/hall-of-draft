@@ -567,6 +567,17 @@
 .hod-alb-cell.filled{cursor:pointer;}
 /* povečana kartica z obračanjem */
 .hod-cd-overlay{align-items:center;}
+/* album header z gumbom nazaj */
+.hod-alb-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.hod-alb-backtop{font-family:'Oswald';font-weight:600;font-size:13px;background:linear-gradient(180deg,#3a4660,#28324a);
+  color:#fff;border:2px solid var(--gold-warm);border-radius:10px;padding:7px 14px;cursor:pointer;white-space:nowrap;
+  box-shadow:0 3px 10px rgba(0,0,0,.4);transition:transform .12s;}
+.hod-alb-backtop:hover{transform:translateX(-2px);border-color:var(--orange);}
+@media(max-width:560px){
+  .hod-alb-header{justify-content:center;}
+  .hod-alb-header .hod-stage-label{order:-1;width:100%;text-align:center;}
+  .hod-alb-header span{display:none;}
+}
 /* lebdeči gumb nenalepljene */
 .hod-unstuck-fab{position:fixed;right:14px;bottom:20px;z-index:250;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:1px;width:64px;height:64px;border-radius:50%;border:2px solid var(--gold-warm);
@@ -577,6 +588,10 @@
 .hod-fab-count{font-family:'Anton';font-size:15px;line-height:1;}
 .hod-fab-lbl{font-size:6.5px;letter-spacing:.5px;text-transform:uppercase;opacity:.9;}
 @keyframes fabPulse{0%,100%{box-shadow:0 6px 18px rgba(0,0,0,.5);}50%{box-shadow:0 6px 24px rgba(232,84,30,.8);}}
+.hod-totop-fab{position:fixed;right:20px;bottom:94px;z-index:250;display:flex;align-items:center;justify-content:center;
+  width:48px;height:48px;border-radius:50%;border:2px solid var(--gold-warm);background:rgba(20,26,42,.92);
+  color:var(--amber);cursor:pointer;font-size:22px;font-family:'Anton';box-shadow:0 4px 14px rgba(0,0,0,.5);}
+.hod-totop-fab:hover{transform:scale(1.08);border-color:var(--orange);}
 .hod-cd-wrap{display:flex;flex-direction:column;align-items:center;}
 .hod-cd-flip{width:260px;height:368px;perspective:1200px;cursor:pointer;}
 .hod-cd-inner{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d;}
@@ -3995,7 +4010,11 @@ function showAlbum(){
   const unstuckTotal=Object.keys(col).reduce((a,k)=>a+(col[k].stuck?0:(col[k].count||0)),0);
   screen.innerHTML=`
     <div class="hod-result hod-fade">
-      <div class="hod-stage-label">📒 Album sličic</div>
+      <div class="hod-alb-header">
+        <button class="hod-alb-backtop" id="hod-alb-backtop">← Nazaj na igro</button>
+        <div class="hod-stage-label" style="margin:0">📒 Album sličic</div>
+        <span style="width:120px"></span>
+      </div>
       <div class="hod-alb-top">
         <span class="hod-alb-coins">🪙 <b>${coins}</b></span>
         <span class="hod-alb-summary">Prilepljenih <b>${stuck}</b>/${total}</span>
@@ -4015,10 +4034,23 @@ function showAlbum(){
       <span class="hod-fab-ico">📥</span>
       <span class="hod-fab-count">${unstuckTotal}</span>
       <span class="hod-fab-lbl">nenalepljene</span>
-    </button>`;
+    </button>
+    <button id="hod-totop-fab" class="hod-totop-fab" style="display:none" title="Na vrh">↑</button>`;
   const fab=document.getElementById('hod-unstuck-fab');
   if(fab) fab.onclick=()=>{ _albumTab='nove'; renderAlbumTabsMain(); renderAlbumBody(); window.scrollTo({top:0,behavior:'smooth'}); };
+  const topFab=document.getElementById('hod-totop-fab');
+  if(topFab){
+    topFab.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+    // pokaži gumb na vrh, ko scrollaš navzdol
+    if(window._hodScrollHandler) window.removeEventListener('scroll', window._hodScrollHandler);
+    window._hodScrollHandler=()=>{
+      const tf=document.getElementById('hod-totop-fab');
+      if(tf) tf.style.display=(window.scrollY>320)?'flex':'none';
+    };
+    window.addEventListener('scroll', window._hodScrollHandler);
+  }
   document.getElementById('hod-alb-back').onclick=()=>goHome();
+  const bt=document.getElementById('hod-alb-backtop'); if(bt) bt.onclick=()=>goHome();
   const ob=document.getElementById('hod-alb-open'); if(ob) ob.onclick=()=>showPackOpening();
   screen.querySelectorAll('.hod-alb-tabm').forEach(b=>b.onclick=()=>{ _albumTab=b.dataset.t; renderAlbumBody(); });
   renderAlbumBody();
@@ -4566,6 +4598,7 @@ function showAlbumLocked(){
 // ===================== KONEC AUTH UI =====================
 
 function goHome(){
+  try{ if(window._hodScrollHandler){ window.removeEventListener('scroll', window._hodScrollHandler); window._hodScrollHandler=null; } }catch(e){}
   try{ if(quizState&&quizState.timer){clearInterval(quizState.timer);quizState.timer=null;} }catch(e){}
   dailyMode=false; quickMode=false; mp=null; numPlayers=1;
   roster=[]; chosenSeason=null; currentOffer=[];
