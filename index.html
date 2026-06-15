@@ -1983,7 +1983,7 @@ async function supaSubmit(row){
   console.warn('Supabase zavrnil objavo:', res.status, errText, 'poslano:', row);
   // če zavrne (npr. manjka stolpec v tabeli), poskusi znova samo z osnovnimi stolpci
   if(res.status===400 || res.status===404){
-    const basic={ mode:row.mode, challenge_day:row.challenge_day, nickname:row.nickname, overall:row.overall };
+    const basic={ mode:row.mode, challenge_day:row.challenge_day, nickname:row.nickname, overall:row.overall, roster:row.roster||[] };
     if(row.goal_done!=null) basic.goal_done=row.goal_done;
     res=await fetch(`${SUPA_URL}/rest/v1/daily_scores`, {
       method:"POST", headers:{...SUPA_HEADERS, "Prefer":"return=minimal"},
@@ -1993,7 +1993,7 @@ async function supaSubmit(row){
     try{ errText=await res.clone().text(); }catch(e){}
     console.warn('Supabase zavrnil tudi basic:', res.status, errText);
     // še zadnji poskus: res samo nujno
-    const minimal={ mode:row.mode, challenge_day:row.challenge_day, nickname:row.nickname, overall:row.overall };
+    const minimal={ mode:row.mode, challenge_day:row.challenge_day, nickname:row.nickname, overall:row.overall, roster:row.roster||[] };
     res=await fetch(`${SUPA_URL}/rest/v1/daily_scores`, {
       method:"POST", headers:{...SUPA_HEADERS, "Prefer":"return=minimal"},
       body:JSON.stringify(minimal)
@@ -6945,7 +6945,7 @@ async function postToLeaderboard(ev, sim, btn){
     overall:lbScore, chem:ev.chem.chem,
     sim_wins: sim?sim.avgWins:null, sim_title: sim?sim.titlePct:null,
     daily_budget: dailyMode?(dailyBudget()||"neomejen"):null,
-    roster: rosterForSave()
+    roster: rosterForSave()||[]
   };
   try{
     await supaSubmit(row);
@@ -6954,7 +6954,8 @@ async function postToLeaderboard(ev, sim, btn){
     showLeaderboard();
   }catch(e){
     if(btn){ btn.disabled=false; btn.textContent="📊 Objavi rezultat"; }
-    alert("Objava ni uspela (preveri povezavo). "+e.message);
+    console.error('OBJAVA PADLA:', e.message);
+    alert("Objava ni uspela.\n\nRazlog: "+e.message);
   }
 }
 let _myLastPost=null;
