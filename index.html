@@ -1880,6 +1880,7 @@ async function marketCollectPurchases(){
   if(added>0){ setCollected(col); storeSet('hod-market-claimed', JSON.stringify(claimed)); }
   return added;
 }
+const MAX_TEAM=12, MAX_PER_POS=3;
 const QUICK_PICKS=8;
 function teamSize(){ return quickMode?QUICK_PICKS:MAX_TEAM; }
 
