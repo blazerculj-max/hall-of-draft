@@ -631,6 +631,7 @@
   padding:10px 8px;text-align:center;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:3px;}
 .hod-mkt-card.rar-legendary{border-color:#ffd166;}
 .hod-mkt-card.rar-moment{border-color:#ff4d6d;}
+.hod-mkt-card.rar-lowlight{border-color:#6b7280;}
 .hod-mkt-card.rar-rare{border-color:#9ec5e8;}
 .hod-mkt-photo{width:60px;height:60px;border-radius:50%;border:2px solid var(--orange);overflow:hidden;position:relative;margin-top:2px;}
 .hod-mkt-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%;}
@@ -675,6 +676,7 @@
 .hod-cd-front.rar-legendary{border-color:#ffd166;box-shadow:0 0 30px rgba(255,209,102,.6),0 18px 50px rgba(0,0,0,.7);}
 .hod-cd-front.rar-rare{border-color:#9ec5e8;}
 .hod-cd-front.rar-moment{border-color:#ff4d6d;box-shadow:0 0 30px rgba(255,77,109,.6),0 18px 50px rgba(0,0,0,.7);}
+.hod-cd-front.rar-lowlight{border-color:#6b7280;box-shadow:0 0 30px rgba(107,114,128,.5),0 18px 50px rgba(0,0,0,.7);}
 /* diagonalno ozadje v klubskih barvah */
 .hod-cd-bg{position:absolute;inset:0;z-index:0;overflow:hidden;}
 .hod-cd-bg-base{position:absolute;inset:0;background:var(--tc1);}
@@ -732,6 +734,12 @@
 .hod-moment-nm{font-family:'Anton';font-size:22px;color:#fff;margin-top:4px;}
 .hod-moment-mom{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;color:var(--amber);margin:4px 0 12px;}
 .hod-moment-desc{font-family:'Oswald';font-size:13px;color:#d8c8b8;line-height:1.5;margin-bottom:16px;}
+/* lowlight (zloglasni moment) — temno sivo namesto rdeče-zlato */
+.hod-moment-card.lowlight{background:linear-gradient(180deg,#1c1f26,#0e1014);border-color:#6b7280;
+  box-shadow:0 14px 50px rgba(0,0,0,.8),0 0 24px rgba(107,114,128,.4);}
+.hod-moment-card.lowlight .hod-moment-badge{color:#9ca3af;}
+.hod-moment-card.lowlight .hod-moment-photo{border-color:#6b7280;box-shadow:0 0 18px rgba(107,114,128,.5);filter:grayscale(.4);}
+.hod-moment-card.lowlight .hod-moment-val{color:#9ca3af;}
 .hod-alb-rt{font-family:'Anton';font-size:14px;color:var(--orange);position:relative;z-index:1;line-height:1;}
 /* paket odpiranje */
 .hod-pack-card{background:linear-gradient(180deg,#2e3340,#23262f);border:2px solid var(--gold);border-radius:18px;
@@ -767,6 +775,7 @@
 .hod-alb-tabm.on{background:var(--orange);color:#fff;border-color:var(--orange);}
 .hod-alb-tab.moment.on{background:#ff4d6d;border-color:#ff4d6d;}
 .hod-alb-cell.rar-moment{border-color:#ff4d6d;box-shadow:0 0 14px rgba(255,77,109,.6);}
+.hod-alb-cell.rar-lowlight{border-color:#6b7280;box-shadow:0 0 12px rgba(107,114,128,.5);}
 .hod-alb-cells.stick .hod-alb-cell{cursor:pointer;}
 .hod-alb-cells.stick .hod-alb-cell:hover{transform:translateY(-3px);border-color:var(--orange);}
 .hod-alb-dup{position:absolute;top:3px;right:3px;z-index:3;background:var(--orange);color:#fff;font-family:'Anton';
@@ -843,6 +852,7 @@
 @keyframes pkoLegShake{0%{transform:scale(1) rotate(0);}15%{transform:scale(1.15) rotate(-3deg);}30%{transform:scale(1.12) rotate(3deg);}45%{transform:scale(1.14) rotate(-2deg);}100%{transform:scale(1) rotate(0);}}
 /* moment */
 .hod-flip.rar-moment .hod-flip-front{border-color:#ff4d6d;box-shadow:0 0 26px rgba(255,77,109,.9);}
+.hod-flip.rar-lowlight .hod-flip-front{border-color:#6b7280;box-shadow:0 0 22px rgba(107,114,128,.8);}
 .hod-flip.rar-moment.flipped{animation:pkoLegShake .7s ease;}
 .hod-leg-burst{position:absolute;inset:-30px;border-radius:50%;pointer-events:none;opacity:0;z-index:-1;background:radial-gradient(circle,rgba(255,209,102,.8),transparent 70%);}
 .hod-flip.rar-legendary.flipped .hod-leg-burst,.hod-flip.rar-moment.flipped .hod-leg-burst{animation:pkoLegBurst 1s ease forwards;}
@@ -3406,7 +3416,8 @@ const RARITY_DEFS={
   common:{name:'Navaden', col:'#b89a78', weight:64},
   rare:{name:'Redek', col:'#9ec5e8', weight:28},
   legendary:{name:'Legendaren', col:'#ffd166', weight:7.5},
-  moment:{name:'MOMENT', col:'#ff4d6d', weight:0.5}
+  moment:{name:'MOMENT', col:'#ff4d6d', weight:0.5},
+  lowlight:{name:'INFAMOUS', col:'#9ca3af', weight:0.5}
 };
 const DECADE_ORDER=['70s','80s','90s','2000s','2010s','2020s'];
 // zbrane kartice: { pid: {stuck:bool, count:int} }  stuck=prilepljena v album
@@ -3479,8 +3490,16 @@ const MOMENTS=[
   {id:'magic42', name:'Magic Johnson', moment:'Rookie na centru', team:'LAL', season:'1979-80', era:'70s', pid:77142, val:'42', sub:'Finals G6', desc:'V 6. tekmi finala 1980 je novinec Magic Johnson igral na mestu centra in dosegel 42 točk za naslov.'},
   {id:'klay37', name:'Klay Thompson', moment:'37 v četrtini', team:'GSW', season:'2014-15', era:'2010s', pid:202691, val:'37', sub:'NBA rekord', desc:'23. januarja 2015 je Klay Thompson v eni sami četrtini dosegel 37 točk — rekord lige.'},
   {id:'lebron', name:'LeBron James', moment:'Kralj točk', team:'LAL', season:'2022-23', era:'2020s', pid:2544, val:'#1', sub:'all-time scorer', desc:'7. februarja 2023 je LeBron James prehitel Kareema Abdul-Jabbarja kot najboljši strelec vseh časov.'},
+  // ===== LOWLIGHTS (zloglasni momenti) =====
+  {id:'malice', name:'Malice at the Palace', moment:'Pretep s tribunami', team:'IND', season:'2004-05', era:'2000s', pid:1884, val:'⚠', sub:'Pacers vs Pistons', desc:'19. novembra 2004 je v Detroitu izbruhnil eden najhujših pretepov v zgodovini NBA — igralci Pacersov so se spopadli z gledalci. Sledile so rekordne kazni.', lowlight:true},
+  {id:'artest', name:'Ron Artest', moment:'V tribune', team:'IND', season:'2004-05', era:'2000s', pid:1884, val:'⚠', sub:'86 tekem kazni', desc:'Ron Artest (kasneje Metta World Peace) je med Malice at the Palace planil v gledalce. Suspendiran je bil za preostanek sezone — 86 tekem.', lowlight:true},
+  {id:'barkley', name:'Charles Barkley', moment:'Pljunek v tribuno', team:'PHI', season:'1991-92', era:'90s', pid:787, val:'⚠', sub:'pomota', desc:'Marca 1991 je Charles Barkley pljunil proti heklerju, a zadel mlado deklico. Javno se je opravičil — eden njegovih najbolj obžalovanih trenutkov.', lowlight:true},
+  {id:'sprewell', name:'Latrell Sprewell', moment:'Napad na trenerja', team:'GSW', season:'1997-98', era:'90s', pid:471, val:'⚠', sub:'P.J. Carlesimo', desc:'Decembra 1997 je Latrell Sprewell na treningu zadavil trenerja P.J. Carlesima. Pogodba mu je bila razveljavljena, sledila je dolga kazen.', lowlight:true},
+  {id:'mj_retire', name:'Michael Jordan', moment:'1. upokojitev', team:'CHI', season:'1993-94', era:'90s', pid:893, val:'✦', sub:'odhod v baseball', desc:'Oktobra 1993 je Michael Jordan na vrhuncu kariere nenadoma končal kariero in se posvetil baseballu. Vrnil se je leta 1995.', lowlight:true},
+  {id:'tonya', name:'Gilbert Arenas', moment:'Orožje v slačilnici', team:'WAS', season:'2009-10', era:'2000s', pid:2240, val:'⚠', sub:'suspenz', desc:'Decembra 2009 je Gilbert Arenas v slačilnico prinesel pištole po sporu s soigralcem Javarisom Crittentonom. Suspendiran je bil za preostanek sezone.', lowlight:true},
+  {id:'tmac', name:'Tracy McGrady', moment:'13 točk v 33s', team:'HOU', season:'2004-05', era:'2000s', pid:1503, val:'13', sub:'neverjeten preobrat', desc:'9. decembra 2004 je Tracy McGrady v zadnjih 33 sekundah dosegel 13 točk in obrnil tekmo proti San Antoniu — eden najbolj noro dramatičnih trenutkov.'},
 ];
-function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:'moment'})); }
+function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:m.lowlight?'lowlight':'moment'})); }
 
 // zbirka unikatnih kartic iz POOL-a: rating 70+, ena kartica = unikaten pid (najboljša sezona)
 let _albumCatalog=null;
@@ -4685,15 +4704,25 @@ function renderAlbumGrid(byDec){
   if(_albumDecade==='moments'){
     let moms=MOMENTS.slice();
     if(q) moms=moms.filter(m=>m.name.toLowerCase().includes(q));
-    grid.innerHTML=`<div class="hod-alb-team"><div class="hod-alb-team-h">⭐ Ultra-rare Momenti <span>${MOMENTS.filter(m=>col[m.id]&&col[m.id].stuck).length}/${MOMENTS.length}</span></div><div class="hod-alb-cells">`+
-      moms.map(m=>{
-        const st=col[m.id]&&col[m.id].stuck;
-        const isTarget=target&&target===m.id;
-        if(!st){
-          return `<div class="hod-alb-cell empty rar-moment ${isTarget?'target':''}" data-stickid="${m.id}"><div class="hod-alb-q">?</div>${isTarget?'<div class="hod-alb-here">tukaj!</div>':''}</div>`;
-        }
-        return `<div class="hod-alb-cell rar-moment moment-cell" data-moment="${m.id}"><div class="hod-alb-photo">${avatarImg(m.pid,'')}</div><div class="hod-alb-fullnm">${escapeHtml(m.name)}</div><div class="hod-alb-szn">${escapeHtml(m.moment)}</div><div class="hod-alb-rt" style="color:#ff4d6d">${m.val}</div></div>`;
-      }).join('')+`</div></div>`;
+    const highs=moms.filter(m=>!m.lowlight);
+    const lows=moms.filter(m=>m.lowlight);
+    const cellHtml=(m)=>{
+      const st=col[m.id]&&col[m.id].stuck;
+      const isTarget=target&&target===m.id;
+      const rar=m.lowlight?'lowlight':'moment';
+      const col2=m.lowlight?'#9ca3af':'#ff4d6d';
+      if(!st){
+        return `<div class="hod-alb-cell empty rar-${rar} ${isTarget?'target':''}" data-stickid="${m.id}"><div class="hod-alb-q">?</div>${isTarget?'<div class="hod-alb-here">tukaj!</div>':''}</div>`;
+      }
+      return `<div class="hod-alb-cell rar-${rar} moment-cell" data-moment="${m.id}"><div class="hod-alb-photo"${m.lowlight?' style="filter:grayscale(.35)"':''}>${avatarImg(m.pid,'')}</div><div class="hod-alb-fullnm">${escapeHtml(m.name)}</div><div class="hod-alb-szn">${escapeHtml(m.moment)}</div><div class="hod-alb-rt" style="color:${col2}">${m.val}</div></div>`;
+    };
+    const gotHigh=highs.filter(m=>col[m.id]&&col[m.id].stuck).length;
+    const gotLow=lows.filter(m=>col[m.id]&&col[m.id].stuck).length;
+    grid.innerHTML=
+      `<div class="hod-alb-team"><div class="hod-alb-team-h">⭐ Ultra-rare Momenti <span>${gotHigh}/${highs.length}</span></div><div class="hod-alb-cells">`+
+      highs.map(cellHtml).join('')+`</div></div>`+
+      (lows.length?`<div class="hod-alb-team" style="margin-top:14px"><div class="hod-alb-team-h" style="color:#9ca3af;border-color:#6b7280">💀 Infamous Momenti <span>${gotLow}/${lows.length}</span></div><div class="hod-alb-cells">`+
+      lows.map(cellHtml).join('')+`</div></div>`:'');
     bindGridClicks(grid);
     return;
   }
@@ -4765,7 +4794,7 @@ function bindGridClicks(grid){
       }
       if(stickCard(id)){
         if(_pendingStick===id) _pendingStick=null;
-        const cat={}; albumCatalog().forEach(c=>cat[c.uid]=c); MOMENTS.forEach(m=>cat[m.id]={...m,rarity:'moment'});
+        const cat={}; albumCatalog().forEach(c=>cat[c.uid]=c); MOMENTS.forEach(m=>cat[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
         const c=cat[id];
         if(c){
           el.classList.remove('empty','target','waiting');
@@ -4860,8 +4889,9 @@ function showCardDetail(c){
 function showMomentDetail(m){
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
-  ov.innerHTML=`<div class="hod-moment-card hod-pop">
-    <div class="hod-moment-badge">⭐ ULTRA-RARE MOMENT</div>
+  const low=!!m.lowlight;
+  ov.innerHTML=`<div class="hod-moment-card hod-pop ${low?'lowlight':''}">
+    <div class="hod-moment-badge">${low?'💀 INFAMOUS MOMENT':'⭐ ULTRA-RARE MOMENT'}</div>
     <div class="hod-moment-photo">${avatarImg(m.pid,'')}</div>
     <div class="hod-moment-val">${m.val}</div>
     <div class="hod-moment-nm">${escapeHtml(m.name)}</div>
@@ -4876,7 +4906,7 @@ function showMomentDetail(m){
 let _unstuckTeam='', _unstuckDec='';
 function renderUnstuck(body){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
   let items=Object.keys(col).filter(k=>!col[k].stuck && (col[k].count||0)>0).map(k=>catMap[k]).filter(Boolean);
   if(!items.length){ body.innerHTML=`<div class="hod-alb-hint">Nimaš nenalepljenih kartic. Odpri paket ali zaslužiš v igrah!</div>`; return; }
   const teams=[...new Set(items.map(c=>c.team).filter(Boolean))].sort();
@@ -4980,7 +5010,7 @@ async function buyFromMarket(id, mb){
 }
 async function renderMarketSell(mb){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
   // dvojniki = count >= 2 (ali stuck && count>=1) — kar imaš odveč
   const dups=Object.keys(col).filter(k=>{
     const c=col[k]; const extra=(c.count||0) - 0; // count so nenalepljene kopije
@@ -5003,7 +5033,7 @@ async function renderMarketSell(mb){
   mb.querySelectorAll('.hod-mkt-sell').forEach(btn=>btn.onclick=()=>openSellDialog(btn.dataset.uid, mb));
 }
 function openSellDialog(uid, mb){
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
   const c=catMap[uid]; if(!c) return;
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
@@ -5132,7 +5162,7 @@ function showMissingReport(){
 }
 function renderShop(body){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
   const dups=Object.keys(col).filter(k=>(col[k].count||0)>0).map(k=>({c:catMap[k],n:col[k].count})).filter(x=>x.c);
   const dupValue=dups.reduce((a,x)=>a+(DUP_VALUE[x.c.rarity]||3)*x.n,0);
   body.innerHTML=`
@@ -5228,7 +5258,7 @@ function showPackOpening(){
 }
 // zvok ob obratu kartice glede na redkost
 function flipSound(el){
-  if(el.classList.contains('rar-moment')) playSfx('moment');
+  if(el.classList.contains('rar-moment')||el.classList.contains('rar-lowlight')) playSfx('moment');
   else if(el.classList.contains('rar-legendary')) playSfx('legendary');
   else playSfx('flip');
 }
