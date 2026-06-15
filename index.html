@@ -131,6 +131,11 @@
 }
 .hod-pos-PG{background:#4cc9f0;} .hod-pos-SG{background:#4895ef;}
 .hod-pos-SF{background:#b5179e;} .hod-pos-PF{background:#f72585;} .hod-pos-C{background:#ff8500;}
+.hod-pcard-photo{width:54px;height:54px;flex:none;border-radius:50%;overflow:hidden;position:relative;border:2px solid var(--gold-warm);background:#0d1119;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+.hod-pcard.elite .hod-pcard-photo{border-color:#ffd60a;box-shadow:0 0 12px rgba(255,214,10,.4);}
+.hod-pcard-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;}
+.hod-pcard-photo-wild{display:flex;align-items:center;justify-content:center;}
+.hod-pcard-photo-wild span{font-family:'Anton';font-size:26px;color:var(--gold);}
 .hod-pinfo{flex:1;min-width:0;}
 .hod-pname{font-family:'Oswald';font-size:18px;font-weight:600;line-height:1.1;color:var(--ink);}
 .hod-pseason{font-size:12px;color:var(--muted);letter-spacing:.5px;}
@@ -6101,6 +6106,7 @@ function makeOffer(){
     return `
     <div class="hod-pcard ${p.rating>=92?'elite':p.rating>=85?'good':''} ${canTake?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.07}s">
       <div class="hod-pos-badge hod-pos-${p.pos}">${allPos.join('/')}</div>
+      <div class="hod-pcard-photo">${avatarImg(p.pid,'hod-pcard-img')}</div>
       <div class="hod-pinfo">
         <div class="hod-pname">${p.name}</div>
         <div class="hod-pseason">${p.season}${canTake?'':' · pozicije polne'}</div>
@@ -6124,6 +6130,7 @@ function makeOffer(){
   const wildCard=`
     <div class="hod-pcard hod-wild ${wildOk?'':'disabled'} hod-pop" id="hod-wild-card">
       <div class="hod-pos-badge hod-wild-badge">??</div>
+      <div class="hod-pcard-photo hod-pcard-photo-wild"><span>?</span></div>
       <div class="hod-pinfo">
         <div class="hod-pname">Skrivnostni igralec</div>
         <div class="hod-pseason">naključen iz ${chosenSeason.year}${wildOk?'':' · ni na voljo'}</div>
@@ -6623,8 +6630,9 @@ function mpShowPick(){
     const ok=posOk&&affordOk;
     const why=!posOk?'pozicije polne':(!affordOk?'predrag':'');
     return `
-    <div class="hod-pcard ${ok?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.04}s">
+    <div class="hod-pcard ${p.rating>=92?'elite':p.rating>=85?'good':''} ${ok?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.04}s">
       <div class="hod-pos-badge hod-pos-${p.pos}">${allPos.join('/')}</div>
+      <div class="hod-pcard-photo">${avatarImg(p.pid,'hod-pcard-img')}</div>
       <div class="hod-pinfo">
         <div class="hod-pname">${p.name}</div>
         <div class="hod-pseason">${p.season}${why?' · '+why:''}</div>
@@ -6648,6 +6656,7 @@ function mpShowPick(){
   const wildCard=`
     <div class="hod-pcard hod-wild ${wildOk?'':'disabled'} hod-pop" id="hod-mp-wild">
       <div class="hod-pos-badge hod-wild-badge">??</div>
+      <div class="hod-pcard-photo hod-pcard-photo-wild"><span>?</span></div>
       <div class="hod-pinfo">
         <div class="hod-pname">Skrivnostni igralec</div>
         <div class="hod-pseason">naključen iz ${mp.spinSeason.year} · ${mp.wildLeft} ostalo${wildOk?'':' · ni na voljo'}</div>
