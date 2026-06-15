@@ -734,6 +734,52 @@
 .hod-moment-nm{font-family:'Anton';font-size:22px;color:#fff;margin-top:4px;}
 .hod-moment-mom{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;color:var(--amber);margin:4px 0 12px;}
 .hod-moment-desc{font-family:'Oswald';font-size:13px;color:#d8c8b8;line-height:1.5;margin-bottom:16px;}
+/* ===== FULL-BLEED FLIP MOMENTNA KARTICA ===== */
+.hod-mom-overlay{display:flex;align-items:center;justify-content:center;}
+.hod-mom-wrap{display:flex;flex-direction:column;align-items:center;}
+.hod-mom-flip{width:300px;height:420px;perspective:1400px;cursor:pointer;}
+@media(max-width:430px){ .hod-mom-flip{width:84vw;height:117vw;max-height:74vh;} }
+.hod-mom-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.4,.2,.2,1);}
+.hod-mom-flip.flipped .hod-mom-inner{transform:rotateY(180deg);}
+.hod-mom-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;overflow:hidden;}
+.hod-mom-front{border:4px solid #ffd166;box-shadow:0 16px 50px rgba(0,0,0,.7),0 0 34px rgba(255,209,102,.45);background:#1a0a2e;}
+.hod-mom-flip.lowlight .hod-mom-front{border-color:#8a9099;box-shadow:0 16px 50px rgba(0,0,0,.8),0 0 30px rgba(138,144,153,.4);background:#0a0b0e;}
+/* slika čez celo kartico */
+.hod-mom-fullimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;}
+.hod-mom-fallback{position:absolute;inset:0;}
+.hod-mom-fallback img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 12%;}
+/* rdeč utripajoč trak za lowlight */
+.hod-mom-warntop{position:absolute;top:0;left:0;right:0;height:5px;background:transparent;z-index:3;}
+.hod-mom-flip.lowlight .hod-mom-warntop{background:#dc3c3c;animation:warnPulse 1.6s ease-in-out infinite;}
+@keyframes warnPulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+/* napis zgoraj */
+.hod-mom-badge{position:absolute;top:0;left:0;right:0;z-index:2;padding:11px 0 16px;text-align:center;
+  font-family:'Anton';font-size:13px;letter-spacing:2px;color:#ffd166;
+  background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);}
+.hod-mom-flip.lowlight .hod-mom-badge{color:#f0f0f0;padding-top:13px;}
+/* napis spodaj čez sliko */
+.hod-mom-bottom{position:absolute;bottom:0;left:0;right:0;z-index:2;padding:40px 16px 18px;text-align:center;
+  background:linear-gradient(0deg,rgba(8,4,16,.96),rgba(8,4,16,.6) 55%,transparent);}
+.hod-mom-flip.lowlight .hod-mom-bottom{background:linear-gradient(0deg,rgba(5,5,8,.97),rgba(5,5,8,.6) 55%,transparent);}
+.hod-mom-val{font-family:'Anton';font-size:42px;line-height:1;color:#ffd166;text-shadow:0 2px 8px rgba(0,0,0,.6);}
+.hod-mom-flip.lowlight .hod-mom-val{color:#dc3c3c;}
+.hod-mom-nm{font-family:'Anton';font-size:20px;color:#fff;margin-top:3px;text-shadow:0 2px 6px rgba(0,0,0,.7);}
+.hod-mom-sub{font-family:'Oswald';font-size:11px;letter-spacing:1px;color:#ffd166;margin-top:3px;}
+.hod-mom-flip.lowlight .hod-mom-sub{color:#b0b6bf;}
+.hod-mom-flip-hint{position:absolute;bottom:6px;left:0;right:0;z-index:3;text-align:center;
+  font-family:'Oswald';font-size:10px;color:rgba(255,255,255,.6);}
+/* HRBTNA STRAN — zgodba */
+.hod-mom-back{transform:rotateY(180deg);border:4px solid #ffd166;
+  background:linear-gradient(160deg,#241830,#0d0816);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;text-align:center;}
+.hod-mom-flip.lowlight .hod-mom-back{border-color:#8a9099;background:linear-gradient(160deg,#1c1f26,#0a0b0e);}
+.hod-mom-back-badge{font-family:'Anton';font-size:12px;letter-spacing:2px;color:#ffd166;margin-bottom:14px;}
+.hod-mom-flip.lowlight .hod-mom-back-badge{color:#b0b6bf;}
+.hod-mom-back-title{font-family:'Anton';font-size:24px;color:#fff;line-height:1.05;}
+.hod-mom-back-mom{font-family:'Bebas Neue';font-size:18px;letter-spacing:1px;color:#ffd166;margin:6px 0 2px;}
+.hod-mom-flip.lowlight .hod-mom-back-mom{color:#dc3c3c;}
+.hod-mom-back-meta{font-family:'Oswald';font-size:11px;letter-spacing:1px;color:var(--muted);margin-bottom:16px;}
+.hod-mom-back-desc{font-family:'Oswald';font-size:14px;line-height:1.6;color:#e8ddc8;}
 /* lowlight (zloglasni moment) — temno sivo namesto rdeče-zlato */
 .hod-moment-card.lowlight{background:linear-gradient(180deg,#1c1f26,#0e1014);border-color:#6b7280;
   box-shadow:0 14px 50px rgba(0,0,0,.8),0 0 24px rgba(107,114,128,.4);}
@@ -3500,6 +3546,16 @@ const MOMENTS=[
   {id:'tmac', name:'Tracy McGrady', moment:'13 točk v 33s', team:'HOU', season:'2004-05', era:'2000s', pid:1503, val:'13', sub:'neverjeten preobrat', desc:'9. decembra 2004 je Tracy McGrady v zadnjih 33 sekundah dosegel 13 točk in obrnil tekmo proti San Antoniu — eden najbolj noro dramatičnih trenutkov.'},
 ];
 function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:m.lowlight?'lowlight':'moment'})); }
+// momenti, ki imajo custom ilustracijo v assets/moments/{id}.png
+const MOMENT_IMG=new Set(['kobe81','wilt100','mj63','magic42','klay37','malice','artest']);
+function hasMomentImg(id){ return MOMENT_IMG.has(id); }
+function momentImgTag(m){
+  if(hasMomentImg(m.id)){
+    return `<img class="hod-mom-fullimg" src="assets/moments/${m.id}.png" alt="${escapeHtml(m.name)}" onerror="this.style.display='none'">`;
+  }
+  // fallback: foto igralca
+  return `<div class="hod-mom-fallback">${avatarImg(m.pid,'')}</div>`;
+}
 
 // zbirka unikatnih kartic iz POOL-a: rating 70+, ena kartica = unikaten pid (najboljša sezona)
 let _albumCatalog=null;
@@ -4714,7 +4770,8 @@ function renderAlbumGrid(byDec){
       if(!st){
         return `<div class="hod-alb-cell empty rar-${rar} ${isTarget?'target':''}" data-stickid="${m.id}"><div class="hod-alb-q">?</div>${isTarget?'<div class="hod-alb-here">tukaj!</div>':''}</div>`;
       }
-      return `<div class="hod-alb-cell rar-${rar} moment-cell" data-moment="${m.id}"><div class="hod-alb-photo"${m.lowlight?' style="filter:grayscale(.35)"':''}>${avatarImg(m.pid,'')}</div><div class="hod-alb-fullnm">${escapeHtml(m.name)}</div><div class="hod-alb-szn">${escapeHtml(m.moment)}</div><div class="hod-alb-rt" style="color:${col2}">${m.val}</div></div>`;
+      const momImg = hasMomentImg(m.id) ? `<img src="assets/moments/${m.id}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%" alt="" onerror="this.style.display='none'">` : avatarImg(m.pid,'');
+      return `<div class="hod-alb-cell rar-${rar} moment-cell" data-moment="${m.id}"><div class="hod-alb-photo"${m.lowlight&&!hasMomentImg(m.id)?' style="filter:grayscale(.35)"':''}>${momImg}</div><div class="hod-alb-fullnm">${escapeHtml(m.name)}</div><div class="hod-alb-szn">${escapeHtml(m.moment)}</div><div class="hod-alb-rt" style="color:${col2}">${m.val}</div></div>`;
     };
     const gotHigh=highs.filter(m=>col[m.id]&&col[m.id].stuck).length;
     const gotLow=lows.filter(m=>col[m.id]&&col[m.id].stuck).length;
@@ -4888,19 +4945,39 @@ function showCardDetail(c){
 }
 function showMomentDetail(m){
   const ov=document.createElement('div');
-  ov.className='hod-howto-overlay';
+  ov.className='hod-howto-overlay hod-mom-overlay';
   const low=!!m.lowlight;
-  ov.innerHTML=`<div class="hod-moment-card hod-pop ${low?'lowlight':''}">
-    <div class="hod-moment-badge">${low?'💀 INFAMOUS MOMENT':'⭐ ULTRA-RARE MOMENT'}</div>
-    <div class="hod-moment-photo">${avatarImg(m.pid,'')}</div>
-    <div class="hod-moment-val">${m.val}</div>
-    <div class="hod-moment-nm">${escapeHtml(m.name)}</div>
-    <div class="hod-moment-mom">${escapeHtml(m.moment)} · ${escapeHtml(m.sub)}</div>
-    <div class="hod-moment-desc">${escapeHtml(m.desc||'')}</div>
-    <button class="hod-btn gold" id="hod-moment-close">Zapri</button>
+  ov.innerHTML=`<div class="hod-mom-wrap">
+    <div class="hod-mom-flip ${low?'lowlight':'highlight'}" id="hod-mom-flip">
+      <div class="hod-mom-inner">
+        <div class="hod-mom-face hod-mom-front">
+          ${momentImgTag(m)}
+          <div class="hod-mom-warntop"></div>
+          <div class="hod-mom-badge">${low?'💀 INFAMOUS MOMENT':'⭐ ULTRA-RARE MOMENT'}</div>
+          <div class="hod-mom-bottom">
+            <div class="hod-mom-val">${escapeHtml(m.val)}</div>
+            <div class="hod-mom-nm">${escapeHtml(m.name)}</div>
+            <div class="hod-mom-sub">${escapeHtml(m.moment)} · ${escapeHtml(m.sub)}${m.season?' · '+m.season:''}</div>
+          </div>
+          <div class="hod-mom-flip-hint">tapni za zgodbo ↻</div>
+        </div>
+        <div class="hod-mom-face hod-mom-back">
+          <div class="hod-mom-back-badge">${low?'💀 INFAMOUS':'⭐ MOMENT'}</div>
+          <div class="hod-mom-back-title">${escapeHtml(m.name)}</div>
+          <div class="hod-mom-back-mom">${escapeHtml(m.moment)}</div>
+          <div class="hod-mom-back-meta">${escapeHtml(m.sub)}${m.season?' · '+m.season:''}</div>
+          <div class="hod-mom-back-desc">${escapeHtml(m.desc||'')}</div>
+          <div class="hod-mom-flip-hint">tapni za sliko ↻</div>
+        </div>
+      </div>
+    </div>
+    <button class="hod-btn secondary" id="hod-moment-close" style="margin-top:14px">Zapri</button>
   </div>`;
   document.body.appendChild(ov);
-  document.getElementById('hod-moment-close').onclick=()=>ov.remove();
+  const flip=ov.querySelector('#hod-mom-flip');
+  flip.onclick=(e)=>{ if(e.target.id!=='hod-moment-close') flip.classList.toggle('flipped'); };
+  ov.querySelector('#hod-moment-close').onclick=(e)=>{ e.stopPropagation(); ov.remove(); };
+  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
 }
 // NENALEPLJENE — klik izbere kartico in skoči v album na pravo mesto
 let _unstuckTeam='', _unstuckDec='';
