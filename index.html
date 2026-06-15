@@ -110,12 +110,20 @@
 /* Player offer cards */
 .hod-offer-grid{display:grid;grid-template-columns:1fr;gap:10px;margin:6px 0 16px;}
 .hod-pcard{
-  background:#161b2a;border:1px solid var(--gold-warm);border-radius:14px;
-  padding:14px 16px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#1a2030,#13182550);border:1px solid var(--gold-warm);border-radius:14px;
+  padding:14px 16px;cursor:pointer;transition:.18s cubic-bezier(.3,.1,.2,1);position:relative;overflow:hidden;
   display:flex;align-items:center;gap:14px;box-shadow:0 6px 18px rgba(0,0,0,.5);
 }
-.hod-pcard:hover{border-color:var(--orange);transform:scale(1.015);box-shadow:0 10px 28px rgba(0,0,0,.55);}
+.hod-pcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold-warm);opacity:.8;}
+.hod-pcard:hover{border-color:var(--orange);transform:translateY(-2px) scale(1.015);box-shadow:0 12px 30px rgba(0,0,0,.6);}
+.hod-pcard:active{transform:scale(.99);}
 .hod-pcard.disabled{opacity:.3;pointer-events:none;filter:grayscale(1);}
+/* elite kartica (92+) dobi zlat sijaj */
+.hod-pcard.elite{border-color:#ffd60a;box-shadow:0 6px 22px rgba(0,0,0,.5),0 0 20px rgba(255,214,10,.22);}
+.hod-pcard.elite::before{background:#ffd60a;opacity:1;box-shadow:0 0 12px rgba(255,214,10,.6);}
+.hod-pcard.elite::after{content:'★';position:absolute;top:6px;right:10px;font-size:13px;color:#ffd60a;opacity:.55;}
+.hod-pcard.good{border-color:var(--amber);}
+.hod-pcard.good::before{background:var(--amber);}
 .hod-pos-badge{
   font-family:'Bebas Neue';font-size:16px;letter-spacing:.5px;
   min-width:46px;width:auto;padding:0 8px;height:46px;flex:none;border-radius:10px;
@@ -136,6 +144,9 @@
 /* Roster */
 .hod-roster{background:#161b2a;border:1px solid var(--gold-warm);border-radius:14px;padding:12px;margin-top:8px;box-shadow:0 6px 18px rgba(0,0,0,.5);}
 .hod-roster-title{font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;color:var(--amber);margin-bottom:8px;display:flex;justify-content:space-between;}
+.hod-live-prog{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.25);border-radius:8px;padding:6px 10px;margin-bottom:9px;font-family:'Oswald';font-size:12px;}
+.hod-live-prog.daily{background:rgba(0,115,230,.1);border-color:rgba(0,115,230,.3);}
+.hod-live-prog b{font-weight:700;}
 .hod-pos-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;}
 .hod-pos-tag{font-family:'Bebas Neue';font-size:13px;width:34px;color:var(--gold);}
 .hod-chip{font-size:12px;background:#1f2233;border:1px solid var(--gold-d);border-radius:20px;padding:3px 10px;}
@@ -2098,8 +2109,21 @@ const DAILY_GOALS=[
   {id:"playoff", type:"sim", minBudget:"srednja", label:"Playoff verjetnost 80%+", test:(ev,sim)=>sim&&sim.playoffPct>=80, fmt:(ev,sim)=>sim?`${sim.playoffPct}% playoff`:`— % playoff`},
   {id:"title15", type:"sim", minBudget:null, label:"Verjetnost naslova 15%+", test:(ev,sim)=>sim&&sim.titlePct>=15, fmt:(ev,sim)=>sim?`${sim.titlePct}% naslov`:`— % naslov`},
 ];
+// quickfire cilji — blažji, ker je na voljo le 8 kart (peterka)
+const QUICKFIRE_GOALS=[
+  {id:"qf_ovr82", type:"build", label:"Sestavi peterko z OVERALL 82+", test:ev=>ev.overall>=82, fmt:ev=>`OVERALL ${ev.overall}`},
+  {id:"qf_ovr85", type:"build", label:"Sestavi peterko z OVERALL 85+", test:ev=>ev.overall>=85, fmt:ev=>`OVERALL ${ev.overall}`},
+  {id:"qf_chem4", type:"build", label:"Doseži kemijo +4 ali več", test:ev=>ev.chem.chem>=4, fmt:ev=>`kemija +${ev.chem.chem}`},
+  {id:"qf_chem5", type:"build", label:"Doseži kemijo +5 ali več", test:ev=>ev.chem.chem>=5, fmt:ev=>`kemija +${ev.chem.chem}`},
+  {id:"qf_stars2", type:"build", label:"Peterka z 2+ zvezdama (92+)", test:ev=>ev.stars>=2, fmt:ev=>`${ev.stars} zvezd`},
+  {id:"qf_win50", type:"sim", label:"Doseži 50+ zmag v sezoni", test:(ev,sim)=>sim&&sim.avgWins>=50, fmt:(ev,sim)=>sim?`${sim.avgWins} zmag`:`— zmag`},
+];
 function dailyGoal(){
   const seed=todaySeed();
+  // quickfire ima svoje, blažje cilje (8 kart = manj izbire)
+  if(typeof quickMode!=='undefined' && quickMode){
+    return QUICKFIRE_GOALS[seed%QUICKFIRE_GOALS.length];
+  }
   return DAILY_GOALS[seed%DAILY_GOALS.length];
 }
 function dailyBudget(){
@@ -2786,6 +2810,39 @@ function ratingClass(r){
   return"hod-r-low";
 }
 
+// groba živa ocena med draftom (povprečje ratingov + zvezde)
+function liveStats(){
+  if(!roster.length) return null;
+  const avg=Math.round(roster.reduce((s,p)=>s+(effRating?effRating(p):p.rating),0)/roster.length);
+  const stars=roster.filter(p=>p.rating>=92).length;
+  return {avg, stars, n:roster.length};
+}
+function liveProgressBar(){
+  const ls=liveStats();
+  if(!ls) return '';
+  // navadni draft: pokaži trenutni povprečni rating (groba ocena overall)
+  if(!dailyMode){
+    return `<div class="hod-live-prog">
+      <span>Trenutni OVR ≈ <b style="color:var(--gold)">${ls.avg}</b></span>
+      <span style="color:var(--muted)">${ls.stars} ${ls.stars===1?'zvezda':'zvezd'} (92+)</span>
+    </div>`;
+  }
+  // daily/quickfire: pokaži napredek proti cilju + oceno
+  const g=dailyGoal();
+  let goalTxt='';
+  // groba ocena ali smo blizu cilja (po tipu)
+  if(g.type==='build'){
+    if(g.id.includes('ovr')) goalTxt=`OVR ≈ ${ls.avg}`;
+    else if(g.id.includes('chem')) goalTxt=`kemija se računa na koncu`;
+    else if(g.id.includes('star')) goalTxt=`${ls.stars} zvezd zdaj`;
+  } else {
+    goalTxt=`zmage se računajo na koncu`;
+  }
+  return `<div class="hod-live-prog daily">
+    <span>🎯 <b style="color:var(--gold)">${g.label}</b></span>
+    <span style="color:var(--muted)">${goalTxt} · OVR ≈ ${ls.avg}</span>
+  </div>`;
+}
 function rosterPanel(){
   let rows=POSITIONS.map(pos=>{
     const ps=roster.filter(p=>effPos(p)===pos);
@@ -2793,7 +2850,7 @@ function rosterPanel(){
     if(ps.length===0) chips=`<span class="hod-chip empty">prazno</span>`;
     return `<div class="hod-pos-row"><span class="hod-pos-tag">${pos}</span>${chips}</div>`;
   }).join('');
-  return `<div class="hod-roster"><div class="hod-roster-title"><span>TVOJA EKIPA</span><span>${roster.length}/12</span></div>${rows}</div>`;
+  return `<div class="hod-roster"><div class="hod-roster-title"><span>TVOJA EKIPA</span><span>${roster.length}/${teamSize()}</span></div>${liveProgressBar()}${rows}</div>`;
 }
 
 // Stabilni okvir za draft fazo: zgrajen enkrat, vsebina con se menja brez skakanja.
@@ -6042,7 +6099,7 @@ function makeOffer(){
       ? `<div class="hod-price">${cost===0?'FREE':'$'+cost}</div>
          <div class="hod-after">→ $${afterBuy}</div>` : '';
     return `
-    <div class="hod-pcard ${canTake?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.07}s">
+    <div class="hod-pcard ${p.rating>=92?'elite':p.rating>=85?'good':''} ${canTake?'':'disabled'} hod-pop" data-i="${i}" style="animation-delay:${i*0.07}s">
       <div class="hod-pos-badge hod-pos-${p.pos}">${allPos.join('/')}</div>
       <div class="hod-pinfo">
         <div class="hod-pname">${p.name}</div>
