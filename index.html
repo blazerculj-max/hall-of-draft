@@ -571,6 +571,24 @@
 .hod-alb-cell.filled{cursor:pointer;}
 /* povečana kartica z obračanjem */
 .hod-cd-overlay{align-items:center;}
+/* NAGRADE */
+.hod-rew-dot{position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:var(--red);border:2px solid #fff;}
+.hod-earn-info{max-width:480px;margin:0 auto 18px;background:rgba(255,182,39,.1);border:1px solid var(--gold-warm);
+  border-radius:10px;padding:9px 13px;font-family:'Oswald';font-size:12px;line-height:1.5;color:var(--amber);text-align:left;}
+.hod-earn-info b{color:var(--gold);}
+.hod-rew-card{display:flex;align-items:center;gap:12px;background:#13192a;border:1px solid var(--gold-warm);
+  border-radius:12px;padding:12px 14px;margin:0 auto 10px;max-width:460px;}
+.hod-rew-medal{font-size:28px;flex:none;}
+.hod-rew-info{flex:1;text-align:left;min-width:0;}
+.hod-rew-lbl{font-family:'Anton';font-size:15px;color:#fff;}
+.hod-rew-sub{font-family:'Oswald';font-size:11px;color:var(--muted);}
+.hod-rew-amt{font-family:'Anton';font-size:14px;color:var(--gold);flex:none;}
+.hod-rew-claim{font-size:13px;padding:7px 14px;flex:none;}
+.hod-wins-card{background:#13192a;border:1px solid var(--gold-warm);border-radius:12px;padding:14px;max-width:460px;margin:0 auto;}
+.hod-wins-title{font-family:'Anton';font-size:16px;color:var(--amber);margin-bottom:10px;}
+.hod-wins-row{display:flex;gap:16px;justify-content:center;}
+.hod-wins-stat b{font-family:'Anton';font-size:22px;color:#fff;display:block;}
+.hod-wins-stat span{font-family:'Oswald';font-size:11px;color:var(--muted);}
 /* MARKET */
 .hod-mkt-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0 12px;}
 .hod-mkt-tab{font-family:'Oswald';font-weight:600;font-size:13px;background:#13192a;border:1px solid var(--gold-warm);
@@ -1342,6 +1360,18 @@ function todayKey(){
   const d=new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+function monthKey(date){
+  const d=date||new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function yesterdayKey(){
+  const d=new Date(Date.now()-86400000);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function prevMonthKey(){
+  const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
 // dnevni cilji (seeded izbira) — mešani: sestava + simulacija
 // NBA kviz vprašanja. Vsako: {q, a:[4 odgovori], c:index pravilnega, d:težavnost 1-15}
 // Pisana konservativno - samo trdna, znana dejstva.
@@ -1823,7 +1853,109 @@ async function supaLeaderboard(mode, day){
   if(!res.ok) throw new Error("HTTP "+res.status);
   return await res.json();
 }
-// ===== MARKET (izmenjava dvojnikov) =====
+// ===== NAGRADE ZA UVRSTITEV =====
+// dnevna lestvica za določen mode in dan (vrne razvrščene vrstice)
+async function lbForDay(mode, day){
+  const url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${encodeURIComponent(mode)}&challenge_day=eq.${encodeURIComponent(day)}&order=overall.desc,created_at.asc&limit=300`;
+  const res=await fetch(url, { headers:SUPA_HEADERS });
+  if(!res.ok) return [];
+  return await res.json();
+}
+// mesečna lestvica: vsi vpisi tega meseca za mode; vzemi NAJBOLJŠI rezultat na igralca
+async function lbForMonth(mode, month){
+  const url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${encodeURIComponent(mode)}&challenge_day=like.${encodeURIComponent(month)}*&order=overall.desc,created_at.asc&limit=1000`;
+  const res=await fetch(url, { headers:SUPA_HEADERS });
+  if(!res.ok) return [];
+  const rows=await res.json();
+  // najboljši na igralca
+  const best={};
+  rows.forEach(r=>{ if(!best[r.nickname] || r.overall>best[r.nickname].overall) best[r.nickname]=r; });
+  return Object.values(best).sort((a,b)=>b.overall-a.overall || (a.created_at<b.created_at?-1:1));
+}
+// najdi rang igralca (deljeno mesto: enak overall = isti rang)
+function rankOf(rows, nick){
+  let rank=0, prevScore=null, realRank=0;
+  for(let i=0;i<rows.length;i++){
+    if(rows[i].overall!==prevScore){ realRank=i+1; prevScore=rows[i].overall; }
+    if(rows[i].nickname===nick) return realRank;
+  }
+  return 0; // ni na lestvici
+}
+// dnevne nagrade po rangu (climb + daily challenge): 1=150, 2=100, 3=50
+const DAILY_REWARD={1:150,2:100,3:50};
+// mesečne nagrade po rangu: {coins, packs}
+const MONTHLY_REWARD={1:{coins:200,packs:5},2:{coins:0,packs:5},3:{coins:0,packs:3}};
+// mesečne lestvice (mode-i)
+const MONTHLY_MODES=[
+  {mode:'neomejeno', label:'Draft Neomejeno'},
+  {mode:'lahka', label:'Draft Lahko'},
+  {mode:'srednja', label:'Draft Srednje'},
+  {mode:'težka', label:'Draft Težko'},
+  {mode:'hol', label:'Higher-Lower'},
+];
+// dnevne lestvice za nagrade
+const DAILY_REWARD_MODES=[
+  {mode:'climb', label:'Daily Climb'},
+  {mode:'daily', label:'Daily Challenge'},
+];
+// izračunaj, katere nagrade igralca čakajo (in jih še ni pobral)
+async function computePendingRewards(){
+  const me=currentUser(); if(!me) return [];
+  const claimed=getClaimedRewards(); // {dayKey_mode:true, monthKey_mode:true}
+  const out=[];
+  // DNEVNE (za včeraj)
+  const yd=yesterdayKey();
+  for(const dm of DAILY_REWARD_MODES){
+    const id=`d_${yd}_${dm.mode}`;
+    if(claimed[id]) continue;
+    try{
+      const rows=await lbForDay(dm.mode, yd);
+      const rank=rankOf(rows, me);
+      if(rank>=1 && rank<=3){
+        out.push({id, kind:'daily', label:dm.label, day:yd, rank, coins:DAILY_REWARD[rank], packs:0});
+      }
+    }catch(e){}
+  }
+  // MESEČNE (za prejšnji mesec)
+  const pm=prevMonthKey();
+  for(const mm of MONTHLY_MODES){
+    const id=`m_${pm}_${mm.mode}`;
+    if(claimed[id]) continue;
+    try{
+      const rows=await lbForMonth(mm.mode, pm);
+      const rank=rankOf(rows, me);
+      if(rank>=1 && rank<=3){
+        const rew=MONTHLY_REWARD[rank];
+        out.push({id, kind:'monthly', label:mm.label, month:pm, rank, coins:rew.coins, packs:rew.packs});
+      }
+    }catch(e){}
+  }
+  return out;
+}
+// pobrane nagrade: shranjeno v računu (data.claimedRewards) + lokalni cache
+function getClaimedRewards(){
+  try{
+    if(_account && _account.data && _account.data.claimedRewards) return _account.data.claimedRewards;
+  }catch(e){}
+  try{ return JSON.parse(storeGet('hod-claimed-rewards')||'{}'); }catch(e){ return {}; }
+}
+function markRewardClaimed(id, rew){
+  const c=getClaimedRewards(); c[id]=true;
+  storeSet('hod-claimed-rewards', JSON.stringify(c));
+  // shrani tudi v račun + beleži zmago za profil
+  if(_account){
+    _account.data=_account.data||{};
+    _account.data.claimedRewards=c;
+    // bragging rights: beleži mesta
+    if(rew && rew.kind==='monthly'){
+      _account.data.wins=_account.data.wins||{first:0,second:0,third:0};
+      if(rew.rank===1) _account.data.wins.first++;
+      else if(rew.rank===2) _account.data.wins.second++;
+      else if(rew.rank===3) _account.data.wins.third++;
+    }
+    if(typeof syncProgress==='function') syncProgress();
+  }
+}
 async function marketList(){
   const url=`${SUPA_URL}/rest/v1/market?status=eq.open&order=created_at.desc&limit=200`;
   const res=await fetch(url, { headers:SUPA_HEADERS });
@@ -2267,6 +2399,7 @@ function showLanding(){
       </div>
       <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn gold hod-landing-action" id="hod-go-album">📒 Album${getPendingPacks()>0?` <span class="hod-pack-badge">${getPendingPacks()} 📦</span>`:''}</button>
+        ${isLoggedIn()?`<button class="hod-btn hod-landing-action" id="hod-go-rewards" style="background:linear-gradient(180deg,#3a4356,#252c3a);box-shadow:0 5px 0 #161b2a,0 8px 18px rgba(0,0,0,.4);color:var(--amber);position:relative">🎁 Nagrade<span id="hod-rew-dot" class="hod-rew-dot" style="display:none"></span></button>`:''}
         <button class="hod-btn hod-landing-action" id="hod-go-auth" style="background:linear-gradient(180deg,#3a4356,#252c3a);box-shadow:0 5px 0 #161b2a,0 8px 18px rgba(0,0,0,.4);color:var(--amber)">${isLoggedIn()?'👤 '+escapeHtml(currentUser()):'🔑 Prijava'}</button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:1px">
@@ -2280,10 +2413,79 @@ function showLanding(){
     if(!isLoggedIn()){ showAlbumLocked(); }
     else showAlbum();
   };
+  const rb=document.getElementById('hod-go-rewards'); if(rb) rb.onclick=()=>showRewards();
   document.getElementById('hod-go-auth').onclick=()=>{ showAuth(); };
   renderProgress();
+  // preveri nagrade v ozadju -> rdeča pika
+  if(isLoggedIn()){
+    computePendingRewards().then(list=>{
+      const dot=document.getElementById('hod-rew-dot');
+      if(dot && list.length>0) dot.style.display='block';
+    }).catch(()=>{});
+  }
 }
 
+async function showRewards(){
+  phase="rewards";
+  screen.innerHTML=`<div class="hod-result hod-fade">
+    <div class="hod-alb-header">
+      <button class="hod-alb-backtop" id="hod-rew-back">← Nazaj</button>
+      <div class="hod-stage-label" style="margin:0">🎁 Nagrade</div>
+      <span style="width:90px"></span>
+    </div>
+    <div class="hod-verdict" style="max-width:480px;margin:0 auto 14px">
+      Nagrade za uvrstitve na lestvicah. Dnevne (Climb, Daily Challenge) pobereš naslednji dan, mesečne (Draft, Higher-Lower) prvi dan novega meseca.
+    </div>
+    <div id="hod-rew-list"><div class="hod-alb-hint">Preverjam nagrade…</div></div>
+    <div id="hod-rew-profile" style="margin-top:18px"></div>
+  </div>`;
+  document.getElementById('hod-rew-back').onclick=()=>goHome();
+  // profil zmag
+  renderWinsProfile();
+  // izračun nagrad
+  let list=[];
+  try{ list=await computePendingRewards(); }catch(e){}
+  const box=document.getElementById('hod-rew-list'); if(!box) return;
+  if(!list.length){
+    box.innerHTML=`<div class="hod-alb-hint">Trenutno nimaš nepobranih nagrad. Uvrsti se v TOP 3 na lestvicah!</div>`;
+    return;
+  }
+  box.innerHTML=list.map(r=>{
+    const medal=['🥇','🥈','🥉'][r.rank-1]||'';
+    const rew=[r.coins?`🪙 ${r.coins}`:'', r.packs?`📦 ${r.packs}`:''].filter(Boolean).join(' + ');
+    return `<div class="hod-rew-card">
+      <div class="hod-rew-medal">${medal}</div>
+      <div class="hod-rew-info">
+        <div class="hod-rew-lbl">${r.label}</div>
+        <div class="hod-rew-sub">${r.kind==='daily'?('Dnevna · '+r.day):('Mesečna · '+r.month)} · ${r.rank}. mesto</div>
+      </div>
+      <div class="hod-rew-amt">${rew}</div>
+      <button class="hod-btn gold hod-rew-claim" data-id="${r.id}">Poberi</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.hod-rew-claim').forEach(btn=>btn.onclick=()=>{
+    const r=list.find(x=>x.id===btn.dataset.id); if(!r) return;
+    if(r.coins) earnCoins(r.coins, true);
+    if(r.packs) awardPack(r.packs);
+    markRewardClaimed(r.id, r);
+    playSfx('win');
+    hodToast(`🎁 <b>Nagrada pobrana!</b> ${r.coins?`🪙 +${r.coins} `:''}${r.packs?`📦 +${r.packs}`:''}`);
+    showRewards(); // osveži
+  });
+}
+function renderWinsProfile(){
+  const box=document.getElementById('hod-rew-profile'); if(!box) return;
+  let w={first:0,second:0,third:0};
+  try{ if(_account&&_account.data&&_account.data.wins) w=_account.data.wins; }catch(e){}
+  box.innerHTML=`<div class="hod-wins-card">
+    <div class="hod-wins-title">🏆 Moje mesečne zmage</div>
+    <div class="hod-wins-row">
+      <div class="hod-wins-stat"><b>🥇 ${w.first||0}</b><span>1. mesta</span></div>
+      <div class="hod-wins-stat"><b>🥈 ${w.second||0}</b><span>2. mesta</span></div>
+      <div class="hod-wins-stat"><b>🥉 ${w.third||0}</b><span>3. mesta</span></div>
+    </div>
+  </div>`;
+}
 function showQuizMenu(){
   phase="quizmenu";
   screen.innerHTML=`
@@ -2292,6 +2494,7 @@ function showQuizMenu(){
       <div class="hod-verdict" style="margin:0 auto 22px;max-width:460px">
         <b style="color:var(--gold)">Milijonar</b> — 15 vprašanj, vse težje, pomoči. <b style="color:var(--gold)">Daily Climb</b> — na čas, 3 napake in konec. <b style="color:var(--gold)">Higher/Lower</b> — kdo ima boljšo statistiko?
       </div>
+      <div class="hod-earn-info">💰 <b>Kako služiš:</b> igranje polni dnevno kapico kovancev. <b>Daily Climb</b> — top 3 dneva dobijo 🪙 150/100/50 (pobereš naslednji dan). <b>Higher/Lower</b> — mesečna lestvica, top 3 dobijo pakete + kovance.</div>
       <div class="hod-landing-row">
         <button class="hod-landing-card hod-landing-mil" id="hod-go-millionaire">
           <span class="hod-landing-emoji">🏆</span>
@@ -2330,6 +2533,7 @@ function showIntro(){
       <div class="hod-verdict" style="margin:0 auto 18px;max-width:460px">
         Zavrti kolut, izberi sezono in draftaj igralce. Sestavi <b style="color:var(--gold)">12 igralcev</b>: največ 3 na pozicijo, vsaj 1 na vsako.
       </div>
+      <div class="hod-earn-info">💰 <b>Kako služiš:</b> draft polni dnevno kapico kovancev. <b>Mesečne lestvice</b> (Neomejeno, Lahko, Srednje, Težko) — top 3 meseca dobijo 📦 5/5/3 pakete + 🪙 200 (1. mesto). <b>Daily Challenge</b> — top 3 dneva 🪙 150/100/50.</div>
       <div class="hod-landing-row hod-draft-modes">
         <button class="hod-landing-card" id="hod-m-solo">
           <span class="hod-landing-emoji">🏀</span>
@@ -2650,8 +2854,7 @@ function endMillionaire(won, wrong){
     </div>`;
   document.getElementById('hod-quiz-again').onclick=()=>startMillionaire();
   document.getElementById('hod-quiz-home').onclick=()=>goHome();
-  if(reached>=5) awardPack(1);
-  { const pl=rewardPlay(); const pts=earnCoins(reached*2); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),400); }
+  { const pl=rewardPlay(); const pts=earnCoins(reached*3); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),400); }
   autoSubmitScore("kviz", score, reached);
 }
 
@@ -3003,7 +3206,7 @@ function dailyData(){
   return d;
 }
 function saveDailyData(d){ storeSet('hod-daily', JSON.stringify(d)); }
-const DAILY_EARN_CAP=60; // največ zasluženih točk na dan (brez daily challenge nagrad)
+const DAILY_EARN_CAP=120; // največ zasluženih točk na dan (brez daily challenge nagrad)
 // dodeli točke z dnevno omejitvijo; vrne dejansko dodano
 function earnCoins(n, ignoreCap){
   const d=dailyData();
@@ -3016,7 +3219,7 @@ function earnCoins(n, ignoreCap){
 // prvih 5 iger na dan = 5 točk vsaka
 function rewardPlay(){
   const d=dailyData();
-  if(d.games<5){ d.games++; saveDailyData(d); return earnCoins(5); }
+  if(d.games<8){ d.games++; saveDailyData(d); return earnCoins(6); }
   return 0;
 }
 // dnevni brezplačni paket ob vstopu
@@ -3271,6 +3474,7 @@ function showPokerMenu(){
       <div class="hod-verdict" style="margin:0 auto 16px;max-width:440px">
         <b style="color:var(--gold)">High Score</b> — sestavi najboljšo peterko in pridi na lestvico. <b style="color:var(--gold)">Vs AI</b> — premagaj 5 nasprotnikov od začetnika do Popovicha.
       </div>
+      <div class="hod-earn-info">💰 <b>Kako služiš:</b> poker polni dnevno kapico kovancev z igranjem in točkami. <b>Vs AI</b> — vsaka zmaga doda kovance (12-50 po nivoju). Ni posebnih lestvičnih nagrad — samo kovanci.</div>
       <button class="hod-fog-toggle ${pokerFog?'on':''}" id="hod-fog-toggle">
         <span class="hod-fog-icon">${pokerFog?'🌫️':'👁️'}</span>
         <span class="hod-fog-txt"><b>Megla ${pokerFog?'VKLOPLJENA':'izklopljena'}</b><br><span>${pokerFog?'overall skrit — sodi po statistiki!':'overall viden takoj'}</span></span>
@@ -3455,8 +3659,7 @@ function renderPoker(finished, firstRender){
     if(ovEl){ ovEl.textContent='0'; countUp(ovEl, sc.total, 900); }
     document.getElementById('hod-pk-again').onclick=()=>startPoker();
     document.getElementById('hod-pk-home').onclick=()=>goHome();
-    if(sc.total>=380) awardPack(1);
-    { const pl=rewardPlay(); const bonus=sc.total>360?Math.floor((sc.total-360)/10)*3:0; const pts=earnCoins(bonus); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
+    { const pl=rewardPlay(); const bonus=sc.total>360?Math.floor((sc.total-360)/10)*4:0; const pts=earnCoins(bonus); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
     autoSubmitScore(pokerFog?"poker_fog":"poker", sc.total, Math.round(sc.base/5));
     return;
   }
@@ -3848,7 +4051,7 @@ function paintVsResult(youSc, botSc){
   const youTotal=youSc.total, botTotal=botSc.total;
   const win = youTotal>botTotal;
   const tie = youTotal===botTotal;
-  if(win){ savePokerProgress(st.aiIdx); awardPack(1); const tier=[8,12,18,25,35][st.aiIdx]||8; const pl=rewardPlay(); const pts=earnCoins(tier); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
+  if(win){ savePokerProgress(st.aiIdx); const tier=[12,18,26,36,50][st.aiIdx]||12; const pl=rewardPlay(); const pts=earnCoins(tier); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
   else { const pl=rewardPlay(); if(pl>0) setTimeout(()=>hodToast(`🪙 <b>+${pl} točk</b>`),900); }
   const ai=st.ai;
   const isLast = st.aiIdx===POKER_AI.length-1;
@@ -3981,8 +4184,7 @@ function endClimb(){
   countUp(document.getElementById('hod-climb-score'), st.score, 900);
   document.getElementById('hod-climb-again').onclick=()=>startClimb();
   document.getElementById('hod-climb-home').onclick=()=>goHome();
-  if(st.score>=50) awardPack(1);
-  { const pl=rewardPlay(); const pts=earnCoins(Math.floor(st.score/20)); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
+  { const pl=rewardPlay(); const pts=earnCoins(Math.floor(st.score/14)); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
   autoSubmitScore("climb", st.score, st.answered-3);
 }
 
@@ -6316,11 +6518,11 @@ function showResult(){
   if(dailyMode) dailyOutcome=saveDailyResult(ev, res);
   { const gp={'A+':25,'A':18,'A-':15,'B+':13,'B':12,'B-':9,'C+':7,'C':6,'C-':5,'D':3,'F':2}[gr.g]||5;
     const pl=rewardPlay(); const pts=earnCoins(gp); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),600); }
-  // dnevni izziv opravljen: paket kot nagrada + obvestilo (točke +30 gredo na LESTVICO, ne v fond)
+  // dnevni izziv opravljen: +30 na LESTVICO + bonus točke v fond (obide kapico)
   if(dailyOutcome && dailyOutcome.firstWinToday){
-    awardPack(1);
+    const b=earnCoins(25, true);
     playSfx('win');
-    setTimeout(()=>hodToast(`🏆 <b>Dnevni izziv opravljen!</b> +30 na lestvici + 📦 paket`),1100);
+    setTimeout(()=>hodToast(`🏆 <b>Dnevni izziv opravljen!</b> +30 na lestvici · 🪙 +${b} točk`),1100);
   }
   const sh=document.getElementById('hod-share');
   if(sh) sh.onclick=()=>shareDaily(ev, res);
