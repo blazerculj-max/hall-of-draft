@@ -1935,9 +1935,7 @@ function startMusic(){
   el.play().catch(()=>{}); // brskalnik dovoli šele po interakciji
 }
 function stopMusic(){
-  if(_musicEl){
-    try{ _musicEl.pause(); _musicEl.currentTime=0; }catch(e){}
-  }
+  if(_musicEl){ try{ _musicEl.pause(); }catch(e){} }
 }
 function setMusic(on){
   _musicOn=!!on; storeSet('hod-music', on?'1':'0');
@@ -1980,6 +1978,9 @@ async function supaSubmit(row){
     body:JSON.stringify(row)
   });
   if(res.ok) return true;
+  // zajemi natančno sporočilo napake od Supabase
+  let errText=''; try{ errText=await res.clone().text(); }catch(e){}
+  console.warn('Supabase zavrnil objavo:', res.status, errText, 'poslano:', row);
   // če zavrne (npr. manjka stolpec v tabeli), poskusi znova samo z osnovnimi stolpci
   if(res.status===400 || res.status===404){
     const basic={ mode:row.mode, challenge_day:row.challenge_day, nickname:row.nickname, overall:row.overall };
@@ -1989,6 +1990,8 @@ async function supaSubmit(row){
       body:JSON.stringify(basic)
     });
     if(res.ok) return true;
+    try{ errText=await res.clone().text(); }catch(e){}
+    console.warn('Supabase zavrnil tudi basic:', res.status, errText);
     // še zadnji poskus: res samo nujno
     const minimal={ mode:row.mode, challenge_day:row.challenge_day, nickname:row.nickname, overall:row.overall };
     res=await fetch(`${SUPA_URL}/rest/v1/daily_scores`, {
@@ -1996,8 +1999,9 @@ async function supaSubmit(row){
       body:JSON.stringify(minimal)
     });
     if(res.ok) return true;
+    try{ errText=await res.clone().text(); }catch(e){}
   }
-  throw new Error("HTTP "+res.status);
+  throw new Error("HTTP "+res.status+(errText?(": "+errText):""));
 }
 // preberi lestvico. mode="daily" -> dnevni izziv za določen dan; sicer budget način (all-time)
 async function supaLeaderboard(mode, day){
