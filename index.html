@@ -38,6 +38,11 @@
   border:2px solid var(--gold-warm);background:rgba(20,26,42,.9);color:#fff;font-size:18px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.5);transition:transform .12s;}
 #hod-sfx-btn:hover{transform:scale(1.08);border-color:var(--orange);}
+#hod-music-btn{position:fixed;top:12px;right:62px;z-index:400;width:42px;height:42px;border-radius:50%;
+  border:2px solid var(--gold-warm);background:rgba(20,26,42,.9);color:#fff;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.5);transition:transform .12s;}
+#hod-music-btn:hover{transform:scale(1.08);border-color:var(--orange);}
+#hod-music-btn.off{opacity:.5;}
 #hod-root::before{
   content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(ellipse 62% 52% at 50% 36%, transparent 26%, rgba(12,8,4,0.78) 100%);
@@ -1158,7 +1163,8 @@
 </style>
 
 <div id="hod-root">
-  <button id="hod-sfx-btn" onclick="toggleSfx()" title="Zvok vklop/izklop" aria-label="Zvok">🔊</button>
+  <button id="hod-sfx-btn" onclick="toggleSfx()" title="Zvočni efekti" aria-label="Zvočni efekti">🔊</button>
+  <button id="hod-music-btn" onclick="toggleMusic()" title="Glasba" aria-label="Glasba">🎵</button>
   <div class="hod-wrap">
     <div class="hod-header" id="hod-header-home" title="Domov" style="cursor:pointer">
       <div class="hod-crest"><img class="hod-crest-img" src="assets/wreath.png" alt=""><span class="hod-crest-in">HOD</span></div>
@@ -1814,6 +1820,8 @@ function unlockAudio(){
   _sfxUnlocked=true;
   // prednaloži vse zvoke v ozadju
   SFX_LIST.forEach(n=>_loadSfx(n));
+  // zaženi glasbo (če vklopljena)
+  startMusic();
 }
 function sfxEnabled(){ return _sfxOn; }
 function setSfx(on){ _sfxOn=!!on; storeSet('hod-sfx', on?'1':'0'); updateSfxBtn(); }
@@ -1846,6 +1854,39 @@ function playSfx(name, vol){
 function updateSfxBtn(){
   const b=document.getElementById('hod-sfx-btn');
   if(b) b.textContent=_sfxOn?'🔊':'🔇';
+}
+// ===== GLASBA (lo-fi loop v ozadju) =====
+const MUSIC_FILE='music'; // assets/sounds/music.mp3
+let _musicOn = (storeGet('hod-music')!=='0'); // privzeto vklopljena
+let _musicEl=null;
+const MUSIC_VOL=0.18; // tiho ozadje
+function _getMusicEl(){
+  if(!_musicEl){
+    _musicEl=new Audio(`assets/sounds/${MUSIC_FILE}.mp3`);
+    _musicEl.loop=true;
+    _musicEl.volume=MUSIC_VOL;
+    _musicEl.preload='auto';
+  }
+  return _musicEl;
+}
+function startMusic(){
+  if(!_musicOn) return;
+  const el=_getMusicEl();
+  el.play().catch(()=>{}); // brskalnik dovoli šele po interakciji
+}
+function stopMusic(){
+  if(_musicEl){ try{ _musicEl.pause(); }catch(e){} }
+}
+function setMusic(on){
+  _musicOn=!!on; storeSet('hod-music', on?'1':'0');
+  if(_musicOn) startMusic(); else stopMusic();
+  updateMusicBtn();
+}
+function toggleMusic(){ unlockAudio(); setMusic(!_musicOn); }
+function updateMusicBtn(){
+  const b=document.getElementById('hod-music-btn');
+  if(b) b.textContent=_musicOn?'🎵':'🎵̶';
+  if(b) b.classList.toggle('off', !_musicOn);
 }
 function dailyRecord(){ try{return JSON.parse(storeGet("hod-daily")||"{}");}catch(e){return {};} }
 function saveDailyRecord(r){ storeSet("hod-daily",JSON.stringify(r)); }
@@ -7028,6 +7069,7 @@ function showLoading(){
   await restoreSession();
   showLanding();
   updateSfxBtn();
+  updateMusicBtn();
   document.addEventListener('touchstart', unlockAudio, {once:false, passive:true, capture:true});
   // klik zvok na vse gumbe (delegacija)
   document.addEventListener('click', (e)=>{
