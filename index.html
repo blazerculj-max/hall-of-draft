@@ -750,7 +750,10 @@
 /* slika čez celo kartico — blag zoom skrije tanek rob slike */
 .hod-mom-fullimg{position:absolute;width:108%;height:108%;left:-4%;top:-4%;object-fit:cover;object-position:center 40%;}
 /* slike z lastnim okvirjem: rahlo povečamo, da lesena podlaga/rob uide čez kartico */
-.hod-mom-fullimg.framed{width:122%;height:122%;left:-11%;top:-11%;object-fit:cover;}
+.hod-mom-fullimg.framed{position:absolute;width:118%;height:118%;left:-9%;top:-9%;object-fit:cover;object-position:center 30%;}
+/* per-sliko fina nastavitev fokusa (glava zgoraj) */
+.hod-mom-fullimg.framed.foc-top{object-position:center 14%;}
+.hod-mom-fullimg.framed.foc-high{object-position:center 22%;}
 .hod-mom-fallback{position:absolute;inset:0;}
 .hod-mom-fallback img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 12%;}
 /* rdeč utripajoč trak za lowlight */
@@ -3865,15 +3868,15 @@ const MOMENTS=[
   {id:'mj_retire', name:'Michael Jordan', moment:'1. upokojitev', team:'CHI', season:'1993-94', era:'90s', pid:893, val:'✦', sub:'odhod v baseball', desc:'Oktobra 1993 je Michael Jordan na vrhuncu kariere nenadoma končal kariero in se posvetil baseballu. Vrnil se je leta 1995.', lowlight:true},
   {id:'tonya', name:'Gilbert Arenas', moment:'Orožje v slačilnici', team:'WAS', season:'2009-10', era:'2000s', pid:2240, val:'⚠', sub:'suspenz', desc:'Decembra 2009 je Gilbert Arenas v slačilnico prinesel pištole po sporu s soigralcem Javarisom Crittentonom. Suspendiran je bil za preostanek sezone.', lowlight:true},
   {id:'tmac', name:'Tracy McGrady', moment:'13 točk v 33s', team:'HOU', season:'2004-05', era:'2000s', pid:1503, val:'13', sub:'neverjeten preobrat', desc:'9. decembra 2004 je Tracy McGrady v zadnjih 33 sekundah dosegel 13 točk in obrnil tekmo proti San Antoniu — eden najbolj noro dramatičnih trenutkov.'},
-  {id:'milic', name:'Marko Milič', moment:'Prvi Slovenec v NBA', team:'PHX', season:'1997-98', era:'90s', pid:0, val:'🇸🇮', sub:'pionir', slovenski:true, desc:'Leta 1997 je Marko Milič kot prvi Slovenec zaigral v ligi NBA. Izbran je bil kot 33. na naboru 1997 (Philadelphia), zaigral pa za Phoenix Suns — oral je ledino za vse, ki so prišli za njim.'},
-  {id:'nesterovic', name:'Rašo Nesterović', moment:'Prvi slovenski prstan', team:'SAS', season:'2004-05', era:'2000s', pid:0, val:'💍', sub:'prvak 2005', slovenski:true, desc:'Radoslav "Rašo" Nesterović je leta 2005 s San Antonio Spurs postal prvi Slovenec s šampionskim prstanom NBA. Izbran kot 17. na naboru 1998 — dolgo najvišji slovenski izbor.'},
-  {id:'udrih', name:'Beno Udrih', moment:'Dvojni prvak', team:'SAS', season:'2006-07', era:'2000s', pid:0, val:'💍💍', sub:'2005 & 2007', slovenski:true, desc:'Beno Udrih je s San Antonio Spurs osvojil dva naslova NBA (2005 in 2007). Kot novinec je takoj okusil vrh — eden najuspešnejših Slovencev v ligi.'},
-  {id:'vujacic', name:'Saša Vujačić', moment:'The Machine', team:'LAL', season:'2009-10', era:'2000s', pid:0, val:'💍💍', sub:'2 naslova z Lakers', slovenski:true, desc:'Saša "The Machine" Vujačić je z LA Lakers osvojil dva naslova (2009, 2010), ob boku Kobeja Bryanta. Njegova prosta meta sta pomagala zapečatiti finale 2010.'},
+  {id:'milic', name:'Marko Milič', moment:'Prvi Slovenec v NBA', team:'PHX', season:'1997-98', era:'90s', pid:0, val:'1.', sub:'pionir', slovenski:true, desc:'Leta 1997 je Marko Milič kot prvi Slovenec zaigral v ligi NBA. Izbran je bil kot 33. na naboru 1997 (Philadelphia), zaigral pa za Phoenix Suns — oral je ledino za vse, ki so prišli za njim.'},
+  {id:'nesterovic', name:'Rašo Nesterović', moment:'Prvi slovenski prstan', team:'SAS', season:'2004-05', era:'2000s', pid:0, val:'2005', sub:'prvak 2005', slovenski:true, desc:'Radoslav "Rašo" Nesterović je leta 2005 s San Antonio Spurs postal prvi Slovenec s šampionskim prstanom NBA. Izbran kot 17. na naboru 1998 — dolgo najvišji slovenski izbor.'},
+  {id:'udrih', name:'Beno Udrih', moment:'Dvojni prvak', team:'SAS', season:'2006-07', era:'2000s', pid:0, val:'2×', sub:'2005 & 2007', slovenski:true, desc:'Beno Udrih je s San Antonio Spurs osvojil dva naslova NBA (2005 in 2007). Kot novinec je takoj okusil vrh — eden najuspešnejših Slovencev v ligi.'},
+  {id:'vujacic', name:'Saša Vujačić', moment:'The Machine', team:'LAL', season:'2009-10', era:'2000s', pid:0, val:'2×', sub:'2 naslova z Lakers', slovenski:true, desc:'Saša "The Machine" Vujačić je z LA Lakers osvojil dva naslova (2009, 2010), ob boku Kobeja Bryanta. Njegova prosta meta sta pomagala zapečatiti finale 2010.'},
   {id:'nachbar', name:'Boštjan Nachbar', moment:'Najvišji slovenski nabor', team:'HOU', season:'2002-03', era:'2000s', pid:0, val:'#15', sub:'15. izbor 2002', slovenski:true, desc:'Boštjan Nachbar je bil leta 2002 izbran kot 15. na naboru (Houston Rockets) — dolgo najvišje izbrani Slovenec, dokler ni prišel Dončić.'},
-  {id:'dragic_asg', name:'Goran Dragić', moment:'Prvi slovenski All-Star', team:'MIA', season:'2017-18', era:'2010s', pid:201609, val:'⭐', sub:'All-Star 2018', slovenski:true, desc:'Februarja 2018 je Goran Dragić postal prvi Slovenec, izbran na tekmo zvezd NBA (All-Star). V 10. sezoni, kot vodja Miami Heat — krona vztrajne kariere.'},
-  {id:'cancar', name:'Vlatko Čančar', moment:'Del prvaka', team:'DEN', season:'2022-23', era:'2020s', pid:1629740, val:'💍', sub:'Denver 2023', slovenski:true, desc:'Vlatko Čančar je bil del Denver Nuggets, ki so leta 2023 osvojili prvi naslov v zgodovini kluba. Kljub poškodbam vztrajen član ekipe ob Jokiću.'},
+  {id:'dragic_asg', name:'Goran Dragić', moment:'Prvi slovenski All-Star', team:'MIA', season:'2017-18', era:'2010s', pid:201609, val:'ASG', sub:'All-Star 2018', slovenski:true, desc:'Februarja 2018 je Goran Dragić postal prvi Slovenec, izbran na tekmo zvezd NBA (All-Star). V 10. sezoni, kot vodja Miami Heat — krona vztrajne kariere.'},
+  {id:'cancar', name:'Vlatko Čančar', moment:'Del prvaka', team:'DEN', season:'2022-23', era:'2020s', pid:1629740, val:'2023', sub:'Denver 2023', slovenski:true, desc:'Vlatko Čančar je bil del Denver Nuggets, ki so leta 2023 osvojili prvi naslov v zgodovini kluba. Kljub poškodbam vztrajen član ekipe ob Jokiću.'},
   {id:'doncic73', name:'Luka Dončić', moment:'73 točk', team:'DAL', season:'2023-24', era:'2020s', pid:1629029, val:'73', sub:'vs Atlanta', slovenski:true, desc:'27. januarja 2024 je Luka Dončić proti Atlanti dosegel 73 točk — eden najvišjih posamičnih izidov v zgodovini NBA in slovenski rekord.'},
-  {id:'doncic_trade', name:'Luka Dončić', moment:'Šok menjava', team:'LAL', season:'2024-25', era:'2020s', pid:1629029, val:'🔄', sub:'na Lakers 2025', slovenski:true, desc:'Februarja 2025 je bil Luka Dončić v eni najbolj šokantnih menjav v zgodovini lige zamenjan iz Dallasa v LA Lakers (za Anthonyja Davisa) — konec ene in začetek nove ere.'},
+  {id:'doncic_trade', name:'Luka Dončić', moment:'Šok menjava', team:'LAL', season:'2024-25', era:'2020s', pid:1629029, val:'2025', sub:'na Lakers 2025', slovenski:true, desc:'Februarja 2025 je bil Luka Dončić v eni najbolj šokantnih menjav v zgodovini lige zamenjan iz Dallasa v LA Lakers (za Anthonyja Davisa) — konec ene in začetek nove ere.'},
 ];
 function momentRarity(m){ return m.slovenski?'slovenski':(m.lowlight?'lowlight':'moment'); }
 function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:momentRarity(m)})); }
@@ -3882,11 +3885,18 @@ const MOMENT_IMG=new Set(['kobe81','wilt100','mj63','magic42','klay37','lebron',
 // slike, ki imajo SVOJ okvir/ozadje (rahlo povečamo, da rob "uide" čez kartico)
 const MOMENT_FRAMED=new Set(['kobe81','magic42','wilt100','mj63','tonya','milic','nesterovic','udrih','vujacic','nachbar','dragic_asg','cancar','doncic73','doncic_trade']);
 function hasMomentImg(id){ return MOMENT_IMG.has(id); }
+// slike, kjer je glava/akcija višje — fokusiramo proti vrhu
+const MOMENT_FOC_TOP=new Set(['udrih','nachbar','dragic_asg']);   // glava čisto pri vrhu
+const MOMENT_FOC_HIGH=new Set(['milic','doncic_trade']);          // rahlo višje
 function momentImgTag(m){
   if(hasMomentImg(m.id)){
     const framed=MOMENT_FRAMED.has(m.id);
-    const cls = framed ? 'hod-mom-fullimg framed' : 'hod-mom-fullimg';
-    return `<img class="${cls}" src="assets/moments/${m.id}.png" alt="${escapeHtml(m.name)}" onerror="this.style.display='none'">`;
+    let cls = framed ? 'hod-mom-fullimg framed' : 'hod-mom-fullimg';
+    if(MOMENT_FOC_TOP.has(m.id)) cls+=' foc-top';
+    else if(MOMENT_FOC_HIGH.has(m.id)) cls+=' foc-high';
+    // posebej: nesterovič je skrajno desno na sliki
+    let extra = (m.id==='nesterovic') ? ' style="object-position:78% 30%"' : '';
+    return `<img class="${cls}" src="assets/moments/${m.id}.png"${extra} alt="${escapeHtml(m.name)}" onerror="this.style.display='none'">`;
   }
   // fallback: foto igralca
   return `<div class="hod-mom-fallback">${avatarImg(m.pid,'')}</div>`;
