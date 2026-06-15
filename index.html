@@ -739,10 +739,10 @@
 .hod-mom-wrap{display:flex;flex-direction:column;align-items:center;}
 .hod-mom-flip{width:300px;height:420px;perspective:1400px;cursor:pointer;}
 @media(max-width:430px){ .hod-mom-flip{width:84vw;height:117vw;max-height:74vh;} }
-.hod-mom-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.4,.2,.2,1);}
-.hod-mom-flip.flipped .hod-mom-inner{transform:rotateY(180deg);}
-.hod-mom-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;overflow:hidden;}
-.hod-mom-front{border:4px solid #ffd166;box-shadow:0 16px 50px rgba(0,0,0,.7),0 0 34px rgba(255,209,102,.45);background:#1a0a2e;}
+.hod-mom-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .7s cubic-bezier(.4,.2,.2,1);}
+.hod-mom-flip.flipped .hod-mom-inner{transform:rotateY(180deg);-webkit-transform:rotateY(180deg);}
+.hod-mom-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;overflow:hidden;-webkit-transform:translateZ(0);}
+.hod-mom-front{transform:rotateY(0deg);-webkit-transform:rotateY(0deg);border:4px solid #ffd166;box-shadow:0 16px 50px rgba(0,0,0,.7),0 0 34px rgba(255,209,102,.45);background:#1a0a2e;}
 .hod-mom-flip.lowlight .hod-mom-front{border-color:#8a9099;box-shadow:0 16px 50px rgba(0,0,0,.8),0 0 30px rgba(138,144,153,.4);background:#0a0b0e;}
 /* slika čez celo kartico — blag zoom skrije tanek rob slike */
 .hod-mom-fullimg{position:absolute;width:108%;height:108%;left:-4%;top:-4%;object-fit:cover;object-position:center 40%;}
@@ -771,7 +771,7 @@
 .hod-mom-flip-hint{position:absolute;bottom:6px;left:0;right:0;z-index:3;text-align:center;
   font-family:'Oswald';font-size:10px;color:rgba(255,255,255,.6);}
 /* HRBTNA STRAN — zgodba */
-.hod-mom-back{transform:rotateY(180deg);border:4px solid #ffd166;
+.hod-mom-back{transform:rotateY(180deg);-webkit-transform:rotateY(180deg);border:4px solid #ffd166;
   background:linear-gradient(160deg,#241830,#0d0816);
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;text-align:center;}
 .hod-mom-flip.lowlight .hod-mom-back{border-color:#8a9099;background:linear-gradient(160deg,#1c1f26,#0a0b0e);}
