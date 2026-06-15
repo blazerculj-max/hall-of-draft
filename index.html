@@ -1929,23 +1929,36 @@ function _getMusicEl(){
 }
 function startMusic(){
   if(!_musicOn) return;
+  if(document.hidden) return; // ne predvajaj, če je stran skrita
   const el=_getMusicEl();
   el.play().catch(()=>{}); // brskalnik dovoli šele po interakciji
 }
 function stopMusic(){
-  if(_musicEl){ try{ _musicEl.pause(); }catch(e){} }
+  if(_musicEl){
+    try{ _musicEl.pause(); _musicEl.currentTime=0; }catch(e){}
+  }
 }
 function setMusic(on){
   _musicOn=!!on; storeSet('hod-music', on?'1':'0');
   if(_musicOn) startMusic(); else stopMusic();
   updateMusicBtn();
 }
-function toggleMusic(){ unlockAudio(); setMusic(!_musicOn); }
+function toggleMusic(){
+  // ob izklopu NE kliči unlockAudio (ki bi spet zagnal glasbo)
+  if(_musicOn){ setMusic(false); }
+  else { unlockAudio(); setMusic(true); }
+}
 function updateMusicBtn(){
   const b=document.getElementById('hod-music-btn');
-  if(b) b.textContent=_musicOn?'🎵':'🎵̶';
-  if(b) b.classList.toggle('off', !_musicOn);
+  if(b){ b.textContent=_musicOn?'🎵':'🔇'; b.classList.toggle('off', !_musicOn); }
 }
+// utišaj glasbo, ko uporabnik minimizira/preklopi zavihek (mobilni browser v ozadju)
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ if(_musicEl){ try{ _musicEl.pause(); }catch(e){} } }
+  else { if(_musicOn){ startMusic(); } }
+});
+window.addEventListener('pagehide', ()=>{ if(_musicEl){ try{ _musicEl.pause(); }catch(e){} } });
+window.addEventListener('blur', ()=>{ if(_musicEl && document.hidden){ try{ _musicEl.pause(); }catch(e){} } });
 function dailyRecord(){ try{return JSON.parse(storeGet("hod-daily")||"{}");}catch(e){return {};} }
 function saveDailyRecord(r){ storeSet("hod-daily",JSON.stringify(r)); }
 
