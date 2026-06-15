@@ -1728,20 +1728,62 @@ const _memStore={};
 function storeGet(k){ try{const v=localStorage.getItem(k);return v;}catch(e){return _memStore[k]||null;} }
 function storeSet(k,v){ try{localStorage.setItem(k,v);}catch(e){_memStore[k]=v;} }
 
-// ===== ZVOK =====
+// ===== ZVOK (Web Audio — zanesljivo za kratke efekte) =====
 const SFX_LIST=['correct','wrong','tick','tense','pack','flip','legendary','moment','stick','coins','win','click'];
-const _sfxCache={};
+const _sfxBuf={};      // dekodirani audio bufferji
+const _sfxFallback={}; // fallback <audio> elementi
 let _sfxOn = (storeGet('hod-sfx')!=='0'); // privzeto vklopljeno
+let _audioCtx=null, _sfxUnlocked=false;
+function _getCtx(){
+  if(!_audioCtx){ try{ _audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  return _audioCtx;
+}
+// naloži in dekodira en zvok
+async function _loadSfx(name){
+  if(_sfxBuf[name]) return _sfxBuf[name];
+  const ctx=_getCtx(); if(!ctx) return null;
+  try{
+    const res=await fetch(`assets/sounds/${name}.mp3`);
+    const arr=await res.arrayBuffer();
+    const buf=await ctx.decodeAudioData(arr);
+    _sfxBuf[name]=buf; return buf;
+  }catch(e){ return null; }
+}
+// odkleni zvok ob prvi interakciji (obvezno za brskalnike)
+function unlockAudio(){
+  if(_sfxUnlocked) return;
+  const ctx=_getCtx(); if(!ctx) return;
+  if(ctx.state==='suspended') ctx.resume();
+  _sfxUnlocked=true;
+  // prednaloži vse zvoke v ozadju
+  SFX_LIST.forEach(n=>_loadSfx(n));
+}
 function sfxEnabled(){ return _sfxOn; }
 function setSfx(on){ _sfxOn=!!on; storeSet('hod-sfx', on?'1':'0'); updateSfxBtn(); }
-function toggleSfx(){ setSfx(!_sfxOn); if(_sfxOn) playSfx('click'); }
+function toggleSfx(){ unlockAudio(); setSfx(!_sfxOn); if(_sfxOn) playSfx('click'); }
 function playSfx(name, vol){
   if(!_sfxOn) return;
+  const ctx=_getCtx();
+  if(ctx){
+    if(ctx.state==='suspended') ctx.resume();
+    const buf=_sfxBuf[name];
+    if(buf){
+      try{
+        const src=ctx.createBufferSource(), g=ctx.createGain();
+        src.buffer=buf; g.gain.value=(vol!=null?vol:0.6);
+        src.connect(g); g.connect(ctx.destination); src.start(0);
+        return;
+      }catch(e){}
+    } else {
+      // še ni naložen — naloži za prihodnjič, zdaj fallback
+      _loadSfx(name);
+    }
+  }
+  // fallback: HTMLAudio
   try{
-    let a=_sfxCache[name];
-    if(!a){ a=new Audio(`assets/sounds/${name}.mp3`); a.preload='auto'; _sfxCache[name]=a; }
-    a.currentTime=0; a.volume=(vol!=null?vol:0.6);
-    a.play().catch(()=>{});
+    let a=_sfxFallback[name];
+    if(!a){ a=new Audio(`assets/sounds/${name}.mp3`); _sfxFallback[name]=a; }
+    a.currentTime=0; a.volume=(vol!=null?vol:0.6); a.play().catch(()=>{});
   }catch(e){}
 }
 function updateSfxBtn(){
@@ -6658,8 +6700,10 @@ function showLoading(){
   await restoreSession();
   showLanding();
   updateSfxBtn();
+  document.addEventListener('touchstart', unlockAudio, {once:false, passive:true, capture:true});
   // klik zvok na vse gumbe (delegacija)
   document.addEventListener('click', (e)=>{
+    unlockAudio();
     const b=e.target.closest('.hod-btn, .hod-landing-card, .hod-alb-tab, .hod-alb-tabm, .hod-pcard, .hod-menu-card, .hod-mode-card, .hod-unst-sel, .hod-szn-tab');
     if(b && !b.classList.contains('disabled') && !b.disabled) playSfx('click', 0.3);
   }, true);
