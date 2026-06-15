@@ -1960,12 +1960,29 @@ function setNick(n){ storeSet("hod-nick", n); }
 
 // vstavi rezultat na lestvico
 async function supaSubmit(row){
-  const res=await fetch(`${SUPA_URL}/rest/v1/daily_scores`, {
+  let res=await fetch(`${SUPA_URL}/rest/v1/daily_scores`, {
     method:"POST", headers:{...SUPA_HEADERS, "Prefer":"return=minimal"},
     body:JSON.stringify(row)
   });
-  if(!res.ok) throw new Error("HTTP "+res.status);
-  return true;
+  if(res.ok) return true;
+  // če zavrne (npr. manjka stolpec v tabeli), poskusi znova samo z osnovnimi stolpci
+  if(res.status===400 || res.status===404){
+    const basic={ mode:row.mode, challenge_day:row.challenge_day, nickname:row.nickname, overall:row.overall };
+    if(row.goal_done!=null) basic.goal_done=row.goal_done;
+    res=await fetch(`${SUPA_URL}/rest/v1/daily_scores`, {
+      method:"POST", headers:{...SUPA_HEADERS, "Prefer":"return=minimal"},
+      body:JSON.stringify(basic)
+    });
+    if(res.ok) return true;
+    // še zadnji poskus: res samo nujno
+    const minimal={ mode:row.mode, challenge_day:row.challenge_day, nickname:row.nickname, overall:row.overall };
+    res=await fetch(`${SUPA_URL}/rest/v1/daily_scores`, {
+      method:"POST", headers:{...SUPA_HEADERS, "Prefer":"return=minimal"},
+      body:JSON.stringify(minimal)
+    });
+    if(res.ok) return true;
+  }
+  throw new Error("HTTP "+res.status);
 }
 // preberi lestvico. mode="daily" -> dnevni izziv za določen dan; sicer budget način (all-time)
 async function supaLeaderboard(mode, day){
