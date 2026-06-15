@@ -571,6 +571,24 @@
 .hod-alb-cell.filled{cursor:pointer;}
 /* povečana kartica z obračanjem */
 .hod-cd-overlay{align-items:center;}
+/* MARKET */
+.hod-mkt-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0 12px;}
+.hod-mkt-tab{font-family:'Oswald';font-weight:600;font-size:13px;background:#13192a;border:1px solid var(--gold-warm);
+  color:var(--amber);border-radius:8px;padding:7px 12px;cursor:pointer;}
+.hod-mkt-tab.on{background:var(--orange);color:#fff;border-color:var(--orange);}
+.hod-mkt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+.hod-mkt-card{position:relative;background:#fff;border:2px solid var(--gold-warm);border-radius:10px;
+  padding:10px 8px;text-align:center;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.hod-mkt-card.rar-legendary{border-color:#ffd166;}
+.hod-mkt-card.rar-moment{border-color:#ff4d6d;}
+.hod-mkt-card.rar-rare{border-color:#9ec5e8;}
+.hod-mkt-photo{width:60px;height:60px;border-radius:50%;border:2px solid var(--orange);overflow:hidden;position:relative;margin-top:2px;}
+.hod-mkt-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%;}
+.hod-mkt-nm{font-family:'Anton';font-size:12px;color:var(--navy);line-height:1.05;}
+.hod-mkt-meta{font-family:'Oswald';font-size:10px;color:var(--gold-d);}
+.hod-mkt-seller{font-size:9px;color:#888;}
+.hod-mkt-want{font-size:9px;color:#4a7fa5;font-style:italic;line-height:1.1;}
+.hod-mkt-price{font-family:'Anton';font-size:15px;color:var(--gold-deep);margin:2px 0;}
 /* album header z gumbom nazaj */
 .hod-alb-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
 .hod-alb-backtop{font-family:'Oswald';font-weight:600;font-size:13px;background:linear-gradient(180deg,#3a4660,#28324a);
@@ -1763,7 +1781,63 @@ async function supaLeaderboard(mode, day){
   if(!res.ok) throw new Error("HTTP "+res.status);
   return await res.json();
 }
-const MAX_TEAM=12, MAX_PER_POS=3;
+// ===== MARKET (izmenjava dvojnikov) =====
+async function marketList(){
+  const url=`${SUPA_URL}/rest/v1/market?status=eq.open&order=created_at.desc&limit=200`;
+  const res=await fetch(url, { headers:SUPA_HEADERS });
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  return await res.json();
+}
+async function marketCreate(row){
+  const res=await fetch(`${SUPA_URL}/rest/v1/market`, {
+    method:"POST", headers:{...SUPA_HEADERS, "Prefer":"return=representation"},
+    body:JSON.stringify(row)
+  });
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  return (await res.json())[0];
+}
+// kupi ponudbo: atomsko označi sold samo če je še open (prepreči dvojni nakup)
+async function marketBuy(id, buyer){
+  const url=`${SUPA_URL}/rest/v1/market?id=eq.${id}&status=eq.open`;
+  const res=await fetch(url, {
+    method:"PATCH", headers:{...SUPA_HEADERS, "Prefer":"return=representation"},
+    body:JSON.stringify({status:'sold', buyer})
+  });
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  const rows=await res.json();
+  return rows.length?rows[0]:null; // null = nekdo je že kupil
+}
+async function marketCancel(id){
+  const url=`${SUPA_URL}/rest/v1/market?id=eq.${id}&status=eq.open`;
+  const res=await fetch(url, {
+    method:"PATCH", headers:{...SUPA_HEADERS, "Prefer":"return=representation"},
+    body:JSON.stringify({status:'cancelled'})
+  });
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  const rows=await res.json();
+  return rows.length?rows[0]:null;
+}
+// prevzem kupljenih kartic: poišči ponudbe, kjer sem kupec, in jih dodaj v zbirko
+async function marketCollectPurchases(){
+  const me=currentUser(); if(!me) return 0;
+  const url=`${SUPA_URL}/rest/v1/market?buyer=eq.${encodeURIComponent(me)}&status=eq.sold&order=created_at.desc&limit=100`;
+  const res=await fetch(url, { headers:SUPA_HEADERS });
+  if(!res.ok) return 0;
+  const rows=await res.json();
+  // lokalno beležimo, katere smo že prevzeli (da jih ne dodamo večkrat)
+  let claimed={}; try{ claimed=JSON.parse(storeGet('hod-market-claimed')||'{}'); }catch(e){}
+  let added=0;
+  const col=getCollected();
+  rows.forEach(r=>{
+    if(claimed[r.id]) return;
+    const uid=r.card_uid;
+    if(col[uid]){ col[uid].count=(col[uid].count||0)+1; }
+    else { col[uid]={stuck:false, count:1}; }
+    claimed[r.id]=true; added++;
+  });
+  if(added>0){ setCollected(col); storeSet('hod-market-claimed', JSON.stringify(claimed)); }
+  return added;
+}
 const QUICK_PICKS=8;
 function teamSize(){ return quickMode?QUICK_PICKS:MAX_TEAM; }
 
@@ -4096,6 +4170,7 @@ function showAlbum(){
       <div class="hod-alb-tabsmain">
         <button class="hod-alb-tabm ${_albumTab==='album'?'on':''}" data-t="album">Album</button>
         <button class="hod-alb-tabm ${_albumTab==='nove'?'on':''}" data-t="nove">Nenalepljene${unstuckTotal>0?` (${unstuckTotal})`:''}</button>
+        <button class="hod-alb-tabm ${_albumTab==='market'?'on':''}" data-t="market">🔁 Market</button>
         <button class="hod-alb-tabm ${_albumTab==='trgovina'?'on':''}" data-t="trgovina">Trgovina</button>
       </div>
       <div id="hod-alb-body"></div>
@@ -4129,8 +4204,9 @@ function showAlbum(){
 function renderAlbumBody(){
   const body=document.getElementById('hod-alb-body'); if(!body) return;
   const fab=document.getElementById('hod-unstuck-fab');
-  if(fab) fab.style.display=(_albumTab==='nove')?'none':(Object.keys(getCollected()).reduce((a,k)=>a+(getCollected()[k].stuck?0:(getCollected()[k].count||0)),0)>0?'flex':'none');
+  if(fab) fab.style.display=(_albumTab==='nove'||_albumTab==='market'||_albumTab==='trgovina')?'none':(Object.keys(getCollected()).reduce((a,k)=>a+(getCollected()[k].stuck?0:(getCollected()[k].count||0)),0)>0?'flex':'none');
   if(_albumTab==='nove'){ renderUnstuck(body); return; }
+  if(_albumTab==='market'){ renderMarket(body); return; }
   if(_albumTab==='trgovina'){ renderShop(body); return; }
   // ALBUM tab
   const cat=albumCatalog();
@@ -4425,6 +4501,163 @@ function renderUnstuck(body){
     renderAlbumTabsMain();
     renderAlbumBody();
   });
+}
+// ===== MARKET UI =====
+let _marketView='browse'; // browse | mine | sell
+async function renderMarket(body){
+  body.innerHTML=`<div class="hod-alb-hint">Zamenjaj svoje dvojnike z drugimi igralci za 🪙 kovance.</div>
+    <div class="hod-mkt-tabs">
+      <button class="hod-mkt-tab ${_marketView==='browse'?'on':''}" data-v="browse">🛒 Ponudbe</button>
+      <button class="hod-mkt-tab ${_marketView==='sell'?'on':''}" data-v="sell">➕ Prodaj dvojnik</button>
+      <button class="hod-mkt-tab ${_marketView==='mine'?'on':''}" data-v="mine">📋 Moje ponudbe</button>
+    </div>
+    <div id="hod-mkt-body"><div class="hod-alb-hint">Nalagam…</div></div>`;
+  body.querySelectorAll('.hod-mkt-tab').forEach(b=>b.onclick=()=>{ _marketView=b.dataset.v; renderMarket(body); });
+  const mb=body.querySelector('#hod-mkt-body');
+  // ob vstopu prevzemi morebitne kupljene kartice
+  try{ const got=await marketCollectPurchases(); if(got>0){ hodToast(`📦 <b>${got} kupljenih kartic</b> dodanih med nenalepljene!`); updateUnstuckBadge(); } }catch(e){}
+  if(_marketView==='browse') return renderMarketBrowse(mb);
+  if(_marketView==='sell') return renderMarketSell(mb);
+  if(_marketView==='mine') return renderMarketMine(mb);
+}
+async function renderMarketBrowse(mb){
+  let rows; try{ rows=await marketList(); }catch(e){ mb.innerHTML=`<div style="color:var(--red);font-size:13px">Marketa ni bilo mogoče naložiti. ${e.message}</div>`; return; }
+  const me=currentUser();
+  const others=rows.filter(r=>r.seller!==me);
+  if(!others.length){ mb.innerHTML=`<div class="hod-alb-hint">Trenutno ni ponudb drugih igralcev. Bodi prvi — daj dvojnik naprodaj!</div>`; return; }
+  mb.innerHTML=`<div class="hod-mkt-grid">`+others.map(r=>marketCardHtml(r,'buy')).join('')+`</div>`;
+  mb.querySelectorAll('.hod-mkt-buy').forEach(btn=>btn.onclick=()=>buyFromMarket(btn.dataset.id, mb));
+}
+function marketCardHtml(r, mode){
+  const rar=r.card_rarity||'common';
+  const priceLbl = r.price!=null ? `🪙 ${r.price}` : '';
+  const wantLbl = r.want_text ? `<div class="hod-mkt-want">želi: ${escapeHtml(r.want_text)}</div>` : '';
+  return `<div class="hod-mkt-card rar-${rar}">
+    <div class="hod-alb-ribbon" style="background:${teamColor(r.card_team)}"></div>
+    <div class="hod-mkt-photo">${avatarImg(r.card_pid,'')}</div>
+    <div class="hod-mkt-nm">${escapeHtml(r.card_name||'')}</div>
+    <div class="hod-mkt-meta">${escapeHtml(r.card_team||'')} · ${r.card_rating||''}</div>
+    <div class="hod-mkt-seller">od: ${escapeHtml(r.seller)}</div>
+    ${wantLbl}
+    <div class="hod-mkt-price">${priceLbl}</div>
+    ${mode==='buy'
+      ? `<button class="hod-btn gold hod-mkt-buy" data-id="${r.id}" style="font-size:13px;padding:6px 12px">${r.price!=null?'Kupi':'Prevzemi'}</button>`
+      : `<button class="hod-btn secondary hod-mkt-cancel" data-id="${r.id}" style="font-size:13px;padding:6px 12px">Prekliči</button>`}
+  </div>`;
+}
+async function buyFromMarket(id, mb){
+  const me=currentUser(); if(!me){ showAlbumLocked(); return; }
+  let rows; try{ rows=await marketList(); }catch(e){ alert('Napaka pri marketu.'); return; }
+  const offer=rows.find(r=>r.id===id);
+  if(!offer){ hodToast('Ponudba ni več na voljo.'); renderMarketBrowse(mb); return; }
+  const price=offer.price||0;
+  if(price>0 && getCoins()<price){ hodToast(`Premalo kovancev (rabiš 🪙 ${price}).`); return; }
+  // poskusi rezervirati (atomsko)
+  const sold=await marketBuy(id, me);
+  if(!sold){ hodToast('Prepozno — nekdo je že kupil to kartico.'); renderMarketBrowse(mb); return; }
+  // plačaj + dodaj kartico
+  if(price>0) addCoins(-price);
+  const col=getCollected();
+  if(col[offer.card_uid]) col[offer.card_uid].count=(col[offer.card_uid].count||0)+1;
+  else col[offer.card_uid]={stuck:false, count:1};
+  setCollected(col);
+  // označi kot prevzeto (da je marketCollectPurchases ne doda še enkrat)
+  let claimed={}; try{ claimed=JSON.parse(storeGet('hod-market-claimed')||'{}'); }catch(e){}
+  claimed[id]=true; storeSet('hod-market-claimed', JSON.stringify(claimed));
+  playSfx('coins');
+  hodToast(`✅ <b>${escapeHtml(offer.card_name)}</b> kupljen! Dodan med nenalepljene.`);
+  updateUnstuckBadge();
+  renderMarketBrowse(mb);
+}
+async function renderMarketSell(mb){
+  const col=getCollected();
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
+  // dvojniki = count >= 2 (ali stuck && count>=1) — kar imaš odveč
+  const dups=Object.keys(col).filter(k=>{
+    const c=col[k]; const extra=(c.count||0) - 0; // count so nenalepljene kopije
+    return (c.count||0)>=1 && (c.stuck || (c.count||0)>=2); // imaš jo (prilepljeno ali vsaj 2)
+  }).map(k=>({uid:k, card:catMap[k], count:col[k].count||0})).filter(x=>x.card && x.count>=1);
+  // ponudimo samo tiste, kjer imaš VSAJ 1 nenalepljeno kopijo za oddati
+  const sellable=dups.filter(x=>x.count>=1);
+  if(!sellable.length){ mb.innerHTML=`<div class="hod-alb-hint">Nimaš dvojnikov za prodajo. Dvojnik je kartica, ki jo imaš večkrat (count ≥ 1 nenalepljena kopija).</div>`; return; }
+  mb.innerHTML=`<div class="hod-alb-hint">Izberi dvojnik, ki ga daš na market:</div>
+    <div class="hod-mkt-grid">`+sellable.map(x=>{
+      const c=x.card;
+      return `<div class="hod-mkt-card rar-${c.rarity}">
+        <div class="hod-alb-ribbon" style="background:${teamColor(c.team)}"></div>
+        <div class="hod-mkt-photo">${avatarImg(c.pid,'')}</div>
+        <div class="hod-mkt-nm">${escapeHtml(c.name||'')}</div>
+        <div class="hod-mkt-meta">${escapeHtml(c.team||'')} · ${c.rating||c.val||''} · ×${x.count}</div>
+        <button class="hod-btn gold hod-mkt-sell" data-uid="${x.uid}" style="font-size:13px;padding:6px 12px">Na market →</button>
+      </div>`;
+    }).join('')+`</div>`;
+  mb.querySelectorAll('.hod-mkt-sell').forEach(btn=>btn.onclick=()=>openSellDialog(btn.dataset.uid, mb));
+}
+function openSellDialog(uid, mb){
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:'moment'});
+  const c=catMap[uid]; if(!c) return;
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-nick-card hod-pop">
+    <div class="hod-nick-title">Na market: ${escapeHtml(c.name)}</div>
+    <div class="hod-nick-sub">Določi ceno v kovancih in/ali kaj želiš v zameno.</div>
+    <div style="margin:12px 0;text-align:left">
+      <label style="font-size:13px;color:var(--amber)">Cena (🪙 kovanci):</label>
+      <input type="number" id="hod-sell-price" min="0" value="20" style="width:100%;box-sizing:border-box;background:#fff;border:2px solid var(--gold-warm);border-radius:8px;padding:8px;font-size:15px;margin:4px 0 10px">
+      <label style="font-size:13px;color:var(--amber)">Želim v zameno (neobvezno, prosto besedilo):</label>
+      <input type="text" id="hod-sell-want" placeholder="npr. katero koli legendo iz 90s" maxlength="60" style="width:100%;box-sizing:border-box;background:#fff;border:2px solid var(--gold-warm);border-radius:8px;padding:8px;font-size:14px;margin:4px 0">
+    </div>
+    <div class="hod-nick-btns">
+      <button class="hod-btn gold" id="hod-sell-ok">Objavi na market</button>
+      <button class="hod-btn secondary" id="hod-sell-cancel">Prekliči</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  document.getElementById('hod-sell-cancel').onclick=()=>ov.remove();
+  document.getElementById('hod-sell-ok').onclick=async()=>{
+    const price=parseInt(document.getElementById('hod-sell-price').value||'0',10)||0;
+    const want=(document.getElementById('hod-sell-want').value||'').trim().slice(0,60);
+    // preveri, da imaš nenalepljeno kopijo
+    const col=getCollected(); const rec=col[uid];
+    if(!rec || (rec.count||0)<1){ hodToast('Nimaš proste kopije te kartice.'); ov.remove(); return; }
+    const okBtn=document.getElementById('hod-sell-ok'); okBtn.disabled=true; okBtn.textContent='Objavljam…';
+    try{
+      await marketCreate({
+        seller:currentUser(), card_uid:uid, card_name:c.name, card_team:c.team||'',
+        card_rating:c.rating||c.val||0, card_rarity:c.rarity, card_pid:c.pid,
+        price:price>0?price:null, want_text:want||null, status:'open'
+      });
+      // odštej kopijo (rezervirana na marketu)
+      rec.count=(rec.count||1)-1; setCollected(col);
+      ov.remove();
+      hodToast('✅ <b>Objavljeno na market!</b>');
+      updateUnstuckBadge();
+      _marketView='mine'; renderMarket(document.getElementById('hod-alb-body'));
+    }catch(e){
+      okBtn.disabled=false; okBtn.textContent='Objavi na market';
+      alert('Objava ni uspela: '+e.message);
+    }
+  };
+}
+async function renderMarketMine(mb){
+  const me=currentUser();
+  let rows; try{ rows=await marketList(); }catch(e){ mb.innerHTML=`<div style="color:var(--red)">Napaka.</div>`; return; }
+  const mine=rows.filter(r=>r.seller===me);
+  if(!mine.length){ mb.innerHTML=`<div class="hod-alb-hint">Nimaš aktivnih ponudb. Daj dvojnik na market v zavihku »Prodaj«.</div>`; return; }
+  mb.innerHTML=`<div class="hod-mkt-grid">`+mine.map(r=>marketCardHtml(r,'cancel')).join('')+`</div>`;
+  mb.querySelectorAll('.hod-mkt-cancel').forEach(btn=>btn.onclick=()=>cancelMyOffer(btn.dataset.id, mb));
+}
+async function cancelMyOffer(id, mb){
+  const res=await marketCancel(id);
+  if(!res){ hodToast('Ni mogoče preklicati (morda že prodano).'); renderMarketMine(mb); return; }
+  // vrni kartico v zbirko
+  const col=getCollected();
+  if(col[res.card_uid]) col[res.card_uid].count=(col[res.card_uid].count||0)+1;
+  else col[res.card_uid]={stuck:false, count:1};
+  setCollected(col);
+  hodToast('Ponudba preklicana, kartica vrnjena.');
+  updateUnstuckBadge();
+  renderMarketMine(mb);
 }
 // posodobi glavne tabe (da se 'album' označi kot aktiven)
 function renderAlbumTabsMain(){
