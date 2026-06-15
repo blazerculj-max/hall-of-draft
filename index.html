@@ -1959,8 +1959,8 @@ document.addEventListener('visibilitychange', ()=>{
 });
 window.addEventListener('pagehide', ()=>{ if(_musicEl){ try{ _musicEl.pause(); }catch(e){} } });
 window.addEventListener('blur', ()=>{ if(_musicEl && document.hidden){ try{ _musicEl.pause(); }catch(e){} } });
-function dailyRecord(){ try{return JSON.parse(storeGet("hod-daily")||"{}");}catch(e){return {};} }
-function saveDailyRecord(r){ storeSet("hod-daily",JSON.stringify(r)); }
+function dailyRecord(){ try{return JSON.parse(storeGet("hod-daily-rec")||"{}");}catch(e){return {};} }
+function saveDailyRecord(r){ storeSet("hod-daily-rec",JSON.stringify(r)); }
 
 // ===== SUPABASE (dnevna lestvica) =====
 const SUPA_URL="https://rlteeloltejitpwreami.supabase.co";
@@ -1970,6 +1970,21 @@ const SUPA_HEADERS={ "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "C
 // vzdevek igralca (shranjen lokalno)
 function getNick(){ return storeGet("hod-nick")||""; }
 function setNick(n){ storeSet("hod-nick", n); }
+// vrne vzdevek za lestvico: prijavljeni uporabnik dobi svoj username avtomatsko,
+// gost se mora vpisati (enkrat, shrani se)
+function resolveNick(){
+  if(isLoggedIn && isLoggedIn()){
+    const u=currentUser();
+    if(u){ setNick(u); return u; }
+  }
+  let nick=getNick();
+  if(!nick){
+    nick=(prompt("Vnesi svoj vzdevek za lestvico:")||"").trim().slice(0,14);
+    if(!nick) return "";
+    setNick(nick);
+  }
+  return nick;
+}
 
 // vstavi rezultat na lestvico
 async function supaSubmit(row){
@@ -3353,7 +3368,8 @@ function currentUser(){ return _account?_account.username:null; }
 // lokalno stanje albuma kot en objekt (za sinhronizacijo)
 function localProgress(){
   return { album:getCollected(), coins:getCoins(), packs:getPendingPacks(),
-           daily:(()=>{try{return JSON.parse(storeGet('hod-daily')||'{}');}catch(e){return {};}})() };
+           daily:(()=>{try{return JSON.parse(storeGet('hod-daily')||'{}');}catch(e){return {};}})(),
+           dailyRec:(()=>{try{return JSON.parse(storeGet('hod-daily-rec')||'{}');}catch(e){return {};}})() };
 }
 function applyProgress(p){
   if(!p) return;
@@ -3361,6 +3377,7 @@ function applyProgress(p){
   if(typeof p.coins==='number') setCoins(p.coins);
   if(typeof p.packs==='number') setPendingPacks(p.packs);
   if(p.daily) storeSet('hod-daily', JSON.stringify(p.daily));
+  if(p.dailyRec) storeSet('hod-daily-rec', JSON.stringify(p.dailyRec));
 }
 async function accFetch(username){
   const url=`${SUPA_URL}/rest/v1/accounts?username=eq.${encodeURIComponent(username)}&select=*`;
@@ -4471,9 +4488,14 @@ function endClimb(){
 // ===== KVIZ LESTVICE (Supabase, isti vzorec) =====
 // samodejna objava rezultata: prvič vpraša za ime (lep pop-up), potem tiho objavlja
 async function autoSubmitScore(mode, score, correct){
+  // prijavljeni uporabnik: uporabi username avtomatsko
+  if(isLoggedIn && isLoggedIn() && currentUser()){
+    const u=currentUser(); setNick(u);
+    await doSubmitQuiz(mode, score, correct, u); return;
+  }
   const nick=getNick();
   if(nick){ await doSubmitQuiz(mode, score, correct, nick); return; }
-  // prvič: pokaži pop-up za ime
+  // gost prvič: pokaži pop-up za ime
   askNickname(async (name)=>{
     setNick(name);
     await doSubmitQuiz(mode, score, correct, name);
@@ -4519,8 +4541,8 @@ function askNickname(onConfirm){
 }
 
 async function postQuizScore(mode, score, correct, btn){
-  let nick=getNick();
-  if(!nick){ nick=(prompt("Vnesi svoj vzdevek za lestvico:")||"").trim().slice(0,14); if(!nick) return; setNick(nick); }
+  const nick=resolveNick();
+  if(!nick) return;
   if(btn){ btn.disabled=true; btn.textContent="Objavljam…"; }
   const row={ mode, challenge_day:todayKey(), nickname:nick, overall:Math.min(99,Math.round(score/20)),
     goal_id:null, goal_done:correct>=10, chem:correct, sim_wins:score, sim_title:null, roster:[] };
@@ -6931,12 +6953,8 @@ function currentMode(){
 }
 
 async function postToLeaderboard(ev, sim, btn){
-  let nick=getNick();
-  if(!nick){
-    nick=(prompt("Vnesi svoj vzdevek za lestvico:")||"").trim().slice(0,14);
-    if(!nick) return;
-    setNick(nick);
-  }
+  const nick=resolveNick();
+  if(!nick) return;
   if(btn){ btn.disabled=true; btn.textContent="Objavljam…"; }
   const mode=currentMode();
   const g=dailyMode?dailyGoal():null;
