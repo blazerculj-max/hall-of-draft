@@ -2058,7 +2058,7 @@ const MONTHLY_MODES=[
 // dnevne lestvice za nagrade
 const DAILY_REWARD_MODES=[
   {mode:'climb', label:'Daily Climb'},
-  {mode:'daily', label:'Daily Challenge'},
+  {mode:'daily', label:'Dnevni izziv'},
 ];
 // izračunaj, katere nagrade igralca čakajo (in jih še ni pobral)
 async function computePendingRewards(){
@@ -2601,7 +2601,7 @@ async function showRewards(){
     <div id="hod-tasks-box"></div>
     <div class="hod-rew-secth">🏅 Nagrade za uvrstitve</div>
     <div class="hod-verdict" style="max-width:480px;margin:0 auto 14px;font-size:13px">
-      Dnevne (Climb, Daily Challenge) pobereš naslednji dan, mesečne (Draft, Higher-Lower) prvi dan novega meseca.
+      Dnevne (Climb, Dnevni izziv) pobereš naslednji dan, mesečne (Draft, Higher-Lower) prvi dan novega meseca.
     </div>
     <div id="hod-rew-list"><div class="hod-alb-hint">Preverjam nagrade…</div></div>
     <div id="hod-rew-profile" style="margin-top:18px"></div>
@@ -2755,7 +2755,7 @@ function showIntro(){
       <div class="hod-verdict" style="margin:0 auto 18px;max-width:460px">
         Zavrti kolut, izberi sezono in draftaj igralce. Sestavi <b style="color:var(--gold)">12 igralcev</b>: največ 3 na pozicijo, vsaj 1 na vsako.
       </div>
-      <div class="hod-earn-info">💰 <b>Kako služiš:</b> draft polni dnevno kapico kovancev. <b>Mesečne lestvice</b> (Neomejeno, Lahko, Srednje, Težko) — top 3 meseca dobijo 📦 5/5/3 pakete + 🪙 200 (1. mesto). <b>Daily Challenge</b> — top 3 dneva 🪙 150/100/50.</div>
+      <div class="hod-earn-info">💰 <b>Kako služiš:</b> draft polni dnevno kapico kovancev. <b>Mesečne lestvice</b> (Neomejeno, Lahko, Srednje, Težko) — top 3 meseca dobijo 📦 5/5/3 pakete + 🪙 200 (1. mesto). <b>Dnevni izziv</b> — top 3 dneva 🪙 150/100/50.</div>
       <div class="hod-landing-row hod-draft-modes">
         <button class="hod-landing-card" id="hod-m-solo">
           <span class="hod-landing-emoji">🏀</span>
@@ -3441,7 +3441,7 @@ const DAILY_TASKS=[
   {id:'climb1', label:'Odigraj Daily Climb', goal:1, reward:15, icon:'🧗'},
   {id:'quiz3', label:'Odigraj 3 kvize', goal:3, reward:15, icon:'❓'},
   {id:'poker2', label:'Odigraj 2 pokra', goal:2, reward:15, icon:'🃏'},
-  {id:'challenge1', label:'Opravi Daily Challenge', goal:1, reward:20, icon:'🏆'},
+  {id:'challenge1', label:'Opravi Dnevni izziv', goal:1, reward:20, icon:'🏆'},
   {id:'stick5', label:'Prilepi 5 sličic', goal:5, reward:20, icon:'🏷️'},
 ];
 // zabeleži napredek naloge
