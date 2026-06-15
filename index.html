@@ -632,6 +632,7 @@
 .hod-mkt-card.rar-legendary{border-color:#ffd166;}
 .hod-mkt-card.rar-moment{border-color:#ff4d6d;}
 .hod-mkt-card.rar-lowlight{border-color:#6b7280;}
+.hod-mkt-card.rar-slovenski{border-color:#0073e6;}
 .hod-mkt-card.rar-rare{border-color:#9ec5e8;}
 .hod-mkt-photo{width:60px;height:60px;border-radius:50%;border:2px solid var(--orange);overflow:hidden;position:relative;margin-top:2px;}
 .hod-mkt-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%;}
@@ -677,6 +678,7 @@
 .hod-cd-front.rar-rare{border-color:#9ec5e8;}
 .hod-cd-front.rar-moment{border-color:#ff4d6d;box-shadow:0 0 30px rgba(255,77,109,.6),0 18px 50px rgba(0,0,0,.7);}
 .hod-cd-front.rar-lowlight{border-color:#6b7280;box-shadow:0 0 30px rgba(107,114,128,.5),0 18px 50px rgba(0,0,0,.7);}
+.hod-cd-front.rar-slovenski{border-color:#0073e6;box-shadow:0 0 30px rgba(0,115,230,.6),0 18px 50px rgba(0,0,0,.7);}
 /* diagonalno ozadje v klubskih barvah */
 .hod-cd-bg{position:absolute;inset:0;z-index:0;overflow:hidden;}
 .hod-cd-bg-base{position:absolute;inset:0;background:var(--tc1);}
@@ -744,6 +746,7 @@
 .hod-mom-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;overflow:hidden;-webkit-transform:translateZ(0);}
 .hod-mom-front{transform:rotateY(0deg);-webkit-transform:rotateY(0deg);border:4px solid #ffd166;box-shadow:0 16px 50px rgba(0,0,0,.7),0 0 34px rgba(255,209,102,.45);background:#1a0a2e;}
 .hod-mom-flip.lowlight .hod-mom-front{border-color:#8a9099;box-shadow:0 16px 50px rgba(0,0,0,.8),0 0 30px rgba(138,144,153,.4);background:#0a0b0e;}
+.hod-mom-flip.slovenski .hod-mom-front{border-color:#0073e6;box-shadow:0 16px 50px rgba(0,0,0,.7),0 0 34px rgba(0,115,230,.5);background:#0a1426;}
 /* slika čez celo kartico — blag zoom skrije tanek rob slike */
 .hod-mom-fullimg{position:absolute;width:108%;height:108%;left:-4%;top:-4%;object-fit:cover;object-position:center 40%;}
 /* slike z lastnim okvirjem: rahlo povečamo, da lesena podlaga/rob uide čez kartico */
@@ -759,12 +762,15 @@
   font-family:'Anton';font-size:13px;letter-spacing:2px;color:#ffd166;
   background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);}
 .hod-mom-flip.lowlight .hod-mom-badge{color:#f0f0f0;padding-top:13px;}
+.hod-mom-flip.slovenski .hod-mom-badge{color:#4da3ff;}
 /* napis spodaj čez sliko */
 .hod-mom-bottom{position:absolute;bottom:0;left:0;right:0;z-index:2;padding:40px 16px 18px;text-align:center;
   background:linear-gradient(0deg,rgba(8,4,16,.96),rgba(8,4,16,.6) 55%,transparent);}
 .hod-mom-flip.lowlight .hod-mom-bottom{background:linear-gradient(0deg,rgba(5,5,8,.97),rgba(5,5,8,.6) 55%,transparent);}
 .hod-mom-val{font-family:'Anton';font-size:42px;line-height:1;color:#ffd166;text-shadow:0 2px 8px rgba(0,0,0,.6);}
 .hod-mom-flip.lowlight .hod-mom-val{color:#dc3c3c;}
+.hod-mom-flip.slovenski .hod-mom-val{color:#4da3ff;}
+.hod-mom-flip.slovenski .hod-mom-sub{color:#9ec5e8;}
 .hod-mom-nm{font-family:'Anton';font-size:20px;color:#fff;margin-top:3px;text-shadow:0 2px 6px rgba(0,0,0,.7);}
 .hod-mom-sub{font-family:'Oswald';font-size:11px;letter-spacing:1px;color:#ffd166;margin-top:3px;}
 .hod-mom-flip.lowlight .hod-mom-sub{color:#b0b6bf;}
@@ -775,6 +781,9 @@
   background:linear-gradient(160deg,#241830,#0d0816);
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;text-align:center;}
 .hod-mom-flip.lowlight .hod-mom-back{border-color:#8a9099;background:linear-gradient(160deg,#1c1f26,#0a0b0e);}
+.hod-mom-flip.slovenski .hod-mom-back{border-color:#0073e6;background:linear-gradient(160deg,#10243f,#0a1426);}
+.hod-mom-flip.slovenski .hod-mom-back-badge{color:#4da3ff;}
+.hod-mom-flip.slovenski .hod-mom-back-mom{color:#4da3ff;}
 .hod-mom-back-badge{font-family:'Anton';font-size:12px;letter-spacing:2px;color:#ffd166;margin-bottom:14px;}
 .hod-mom-flip.lowlight .hod-mom-back-badge{color:#b0b6bf;}
 .hod-mom-back-title{font-family:'Anton';font-size:24px;color:#fff;line-height:1.05;}
@@ -824,6 +833,7 @@
 .hod-alb-tab.moment.on{background:#ff4d6d;border-color:#ff4d6d;}
 .hod-alb-cell.rar-moment{border-color:#ff4d6d;box-shadow:0 0 14px rgba(255,77,109,.6);}
 .hod-alb-cell.rar-lowlight{border-color:#6b7280;box-shadow:0 0 12px rgba(107,114,128,.5);}
+.hod-alb-cell.rar-slovenski{border-color:#0073e6;box-shadow:0 0 14px rgba(0,115,230,.6);}
 .hod-alb-cells.stick .hod-alb-cell{cursor:pointer;}
 .hod-alb-cells.stick .hod-alb-cell:hover{transform:translateY(-3px);border-color:var(--orange);}
 .hod-alb-dup{position:absolute;top:3px;right:3px;z-index:3;background:var(--orange);color:#fff;font-family:'Anton';
@@ -901,6 +911,7 @@
 /* moment */
 .hod-flip.rar-moment .hod-flip-front{border-color:#ff4d6d;box-shadow:0 0 26px rgba(255,77,109,.9);}
 .hod-flip.rar-lowlight .hod-flip-front{border-color:#6b7280;box-shadow:0 0 22px rgba(107,114,128,.8);}
+.hod-flip.rar-slovenski .hod-flip-front{border-color:#0073e6;box-shadow:0 0 26px rgba(0,115,230,.9);}
 .hod-flip.rar-moment.flipped{animation:pkoLegShake .7s ease;}
 .hod-leg-burst{position:absolute;inset:-30px;border-radius:50%;pointer-events:none;opacity:0;z-index:-1;background:radial-gradient(circle,rgba(255,209,102,.8),transparent 70%);}
 .hod-flip.rar-legendary.flipped .hod-leg-burst,.hod-flip.rar-moment.flipped .hod-leg-burst{animation:pkoLegBurst 1s ease forwards;}
@@ -3772,7 +3783,8 @@ const RARITY_DEFS={
   rare:{name:'Redek', col:'#9ec5e8', weight:28},
   legendary:{name:'Legendaren', col:'#ffd166', weight:7.5},
   moment:{name:'MOMENT', col:'#ff4d6d', weight:0.5},
-  lowlight:{name:'INFAMOUS', col:'#9ca3af', weight:0.5}
+  lowlight:{name:'INFAMOUS', col:'#9ca3af', weight:0.5},
+  slovenski:{name:'SLOVENSKI', col:'#0073e6', weight:0.5}
 };
 const DECADE_ORDER=['70s','80s','90s','2000s','2010s','2020s'];
 // zbrane kartice: { pid: {stuck:bool, count:int} }  stuck=prilepljena v album
@@ -3853,12 +3865,22 @@ const MOMENTS=[
   {id:'mj_retire', name:'Michael Jordan', moment:'1. upokojitev', team:'CHI', season:'1993-94', era:'90s', pid:893, val:'✦', sub:'odhod v baseball', desc:'Oktobra 1993 je Michael Jordan na vrhuncu kariere nenadoma končal kariero in se posvetil baseballu. Vrnil se je leta 1995.', lowlight:true},
   {id:'tonya', name:'Gilbert Arenas', moment:'Orožje v slačilnici', team:'WAS', season:'2009-10', era:'2000s', pid:2240, val:'⚠', sub:'suspenz', desc:'Decembra 2009 je Gilbert Arenas v slačilnico prinesel pištole po sporu s soigralcem Javarisom Crittentonom. Suspendiran je bil za preostanek sezone.', lowlight:true},
   {id:'tmac', name:'Tracy McGrady', moment:'13 točk v 33s', team:'HOU', season:'2004-05', era:'2000s', pid:1503, val:'13', sub:'neverjeten preobrat', desc:'9. decembra 2004 je Tracy McGrady v zadnjih 33 sekundah dosegel 13 točk in obrnil tekmo proti San Antoniu — eden najbolj noro dramatičnih trenutkov.'},
+  {id:'milic', name:'Marko Milič', moment:'Prvi Slovenec v NBA', team:'PHX', season:'1997-98', era:'90s', pid:0, val:'🇸🇮', sub:'pionir', slovenski:true, desc:'Leta 1997 je Marko Milič kot prvi Slovenec zaigral v ligi NBA. Izbran je bil kot 33. na naboru 1997 (Philadelphia), zaigral pa za Phoenix Suns — oral je ledino za vse, ki so prišli za njim.'},
+  {id:'nesterovic', name:'Rašo Nesterović', moment:'Prvi slovenski prstan', team:'SAS', season:'2004-05', era:'2000s', pid:0, val:'💍', sub:'prvak 2005', slovenski:true, desc:'Radoslav "Rašo" Nesterović je leta 2005 s San Antonio Spurs postal prvi Slovenec s šampionskim prstanom NBA. Izbran kot 17. na naboru 1998 — dolgo najvišji slovenski izbor.'},
+  {id:'udrih', name:'Beno Udrih', moment:'Dvojni prvak', team:'SAS', season:'2006-07', era:'2000s', pid:0, val:'💍💍', sub:'2005 & 2007', slovenski:true, desc:'Beno Udrih je s San Antonio Spurs osvojil dva naslova NBA (2005 in 2007). Kot novinec je takoj okusil vrh — eden najuspešnejših Slovencev v ligi.'},
+  {id:'vujacic', name:'Saša Vujačić', moment:'The Machine', team:'LAL', season:'2009-10', era:'2000s', pid:0, val:'💍💍', sub:'2 naslova z Lakers', slovenski:true, desc:'Saša "The Machine" Vujačić je z LA Lakers osvojil dva naslova (2009, 2010), ob boku Kobeja Bryanta. Njegova prosta meta sta pomagala zapečatiti finale 2010.'},
+  {id:'nachbar', name:'Boštjan Nachbar', moment:'Najvišji slovenski nabor', team:'HOU', season:'2002-03', era:'2000s', pid:0, val:'#15', sub:'15. izbor 2002', slovenski:true, desc:'Boštjan Nachbar je bil leta 2002 izbran kot 15. na naboru (Houston Rockets) — dolgo najvišje izbrani Slovenec, dokler ni prišel Dončić.'},
+  {id:'dragic_asg', name:'Goran Dragić', moment:'Prvi slovenski All-Star', team:'MIA', season:'2017-18', era:'2010s', pid:201609, val:'⭐', sub:'All-Star 2018', slovenski:true, desc:'Februarja 2018 je Goran Dragić postal prvi Slovenec, izbran na tekmo zvezd NBA (All-Star). V 10. sezoni, kot vodja Miami Heat — krona vztrajne kariere.'},
+  {id:'cancar', name:'Vlatko Čančar', moment:'Del prvaka', team:'DEN', season:'2022-23', era:'2020s', pid:1629740, val:'💍', sub:'Denver 2023', slovenski:true, desc:'Vlatko Čančar je bil del Denver Nuggets, ki so leta 2023 osvojili prvi naslov v zgodovini kluba. Kljub poškodbam vztrajen član ekipe ob Jokiću.'},
+  {id:'doncic73', name:'Luka Dončić', moment:'73 točk', team:'DAL', season:'2023-24', era:'2020s', pid:1629029, val:'73', sub:'vs Atlanta', slovenski:true, desc:'27. januarja 2024 je Luka Dončić proti Atlanti dosegel 73 točk — eden najvišjih posamičnih izidov v zgodovini NBA in slovenski rekord.'},
+  {id:'doncic_trade', name:'Luka Dončić', moment:'Šok menjava', team:'LAL', season:'2024-25', era:'2020s', pid:1629029, val:'🔄', sub:'na Lakers 2025', slovenski:true, desc:'Februarja 2025 je bil Luka Dončić v eni najbolj šokantnih menjav v zgodovini lige zamenjan iz Dallasa v LA Lakers (za Anthonyja Davisa) — konec ene in začetek nove ere.'},
 ];
-function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:m.lowlight?'lowlight':'moment'})); }
+function momentRarity(m){ return m.slovenski?'slovenski':(m.lowlight?'lowlight':'moment'); }
+function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:momentRarity(m)})); }
 // momenti, ki imajo custom ilustracijo v assets/moments/{id}.png
-const MOMENT_IMG=new Set(['kobe81','wilt100','mj63','magic42','klay37','lebron','tmac','malice','artest','barkley','sprewell','mj_retire','tonya']);
+const MOMENT_IMG=new Set(['kobe81','wilt100','mj63','magic42','klay37','lebron','tmac','malice','artest','barkley','sprewell','mj_retire','tonya','milic','nesterovic','udrih','vujacic','nachbar','dragic_asg','cancar','doncic73','doncic_trade']);
 // slike, ki imajo SVOJ okvir/ozadje (rahlo povečamo, da rob "uide" čez kartico)
-const MOMENT_FRAMED=new Set(['kobe81','magic42','wilt100','mj63','tonya']);
+const MOMENT_FRAMED=new Set(['kobe81','magic42','wilt100','mj63','tonya','milic','nesterovic','udrih','vujacic','nachbar','dragic_asg','cancar','doncic73','doncic_trade']);
 function hasMomentImg(id){ return MOMENT_IMG.has(id); }
 function momentImgTag(m){
   if(hasMomentImg(m.id)){
@@ -5087,13 +5109,14 @@ function renderAlbumGrid(byDec){
   if(_albumDecade==='moments'){
     let moms=MOMENTS.slice();
     if(q) moms=moms.filter(m=>m.name.toLowerCase().includes(q));
-    const highs=moms.filter(m=>!m.lowlight);
+    const highs=moms.filter(m=>!m.lowlight&&!m.slovenski);
     const lows=moms.filter(m=>m.lowlight);
+    const slos=moms.filter(m=>m.slovenski);
     const cellHtml=(m)=>{
       const st=col[m.id]&&col[m.id].stuck;
       const isTarget=target&&target===m.id;
-      const rar=m.lowlight?'lowlight':'moment';
-      const col2=m.lowlight?'#9ca3af':'#ff4d6d';
+      const rar=momentRarity(m);
+      const col2=m.slovenski?'#4da3ff':(m.lowlight?'#9ca3af':'#ff4d6d');
       if(!st){
         return `<div class="hod-alb-cell empty rar-${rar} ${isTarget?'target':''}" data-stickid="${m.id}"><div class="hod-alb-q">?</div>${isTarget?'<div class="hod-alb-here">tukaj!</div>':''}</div>`;
       }
@@ -5102,9 +5125,12 @@ function renderAlbumGrid(byDec){
     };
     const gotHigh=highs.filter(m=>col[m.id]&&col[m.id].stuck).length;
     const gotLow=lows.filter(m=>col[m.id]&&col[m.id].stuck).length;
+    const gotSlo=slos.filter(m=>col[m.id]&&col[m.id].stuck).length;
     grid.innerHTML=
       `<div class="hod-alb-team"><div class="hod-alb-team-h">⭐ Ultra-rare Momenti <span>${gotHigh}/${highs.length}</span></div><div class="hod-alb-cells">`+
       highs.map(cellHtml).join('')+`</div></div>`+
+      (slos.length?`<div class="hod-alb-team" style="margin-top:14px"><div class="hod-alb-team-h" style="color:#4da3ff;border-color:#0073e6">🇸🇮 Slovenski Momenti <span>${gotSlo}/${slos.length}</span></div><div class="hod-alb-cells">`+
+      slos.map(cellHtml).join('')+`</div></div>`:'')+
       (lows.length?`<div class="hod-alb-team" style="margin-top:14px"><div class="hod-alb-team-h" style="color:#9ca3af;border-color:#6b7280">💀 Infamous Momenti <span>${gotLow}/${lows.length}</span></div><div class="hod-alb-cells">`+
       lows.map(cellHtml).join('')+`</div></div>`:'');
     bindGridClicks(grid);
@@ -5178,7 +5204,7 @@ function bindGridClicks(grid){
       }
       if(stickCard(id)){
         if(_pendingStick===id) _pendingStick=null;
-        const cat={}; albumCatalog().forEach(c=>cat[c.uid]=c); MOMENTS.forEach(m=>cat[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
+        const cat={}; albumCatalog().forEach(c=>cat[c.uid]=c); MOMENTS.forEach(m=>cat[m.id]={...m,rarity:momentRarity(m)});
         const c=cat[id];
         if(c){
           el.classList.remove('empty','target','waiting');
@@ -5277,11 +5303,12 @@ function showDevGallery(){
   const mom=momentCatalog();
   const rarOrder={lowlight:0,moment:1,legendary:2,rare:3,common:4};
   // momente posebej (z lastnimi slikami), ostalo po redkosti
-  const ultra=mom.filter(m=>!m.lowlight);
+  const ultra=mom.filter(m=>!m.lowlight&&!m.slovenski);
   const low=mom.filter(m=>m.lowlight);
+  const slos=mom.filter(m=>m.slovenski);
   function cellMoment(m){
-    const rar=m.lowlight?'lowlight':'moment';
-    const col2=m.lowlight?'#9ca3af':'#ffd166';
+    const rar=momentRarity(m);
+    const col2=m.slovenski?'#4da3ff':(m.lowlight?'#9ca3af':'#ffd166');
     const img = hasMomentImg(m.id) ? `<img src="assets/moments/${m.id}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%" alt="" onerror="this.style.display='none'">` : avatarImg(m.pid,'');
     return `<div class="hod-alb-cell rar-${rar} moment-cell" data-moment="${m.id}"><div class="hod-alb-photo">${img}</div><div class="hod-alb-fullnm">${escapeHtml(m.name)}</div><div class="hod-alb-szn">${escapeHtml(m.moment)}</div><div class="hod-alb-rt" style="color:${col2}">${m.val}</div></div>`;
   }
@@ -5300,6 +5327,8 @@ function showDevGallery(){
   // momenti
   html+=`<div class="hod-alb-section-t">⭐ Ultra-rare momenti (${ultra.length})</div>`;
   html+=`<div class="hod-alb-grid">`+ultra.map(cellMoment).join('')+`</div>`;
+  html+=`<div class="hod-alb-section-t">🇸🇮 Slovenski momenti (${slos.length})</div>`;
+  html+=`<div class="hod-alb-grid">`+slos.map(cellMoment).join('')+`</div>`;
   html+=`<div class="hod-alb-section-t">💀 Infamous momenti (${low.length})</div>`;
   html+=`<div class="hod-alb-grid">`+low.map(cellMoment).join('')+`</div>`;
   // ostale redkosti
@@ -5322,13 +5351,17 @@ function showMomentDetail(m){
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay hod-mom-overlay';
   const low=!!m.lowlight;
+  const slo=!!m.slovenski;
+  const flipCls = slo?'slovenski':(low?'lowlight':'highlight');
+  const badgeF = slo?'🇸🇮 SLOVENSKI MOMENT':(low?'💀 INFAMOUS MOMENT':'⭐ ULTRA-RARE MOMENT');
+  const badgeB = slo?'🇸🇮 SLOVENSKI':(low?'💀 INFAMOUS':'⭐ MOMENT');
   ov.innerHTML=`<div class="hod-mom-wrap">
-    <div class="hod-mom-flip ${low?'lowlight':'highlight'}" id="hod-mom-flip">
+    <div class="hod-mom-flip ${flipCls}" id="hod-mom-flip">
       <div class="hod-mom-inner">
         <div class="hod-mom-face hod-mom-front">
           ${momentImgTag(m)}
           <div class="hod-mom-warntop"></div>
-          <div class="hod-mom-badge">${low?'💀 INFAMOUS MOMENT':'⭐ ULTRA-RARE MOMENT'}</div>
+          <div class="hod-mom-badge">${badgeF}</div>
           <div class="hod-mom-bottom">
             <div class="hod-mom-val">${escapeHtml(m.val)}</div>
             <div class="hod-mom-nm">${escapeHtml(m.name)}</div>
@@ -5337,7 +5370,7 @@ function showMomentDetail(m){
           <div class="hod-mom-flip-hint">tapni za zgodbo ↻</div>
         </div>
         <div class="hod-mom-face hod-mom-back">
-          <div class="hod-mom-back-badge">${low?'💀 INFAMOUS':'⭐ MOMENT'}</div>
+          <div class="hod-mom-back-badge">${badgeB}</div>
           <div class="hod-mom-back-title">${escapeHtml(m.name)}</div>
           <div class="hod-mom-back-mom">${escapeHtml(m.moment)}</div>
           <div class="hod-mom-back-meta">${escapeHtml(m.sub)}${m.season?' · '+m.season:''}</div>
@@ -5358,7 +5391,7 @@ function showMomentDetail(m){
 let _unstuckTeam='', _unstuckDec='';
 function renderUnstuck(body){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
   let items=Object.keys(col).filter(k=>!col[k].stuck && (col[k].count||0)>0).map(k=>catMap[k]).filter(Boolean);
   if(!items.length){ body.innerHTML=`<div class="hod-alb-hint">Nimaš nenalepljenih kartic. Odpri paket ali zaslužiš v igrah!</div>`; return; }
   const teams=[...new Set(items.map(c=>c.team).filter(Boolean))].sort();
@@ -5462,7 +5495,7 @@ async function buyFromMarket(id, mb){
 }
 async function renderMarketSell(mb){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
   // dvojniki = count >= 2 (ali stuck && count>=1) — kar imaš odveč
   const dups=Object.keys(col).filter(k=>{
     const c=col[k]; const extra=(c.count||0) - 0; // count so nenalepljene kopije
@@ -5485,7 +5518,7 @@ async function renderMarketSell(mb){
   mb.querySelectorAll('.hod-mkt-sell').forEach(btn=>btn.onclick=()=>openSellDialog(btn.dataset.uid, mb));
 }
 function openSellDialog(uid, mb){
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
   const c=catMap[uid]; if(!c) return;
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
@@ -5614,7 +5647,7 @@ function showMissingReport(){
 }
 function renderShop(body){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:m.lowlight?'lowlight':'moment'});
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
   const dups=Object.keys(col).filter(k=>(col[k].count||0)>0).map(k=>({c:catMap[k],n:col[k].count})).filter(x=>x.c);
   const dupValue=dups.reduce((a,x)=>a+(DUP_VALUE[x.c.rarity]||3)*x.n,0);
   body.innerHTML=`
