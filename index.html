@@ -4908,7 +4908,10 @@ function showAlbum(){
         <button class="hod-alb-tabm ${_albumTab==='trgovina'?'on':''}" data-t="trgovina">Trgovina</button>
       </div>
       <div id="hod-alb-body"></div>
-      <div style="margin-top:18px"><button class="hod-btn secondary" id="hod-alb-back">← Domov</button></div>
+      <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:10px">
+        <button class="hod-btn secondary" id="hod-alb-back">← Domov</button>
+        <button id="hod-dev-btn" title="dev" style="background:none;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.3);font-size:10px;padding:5px 9px;border-radius:8px;cursor:pointer;font-family:monospace">dev</button>
+      </div>
     </div>
     <button id="hod-unstuck-fab" class="hod-unstuck-fab" style="display:${unstuckTotal>0?'flex':'none'}">
       <span class="hod-fab-ico">📥</span>
@@ -4930,6 +4933,12 @@ function showAlbum(){
     window.addEventListener('scroll', window._hodScrollHandler);
   }
   document.getElementById('hod-alb-back').onclick=()=>goHome();
+  const devb=document.getElementById('hod-dev-btn');
+  if(devb) devb.onclick=()=>{
+    const pass=(prompt('Dev geslo:')||'').trim();
+    if(pass==='TEST'){ showDevGallery(); }
+    else if(pass) alert('Napačno geslo.');
+  };
   const bt=document.getElementById('hod-alb-backtop'); if(bt) bt.onclick=()=>goHome();
   const ob=document.getElementById('hod-alb-open'); if(ob) ob.onclick=()=>showPackOpening();
   screen.querySelectorAll('.hod-alb-tabm').forEach(b=>b.onclick=()=>{ _albumTab=b.dataset.t; renderAlbumBody(); });
@@ -5193,6 +5202,54 @@ function showCardDetail(c){
   flip.onclick=()=>flip.classList.toggle('flipped');
   ov.querySelector('#hod-cd-close').onclick=()=>ov.remove();
   ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
+}
+// DEV galerija: prikaže VSE kartice (poln album) samo za ogled — ne spremeni zbirke
+function showDevGallery(){
+  phase="dev";
+  const cat=albumCatalog();
+  const mom=momentCatalog();
+  const rarOrder={lowlight:0,moment:1,legendary:2,rare:3,common:4};
+  // momente posebej (z lastnimi slikami), ostalo po redkosti
+  const ultra=mom.filter(m=>!m.lowlight);
+  const low=mom.filter(m=>m.lowlight);
+  function cellMoment(m){
+    const rar=m.lowlight?'lowlight':'moment';
+    const col2=m.lowlight?'#9ca3af':'#ffd166';
+    const img = hasMomentImg(m.id) ? `<img src="assets/moments/${m.id}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%" alt="" onerror="this.style.display='none'">` : avatarImg(m.pid,'');
+    return `<div class="hod-alb-cell rar-${rar} moment-cell" data-moment="${m.id}"><div class="hod-alb-photo">${img}</div><div class="hod-alb-fullnm">${escapeHtml(m.name)}</div><div class="hod-alb-szn">${escapeHtml(m.moment)}</div><div class="hod-alb-rt" style="color:${col2}">${m.val}</div></div>`;
+  }
+  function cellCard(c){
+    return `<div class="hod-alb-cell rar-${c.rarity}" data-uid="${c.uid}"><div class="hod-alb-photo">${avatarImg(c.pid,'')}</div><div class="hod-alb-fullnm">${escapeHtml(c.name)}</div><div class="hod-alb-szn">${escapeHtml(c.season||'')}</div><div class="hod-alb-rt">${c.rating}</div></div>`;
+  }
+  const byRar={};
+  cat.forEach(c=>{ (byRar[c.rarity]=byRar[c.rarity]||[]).push(c); });
+  let html=`<div class="hod-result hod-fade">
+    <div class="hod-alb-header">
+      <button class="hod-alb-backtop" id="hod-dev-back">← Nazaj v album</button>
+      <div class="hod-stage-label" style="margin:0">🛠️ DEV — vse kartice</div>
+      <span style="width:120px"></span>
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:12px">Samo za ogled. Klikni moment za predogled kartice.</div>`;
+  // momenti
+  html+=`<div class="hod-alb-section-t">⭐ Ultra-rare momenti (${ultra.length})</div>`;
+  html+=`<div class="hod-alb-grid">`+ultra.map(cellMoment).join('')+`</div>`;
+  html+=`<div class="hod-alb-section-t">💀 Infamous momenti (${low.length})</div>`;
+  html+=`<div class="hod-alb-grid">`+low.map(cellMoment).join('')+`</div>`;
+  // ostale redkosti
+  ['legendary','rare','common'].forEach(r=>{
+    const arr=byRar[r]||[]; if(!arr.length) return;
+    const nm={legendary:'🟡 Legendarne',rare:'🔵 Redke',common:'⚪ Navadne'}[r];
+    html+=`<div class="hod-alb-section-t">${nm} (${arr.length})</div>`;
+    html+=`<div class="hod-alb-grid">`+arr.map(cellCard).join('')+`</div>`;
+  });
+  html+=`<div style="margin-top:18px;text-align:center"><button class="hod-btn secondary" id="hod-dev-home">← Domov</button></div></div>`;
+  screen.innerHTML=html;
+  document.getElementById('hod-dev-back').onclick=()=>showAlbum();
+  document.getElementById('hod-dev-home').onclick=()=>goHome();
+  // klik na moment = predogled full kartice
+  screen.querySelectorAll('.moment-cell').forEach(el=>{
+    el.onclick=()=>{ const m=MOMENTS.find(x=>x.id===el.dataset.moment); if(m) showMomentDetail(m); };
+  });
 }
 function showMomentDetail(m){
   const ov=document.createElement('div');
