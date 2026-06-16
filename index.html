@@ -652,6 +652,23 @@
 .hod-pkm-card{position:relative;}
 .hod-pkm-card.pk-wild{border-color:#ffd60a!important;box-shadow:0 0 10px rgba(255,214,10,.5)!important;}
 .hod-vs-hand{background:var(--gold);color:#1a1206;font-weight:700;padding:1px 6px;border-radius:8px;font-size:10px;}
+/* 3-delni momenti v albumu */
+.hod-mom3-unit{margin:4px;border:2px solid #2a3142;border-radius:10px;padding:6px;background:rgba(0,0,0,.25);}
+.hod-mom3-unit.done{border-color:#ff4d6d;box-shadow:0 0 14px rgba(255,77,109,.4);cursor:pointer;}
+.hod-mom3-strip{display:flex;gap:3px;border-radius:6px;overflow:hidden;aspect-ratio:3/1.4;}
+.hod-mom3-cell{flex:1;position:relative;overflow:hidden;background:#11151f;display:flex;align-items:center;justify-content:center;}
+.hod-mom3-cell.empty{border:1px dashed rgba(255,255,255,.18);}
+.hod-mom3-cell.empty.target{border-color:#ff4d6d;animation:miniTargetPulse 1s ease-in-out infinite;}
+.hod-mom3-q{font-family:'Anton';font-size:14px;color:rgba(255,255,255,.4);}
+.hod-mom3-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.hod-mom3-num{position:absolute;bottom:2px;right:3px;font-size:9px;font-weight:800;color:#fff;background:rgba(0,0,0,.6);padding:0 4px;border-radius:4px;}
+.hod-mom3-label{font-family:'Oswald';font-size:11px;color:var(--ink);margin-top:5px;text-align:center;}
+.hod-mom3-label b{color:#ff4d6d;}
+.hod-mom3-label span{color:var(--muted);}
+.hod-alb-photo-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.hod-mom-assembled{font-family:'Anton';font-size:16px;color:#ff4d6d;text-align:center;margin-bottom:10px;animation:setdonePop .5s ease;letter-spacing:1px;}
+.hod-mom-flip.just-assembled{animation:assembleIn .8s cubic-bezier(.34,1.4,.5,1);}
+@keyframes assembleIn{0%{transform:scale(.6) rotateY(40deg);opacity:0;}100%{transform:scale(1) rotateY(0);opacity:1;}}
 /* francoska ruleta */
 .frt-wrap{max-width:480px;margin:0 auto;}
 .frt-balance{text-align:center;font-family:'Oswald';font-size:14px;color:var(--ink);margin-bottom:10px;}
@@ -4575,8 +4592,60 @@ const MOMENTS=[
   {id:'doncic73', name:'Luka Dončić', moment:'73 točk', team:'DAL', season:'2023-24', era:'2020s', pid:1629029, val:'73', sub:'vs Atlanta', slovenski:true, desc:'27. januarja 2024 je Luka Dončić proti Atlanti dosegel 73 točk — eden najvišjih posamičnih izidov v zgodovini NBA in slovenski rekord.'},
   {id:'doncic_trade', name:'Luka Dončić', moment:'Šok menjava', team:'LAL', season:'2024-25', era:'2020s', pid:1629029, val:'2025', sub:'na Lakers 2025', slovenski:true, desc:'Februarja 2025 je bil Luka Dončić v eni najbolj šokantnih menjav v zgodovini lige zamenjan iz Dallasa v LA Lakers (za Anthonyja Davisa) — konec ene in začetek nove ere.'},
 ];
+// enotna mapa vseh "stickabilnih" enot: album karte + celi momenti + tretjine split momentov
+function buildCatMap(){
+  const catMap={};
+  albumCatalog().forEach(c=>catMap[c.uid]=c);
+  MOMENTS.forEach(m=>{
+    catMap[m.id]={...m,rarity:momentRarity(m),era:'moments'};
+    if(isSplitMoment(m.id)){
+      [1,2,3].forEach(n=>{ catMap[`${m.id}_${n}`]={...m,id:`${m.id}_${n}`,rarity:'rare',part:n,baseId:m.id,era:'moments',name:`${m.name} (${n}/3)`}; });
+    }
+  });
+  return catMap;
+}
 function momentRarity(m){ return m.slovenski?'slovenski':(m.lowlight?'lowlight':'moment'); }
-function momentCatalog(){ return MOMENTS.map(m=>({...m, rating:99, rarity:momentRarity(m)})); }
+// ===== 3-DELNI MOMENTI =====
+// vodoravni momenti se razdelijo na 3 tretjine (1/3, 2/3, 3/3). Vsaka je svoja nalepka.
+const MOMENT_SPLIT=new Set(['klay37','lebron','tmac','malice','artest','barkley','sprewell','mj_retire','milic','nesterovic','vujacic','doncic_trade']);
+function isSplitMoment(id){ return MOMENT_SPLIT.has(id); }
+// ali je dani id "del" (tretjina), npr 'lebron_2'
+function isMomentPart(id){ return /_[123]$/.test(id||''); }
+function partBase(id){ return id.replace(/_[123]$/,''); }
+function partNum(id){ const m=(id||'').match(/_([123])$/); return m?parseInt(m[1]):0; }
+// vrne vse tri dele momenta kot objekte
+function momentParts(baseId){
+  const base=MOMENTS.find(m=>m.id===baseId); if(!base) return [];
+  return [1,2,3].map(n=>({
+    ...base, id:`${baseId}_${n}`, part:n, baseId,
+    rarity:'rare', // tretjine so "redke" (stopnjo nižje od ultra momenta) — realno za sestaviti
+    isPart:true
+  }));
+}
+// ali so vse tri tretjine momenta prilepljene
+function momentAssembled(baseId, col){
+  col=col||getCollected();
+  return [1,2,3].every(n=>col[`${baseId}_${n}`] && col[`${baseId}_${n}`].stuck);
+}
+function momentCatalog(){
+  // celi momenti (framed) + tretjine (split) namesto celih
+  const out=[];
+  MOMENTS.forEach(m=>{
+    if(isSplitMoment(m.id)){
+      momentParts(m.id).forEach(p=>out.push({...p, rating:99}));
+    } else {
+      out.push({...m, rating:99, rarity:momentRarity(m)});
+    }
+  });
+  return out;
+}
+// za prikaz v zbirki: seznam "enot" za album (cel moment ALI skupina treh)
+function momentUnits(){
+  return MOMENTS.map(m=>({
+    base:m, split:isSplitMoment(m.id),
+    partIds: isSplitMoment(m.id) ? [1,2,3].map(n=>`${m.id}_${n}`) : [m.id]
+  }));
+}
 // momenti, ki imajo custom ilustracijo v assets/moments/{id}.png
 const MOMENT_IMG=new Set(['kobe81','wilt100','mj63','magic42','klay37','lebron','tmac','malice','artest','barkley','sprewell','mj_retire','tonya','milic','nesterovic','udrih','vujacic','nachbar','dragic_asg','cancar','doncic73','doncic_trade']);
 // slike, ki imajo SVOJ okvir/ozadje (rahlo povečamo, da rob "uide" čez kartico)
@@ -4601,6 +4670,11 @@ function momentImgTag(m){
   }
   // fallback: foto igralca
   return `<div class="hod-mom-fallback">${avatarImg(m.pid,'')}</div>`;
+}
+// img za eno tretjino momenta (1/2/3) — pokaže levo/sredino/desno
+function momentPartImgTag(baseId, part, cls){
+  const xpos = part===1?'0%' : part===2?'50%' : '100%';
+  return `<img class="${cls||'hod-mompart-img'}" src="assets/moments/${baseId}.png" style="object-position:${xpos} center" alt="" onerror="this.style.display='none'">`;
 }
 
 // zbirka unikatnih kartic iz POOL-a: rating 70+, ena kartica = unikaten pid (najboljša sezona)
@@ -5946,7 +6020,7 @@ function renderAlbumBody(){
     const wait=waitByDec[d]||0;
     return `<button class="hod-alb-tab ${d===_albumDecade?'on':''}" data-dec="${d}">${d}<span>${got}/${tot}</span>${wait>0?`<i class="hod-wait-dot">${wait}</i>`:''}</button>`;
   }).join('');
-  const momGot=MOMENTS.filter(m=>col[m.id]&&col[m.id].stuck).length;
+  const momGot=MOMENTS.filter(m=>isSplitMoment(m.id)?momentAssembled(m.id,col):(col[m.id]&&col[m.id].stuck)).length;
   const momWait=waitByDec['moments']||0;
   // iskalnik (po imenu ALI številki)
   let numInfo='';
@@ -5989,7 +6063,7 @@ function renderAlbumBody(){
 // koliko nenalepljenih čaka po dekadi (za rdečo piko + številko)
 function albumWaitByDecade(){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,era:'moments'});
+  const catMap=buildCatMap();
   const out={};
   Object.keys(col).forEach(k=>{
     if(!col[k].stuck && (col[k].count||0)>0){
@@ -6011,19 +6085,38 @@ function renderAlbumGrid(byDec){
     const lows=moms.filter(m=>m.lowlight);
     const slos=moms.filter(m=>m.slovenski);
     const cellHtml=(m)=>{
+      const col2=m.slovenski?'#4da3ff':(m.lowlight?'#9ca3af':'#ff4d6d');
+      const rar=momentRarity(m);
+      // SPLIT moment -> 3 ozke tretjine v eni "panoramski" enoti
+      if(isSplitMoment(m.id)){
+        const assembled=momentAssembled(m.id, col);
+        const thirds=[1,2,3].map(n=>{
+          const pid=`${m.id}_${n}`;
+          const st=col[pid]&&col[pid].stuck;
+          const isTgt=target&&target===pid;
+          if(!st){
+            return `<div class="hod-mom3-cell empty ${isTgt?'target':''}" data-stickid="${pid}"><div class="hod-mom3-q">${n}/3</div></div>`;
+          }
+          return `<div class="hod-mom3-cell filled">${momentPartImgTag(m.id,n,'hod-mom3-img')}<div class="hod-mom3-num">${n}/3</div></div>`;
+        }).join('');
+        return `<div class="hod-mom3-unit ${assembled?'done':''}" ${assembled?`data-moment="${m.id}"`:''}>
+          <div class="hod-mom3-strip">${thirds}</div>
+          <div class="hod-mom3-label">${escapeHtml(m.name)} · ${escapeHtml(m.moment)} ${assembled?'<b>✓ sestavljeno</b>':`<span>${[1,2,3].filter(n=>col[m.id+'_'+n]&&col[m.id+'_'+n].stuck).length}/3</span>`}</div>
+        </div>`;
+      }
+      // navaden cel moment
       const st=col[m.id]&&col[m.id].stuck;
       const isTarget=target&&target===m.id;
-      const rar=momentRarity(m);
-      const col2=m.slovenski?'#4da3ff':(m.lowlight?'#9ca3af':'#ff4d6d');
       if(!st){
         return `<div class="hod-alb-cell empty rar-${rar} ${isTarget?'target':''}" data-stickid="${m.id}"><div class="hod-alb-q">?</div>${isTarget?'<div class="hod-alb-here">tukaj!</div>':''}</div>`;
       }
       const momImg = hasMomentImg(m.id) ? `<img src="assets/moments/${m.id}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%" alt="" onerror="this.style.display='none'">` : avatarImg(m.pid,'');
       return `<div class="hod-alb-cell rar-${rar} moment-cell" data-moment="${m.id}"><div class="hod-alb-photo"${m.lowlight&&!hasMomentImg(m.id)?' style="filter:grayscale(.35)"':''}>${momImg}</div><div class="hod-alb-fullnm">${escapeHtml(m.name)}</div><div class="hod-alb-szn">${escapeHtml(m.moment)}</div><div class="hod-alb-rt" style="color:${col2}">${m.val}</div></div>`;
     };
-    const gotHigh=highs.filter(m=>col[m.id]&&col[m.id].stuck).length;
-    const gotLow=lows.filter(m=>col[m.id]&&col[m.id].stuck).length;
-    const gotSlo=slos.filter(m=>col[m.id]&&col[m.id].stuck).length;
+    const momDone=(m)=>isSplitMoment(m.id)?momentAssembled(m.id,col):(col[m.id]&&col[m.id].stuck);
+    const gotHigh=highs.filter(momDone).length;
+    const gotLow=lows.filter(momDone).length;
+    const gotSlo=slos.filter(momDone).length;
     grid.innerHTML=
       `<div class="hod-alb-team"><div class="hod-alb-team-h">⭐ Ultra-rare Momenti <span>${gotHigh}/${highs.length}</span></div><div class="hod-alb-cells">`+
       highs.map(cellHtml).join('')+`</div></div>`+
@@ -6103,6 +6196,8 @@ function bindGridClicks(grid){
       if(stickCard(id)){
         if(_pendingStick===id) _pendingStick=null;
         const cat={}; albumCatalog().forEach(c=>cat[c.uid]=c); MOMENTS.forEach(m=>cat[m.id]={...m,rarity:momentRarity(m)});
+        // dodaj tudi tretjine split momentov
+        MOMENTS.filter(m=>isSplitMoment(m.id)).forEach(m=>{ [1,2,3].forEach(n=>{ cat[`${m.id}_${n}`]={...m,id:`${m.id}_${n}`,rarity:'rare',part:n,baseId:m.id}; }); });
         const c=cat[id];
         if(c){
           el.classList.remove('empty','target','waiting');
@@ -6128,6 +6223,10 @@ function bindGridClicks(grid){
   // klik na moment = opis
   grid.querySelectorAll('.moment-cell').forEach(el=>{
     el.onclick=()=>{ const m=MOMENTS.find(x=>x.id===el.dataset.moment); if(m) showMomentDetail(m); };
+  });
+  // klik na SESTAVLJEN 3-delni moment = opis s "sestavljeno" efektom
+  grid.querySelectorAll('.hod-mom3-unit.done[data-moment]').forEach(el=>{
+    el.onclick=()=>{ const m=MOMENTS.find(x=>x.id===el.dataset.moment); if(m) showMomentDetail(m, true); };
   });
   // klik na prilepljeno kartico = povečana kartica s kariero (obrni)
   grid.querySelectorAll('.hod-alb-cell.filled[data-card]').forEach(el=>{
@@ -6455,7 +6554,7 @@ function showSplitDemo(){
   document.getElementById('hod-split-back').onclick=()=>showDevGallery();
   document.getElementById('hod-split-home').onclick=()=>goHome();
 }
-function showMomentDetail(m){
+function showMomentDetail(m, assembled){
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay hod-mom-overlay';
   const low=!!m.lowlight;
@@ -6464,7 +6563,8 @@ function showMomentDetail(m){
   const badgeF = slo?'🇸🇮 SLOVENSKI MOMENT':(low?'💀 INFAMOUS MOMENT':'⭐ ULTRA-RARE MOMENT');
   const badgeB = slo?'🇸🇮 SLOVENSKI':(low?'💀 INFAMOUS':'⭐ MOMENT');
   ov.innerHTML=`<div class="hod-mom-wrap">
-    <div class="hod-mom-flip ${flipCls}" id="hod-mom-flip" data-ar="${momentAspect(m.id)}">
+    ${assembled?'<div class="hod-mom-assembled">🧩 SESTAVLJENO IZ 3 DELOV!</div>':''}
+    <div class="hod-mom-flip ${flipCls} ${assembled?'just-assembled':''}" id="hod-mom-flip" data-ar="${momentAspect(m.id)}">
       <div class="hod-mom-inner">
         <div class="hod-mom-face hod-mom-front">
           ${momentImgTag(m)}
@@ -6515,7 +6615,7 @@ function showMomentDetail(m){
 let _unstuckTeam='', _unstuckDec='';
 function renderUnstuck(body){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
+  const catMap=buildCatMap();
   let items=Object.keys(col).filter(k=>!col[k].stuck && (col[k].count||0)>0).map(k=>catMap[k]).filter(Boolean);
   if(!items.length){ body.innerHTML=`<div class="hod-alb-hint">Nimaš nenalepljenih kartic. Odpri paket ali zaslužiš v igrah!</div>`; return; }
   const teams=[...new Set(items.map(c=>c.team).filter(Boolean))].sort();
@@ -6530,13 +6630,15 @@ function renderUnstuck(body){
     <div class="hod-alb-cells stick">`+shown.map(c=>{
     const id=c.id||c.uid||(''+c.pid); const cnt=(col[id]&&col[id].count)||1;
     const sel=(_miniStickId===id)?' mini-active':'';
+    const isPartCell=c.part&&c.baseId;
+    const photoHtml = isPartCell ? momentPartImgTag(c.baseId, c.part, 'hod-alb-photo-img') : avatarImg(c.pid,'');
     return `<div class="hod-alb-cell rar-${c.rarity} stickable${sel}" data-id="${id}" data-era="${c.era||'moments'}">
       ${c.num?`<div class="hod-alb-num">${c.num}</div>`:''}
       ${cnt>1?`<div class="hod-alb-dup">×${cnt}</div>`:''}
-      <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
+      <div class="hod-alb-photo">${photoHtml}</div>
       <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
-      <div class="hod-alb-szn">${c.season||c.moment||''}</div>
-      <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
+      <div class="hod-alb-szn">${isPartCell?'🧩 '+c.part+'/3':(c.season||c.moment||'')}</div>
+      <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${isPartCell?c.part+'/3':(c.val||c.rating)}</div>
       <div class="hod-alb-stick">${sel?'↓ prilepi spodaj':'tapni za lepljenje'}</div>
     </div>`;
   }).join('')+`</div>
@@ -6560,14 +6662,22 @@ function renderUnstuck(body){
 // mini prikaz ene ekipe (ali momentne skupine) z utripajočim praznim mestom za lepljenje
 function renderMiniTeam(host, stickId, unstuckBody){
   if(!host) return;
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
+  const catMap=buildCatMap();
   const col=getCollected();
   const target=catMap[stickId];
   if(!target){ host.innerHTML=''; return; }
-  const isMoment=!!target.moment || ['moment','lowlight','slovenski'].includes(target.rarity);
+  const isPart = isMomentPart(stickId) || target.baseId;
+  const isMoment=!isPart && (!!target.moment || ['moment','lowlight','slovenski'].includes(target.rarity));
   let title, sections;
-  if(isMoment){
-    const group=MOMENTS.map(m=>({...m,rarity:momentRarity(m),uid:m.id}));
+  if(isPart){
+    // 3-delni moment: pokaži 3 tretjine tega momenta
+    const baseId=target.baseId||partBase(stickId);
+    const base=MOMENTS.find(m=>m.id===baseId);
+    const group=[1,2,3].map(n=>({...base, id:`${baseId}_${n}`, uid:`${baseId}_${n}`, rarity:'rare', part:n, baseId, name:`${base.name} (${n}/3)`}));
+    title=`🧩 ${base.name} — sestavi 3 dele`;
+    sections=[{label:'', cards:group}];
+  } else if(isMoment){
+    const group=MOMENTS.filter(m=>!isSplitMoment(m.id)).map(m=>({...m,rarity:momentRarity(m),uid:m.id}));
     group.sort((a,b)=>(b.rating||0)-(a.rating||0));
     title='⭐ Momenti';
     sections=[{label:'', cards:group}];
@@ -6593,21 +6703,21 @@ function renderMiniTeam(host, stickId, unstuckBody){
   const cellOf=(c)=>{
     const id=c.id||c.uid;
     const stuck=col[id]&&col[id].stuck;
+    const isPartCell=c.part&&c.baseId;
+    const photoHtml = isPartCell ? momentPartImgTag(c.baseId, c.part, 'hod-alb-photo-img') : avatarImg(c.pid,'');
     if(stuck){
       return `<div class="hod-alb-cell rar-${c.rarity} mini-cell">
-        <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
+        <div class="hod-alb-photo">${photoHtml}</div>
         <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
-        <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div></div>`;
+        <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${isPartCell?c.part+'/3':(c.val||c.rating)}</div></div>`;
     }
-    // imaš to karto nenalepljeno? -> rdeča pika, klikneš in prilepiš
     const haveUnstuck = col[id] && !col[id].stuck && (col[id].count||0)>0;
     if(haveUnstuck){
       return `<div class="hod-alb-cell empty mini-cell target mini-target" data-ministick="${id}">
-        <div class="hod-alb-photo" style="opacity:.35">${avatarImg(c.pid,'')}</div>
+        <div class="hod-alb-photo" style="opacity:.35">${photoHtml}</div>
         <div class="hod-alb-emptymark">🔴</div>
         <div class="hod-alb-fullnm" style="opacity:.7">${escapeHtml(c.name||'')}</div></div>`;
     }
-    // nimaš -> prazno mesto "?"
     return `<div class="hod-alb-cell empty mini-cell">
       <div class="hod-alb-emptymark">?</div>
       <div class="hod-alb-fullnm" style="opacity:.5">${escapeHtml(c.name||'')}</div></div>`;
@@ -6627,20 +6737,29 @@ function renderMiniTeam(host, stickId, unstuckBody){
         playSfx('stick');
         taskProgress('stick5');
         const c=catMap[id];
+        const isPartCell=c.part&&c.baseId;
+        const photoHtml=isPartCell?momentPartImgTag(c.baseId,c.part,'hod-alb-photo-img'):avatarImg(c.pid,'');
         tgt.classList.remove('empty','target','mini-target');
         tgt.classList.add('rar-'+c.rarity,'mini-peel');
-        tgt.innerHTML=`<div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
+        tgt.innerHTML=`<div class="hod-alb-photo">${photoHtml}</div>
           <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
-          <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
+          <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${isPartCell?c.part+'/3':(c.val||c.rating)}</div>
           <div class="hod-stick-stamp">✓</div>`;
         hodToast('✅ <b>Prilepljeno!</b>');
         if(typeof syncProgress==='function') syncProgress();
-        // mini-ekipa OSTANE odprta — po kratki animaciji osveži (ostale pike ostanejo aktivne)
+        // če se je s tem sestavil cel 3-delni moment -> poseben efekt
+        const baseId=c.baseId||partBase(id);
+        if(isPartCell && momentAssembled(baseId)){
+          setTimeout(()=>{ const base=MOMENTS.find(m=>m.id===baseId); if(base) showMomentDetail(base, true); }, 700);
+        }
         setTimeout(()=>{
           renderUnstuck(unstuckBody);
           const mt=document.getElementById('hod-mini-team');
           if(mt){
-            const anchor=isMoment?stickId:(albumCatalog().find(x=>x.team===target.team)||{uid:stickId}).uid;
+            let anchor;
+            if(isPart) anchor=stickId;
+            else if(isMoment) anchor=stickId;
+            else anchor=(albumCatalog().find(x=>x.team===target.team)||{uid:stickId}).uid;
             if(anchor) renderMiniTeam(mt, anchor, unstuckBody);
           }
         }, 650);
@@ -6729,7 +6848,7 @@ async function buyFromMarket(id, mb){
 }
 async function renderMarketSell(mb){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
+  const catMap=buildCatMap();
   // dvojniki = count >= 2 (ali stuck && count>=1) — kar imaš odveč
   const dups=Object.keys(col).filter(k=>{
     const c=col[k]; const extra=(c.count||0) - 0; // count so nenalepljene kopije
@@ -6752,7 +6871,7 @@ async function renderMarketSell(mb){
   mb.querySelectorAll('.hod-mkt-sell').forEach(btn=>btn.onclick=()=>openSellDialog(btn.dataset.uid, mb));
 }
 function openSellDialog(uid, mb){
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
+  const catMap=buildCatMap();
   const c=catMap[uid]; if(!c) return;
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
@@ -6883,7 +7002,7 @@ function showMissingReport(){
 let _shopView='main', _shopConf='', _shopTeamPick='';
 function renderShop(body){
   const col=getCollected();
-  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
+  const catMap=buildCatMap();
   const dups=Object.keys(col).filter(k=>(col[k].count||0)>0).map(k=>({c:catMap[k],n:col[k].count})).filter(x=>x.c);
   const dupValue=dups.reduce((a,x)=>a+(DUP_VALUE[x.c.rarity]||3)*x.n,0);
   const coins=getCoins();
