@@ -4084,7 +4084,7 @@ const ROULETTE_STYLE={
   premium:{col:'#ffd60a', label:'Zlati',   ic:'🏆'},
   moment: {col:'#ff4d6d', label:'Moment',  ic:'⭐'},
 };
-function showPackRoulette(teamNm, era){
+function showPackRoulette(teamNm, era, testMode){
   const N=ROULETTE_SLOTS.length; // 36
   // izberi zmagovalni predelek
   const winIdx=Math.floor(Math.random()*N);
@@ -4130,8 +4130,10 @@ function showPackRoulette(teamNm, era){
     </div>
     <button class="hod-btn gold" id="hod-roul-spin">Zavrti! 🎰</button>
     <div id="hod-roul-result"></div>
+    ${testMode?'<button class="hod-btn secondary" id="hod-roul-close" style="margin-top:12px">← Zapri test</button>':''}
   </div>`;
   document.body.appendChild(ov);
+  if(testMode){ const cb=ov.querySelector('#hod-roul-close'); if(cb) cb.onclick=()=>{ ov.remove(); showDevGallery(); }; }
   const wheel=ov.querySelector('#hod-roul-wheel');
   const spinBtn=ov.querySelector('#hod-roul-spin');
   let spun=false;
@@ -4148,7 +4150,7 @@ function showPackRoulette(teamNm, era){
       let param=null;
       if(winType==='team'){ const ts=Object.keys(TEAM_NAME); param=ts[Math.floor(Math.random()*ts.length)]; }
       else if(winType==='decade'){ param=DECADE_GROUPS[Math.floor(Math.random()*DECADE_GROUPS.length)].id; }
-      queuePack({type:winType, param});
+      if(!testMode) queuePack({type:winType, param});
       const st=ROULETTE_STYLE[winType];
       let label=st.label+' paket';
       if(winType==='team') label=`${TEAM_NAME[param]||param} paket`;
@@ -4158,9 +4160,9 @@ function showPackRoulette(teamNm, era){
       res.innerHTML=`<div class="hod-roul-won" style="border-color:${st.col}">
         <div class="hod-roul-won-ic">${st.ic}</div>
         <div class="hod-roul-won-t">Zadel si:<br><b style="color:${st.col}">${escapeHtml(label)}</b></div>
-        <button class="hod-btn gold" id="hod-roul-open">Odpri paket 📦</button>
+        <button class="hod-btn gold" id="hod-roul-open">${testMode?'Zavrti znova 🎰':'Odpri paket 📦'}</button>
       </div>`;
-      res.querySelector('#hod-roul-open').onclick=()=>{ ov.remove(); showPackOpening(); };
+      res.querySelector('#hod-roul-open').onclick=()=>{ ov.remove(); if(testMode) showPackRoulette(teamNm, era, true); else showPackOpening(); };
     }, 4400);
   };
 }
@@ -5748,10 +5750,7 @@ function showCardDetail(c){
 // DEV galerija: prikaže VSE kartice (poln album) samo za ogled — ne spremeni zbirke
 function showDevGallery(){
   phase="dev";
-  const cat=albumCatalog();
   const mom=momentCatalog();
-  const rarOrder={lowlight:0,moment:1,legendary:2,rare:3,common:4};
-  // momente posebej (z lastnimi slikami), ostalo po redkosti
   const ultra=mom.filter(m=>!m.lowlight&&!m.slovenski);
   const low=mom.filter(m=>m.lowlight);
   const slos=mom.filter(m=>m.slovenski);
@@ -5761,40 +5760,30 @@ function showDevGallery(){
     const img = hasMomentImg(m.id) ? `<img src="assets/moments/${m.id}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%" alt="" onerror="this.style.display='none'">` : avatarImg(m.pid,'');
     return `<div class="hod-alb-cell rar-${rar} moment-cell" data-moment="${m.id}"><div class="hod-alb-photo">${img}</div><div class="hod-alb-fullnm">${escapeHtml(m.name)}</div><div class="hod-alb-szn">${escapeHtml(m.moment)}</div><div class="hod-alb-rt" style="color:${col2}">${m.val}</div></div>`;
   }
-  function cellCard(c){
-    return `<div class="hod-alb-cell rar-${c.rarity}" data-uid="${c.uid}"><div class="hod-alb-photo">${avatarImg(c.pid,'')}</div><div class="hod-alb-fullnm">${escapeHtml(c.name)}</div><div class="hod-alb-szn">${escapeHtml(c.season||'')}</div><div class="hod-alb-rt">${c.rating}</div></div>`;
-  }
-  const byRar={};
-  cat.forEach(c=>{ (byRar[c.rarity]=byRar[c.rarity]||[]).push(c); });
   let html=`<div class="hod-result hod-fade">
     <div class="hod-alb-header">
       <button class="hod-alb-backtop" id="hod-dev-back">← Nazaj v album</button>
-      <div class="hod-stage-label" style="margin:0">🛠️ DEV — vse kartice</div>
+      <div class="hod-stage-label" style="margin:0">🛠️ DEV — testno</div>
       <span style="width:120px"></span>
     </div>
-    <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:12px">Samo za ogled. Klikni moment za predogled kartice.</div>`;
-  // momenti
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:14px">Klikni moment za predogled kartice.</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px">
+      <button class="hod-btn" id="hod-dev-split" style="background:linear-gradient(180deg,#9b5de5,#6a3bb5)">🎞️ Demo tretjin</button>
+      <button class="hod-btn" id="hod-dev-roul" style="background:linear-gradient(180deg,#e8541e,#c43d12)">🎰 Test ruleta</button>
+    </div>`;
+  // samo momenti
   html+=`<div class="hod-alb-section-t">⭐ Ultra-rare momenti (${ultra.length})</div>`;
   html+=`<div class="hod-alb-grid">`+ultra.map(cellMoment).join('')+`</div>`;
   html+=`<div class="hod-alb-section-t">🇸🇮 Slovenski momenti (${slos.length})</div>`;
   html+=`<div class="hod-alb-grid">`+slos.map(cellMoment).join('')+`</div>`;
   html+=`<div class="hod-alb-section-t">💀 Infamous momenti (${low.length})</div>`;
   html+=`<div class="hod-alb-grid">`+low.map(cellMoment).join('')+`</div>`;
-  // ostale redkosti
-  ['legendary','rare','common'].forEach(r=>{
-    const arr=byRar[r]||[]; if(!arr.length) return;
-    const nm={legendary:'🟡 Legendarne',rare:'🔵 Redke',common:'⚪ Navadne'}[r];
-    html+=`<div class="hod-alb-section-t">${nm} (${arr.length})</div>`;
-    html+=`<div class="hod-alb-grid">`+arr.map(cellCard).join('')+`</div>`;
-  });
-  html+=`<div style="margin-top:18px;text-align:center;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-    <button class="hod-btn" id="hod-dev-split" style="background:linear-gradient(180deg,#9b5de5,#6a3bb5)">🎞️ Demo: 3-delni moment</button>
-    <button class="hod-btn secondary" id="hod-dev-home">← Domov</button>
-  </div></div>`;
+  html+=`<div style="margin-top:18px;text-align:center"><button class="hod-btn secondary" id="hod-dev-home">← Domov</button></div></div>`;
   screen.innerHTML=html;
   document.getElementById('hod-dev-back').onclick=()=>showAlbum();
   document.getElementById('hod-dev-home').onclick=()=>goHome();
   const dsp=document.getElementById('hod-dev-split'); if(dsp) dsp.onclick=()=>showSplitDemo();
+  const drl=document.getElementById('hod-dev-roul'); if(drl) drl.onclick=()=>showPackRoulette('TEST EKIPA','test',true);
   // klik na moment = predogled full kartice
   screen.querySelectorAll('.moment-cell').forEach(el=>{
     el.onclick=()=>{ const m=MOMENTS.find(x=>x.id===el.dataset.moment); if(m) showMomentDetail(m); };
