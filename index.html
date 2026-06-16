@@ -5483,14 +5483,74 @@ function showDevGallery(){
     html+=`<div class="hod-alb-section-t">${nm} (${arr.length})</div>`;
     html+=`<div class="hod-alb-grid">`+arr.map(cellCard).join('')+`</div>`;
   });
-  html+=`<div style="margin-top:18px;text-align:center"><button class="hod-btn secondary" id="hod-dev-home">← Domov</button></div></div>`;
+  html+=`<div style="margin-top:18px;text-align:center;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="hod-btn" id="hod-dev-split" style="background:linear-gradient(180deg,#9b5de5,#6a3bb5)">🎞️ Demo: 3-delni moment</button>
+    <button class="hod-btn secondary" id="hod-dev-home">← Domov</button>
+  </div></div>`;
   screen.innerHTML=html;
   document.getElementById('hod-dev-back').onclick=()=>showAlbum();
   document.getElementById('hod-dev-home').onclick=()=>goHome();
+  const dsp=document.getElementById('hod-dev-split'); if(dsp) dsp.onclick=()=>showSplitDemo();
   // klik na moment = predogled full kartice
   screen.querySelectorAll('.moment-cell').forEach(el=>{
     el.onclick=()=>{ const m=MOMENTS.find(x=>x.id===el.dataset.moment); if(m) showMomentDetail(m); };
   });
+}
+// DEV demo: kako izgleda vodoraven moment razrezan na 3 dele + sestavljen
+function showSplitDemo(){
+  phase="dev";
+  // vzamemo dva primera (vodoravna momenta)
+  const demoIds=['malice','lebron','doncic_trade'];
+  const moms=demoIds.map(id=>MOMENTS.find(m=>m.id===id)).filter(Boolean);
+  // ena tretjina kot nalepka (object-position po x: 0% levo, 50% sredina, 100% desno)
+  function thirdSticker(m, part){
+    const xpos=part===0?'0%':part===1?'50%':'100%';
+    const col=m.slovenski?'#4da3ff':(m.lowlight?'#9ca3af':'#ffd166');
+    return `<div style="position:relative;width:96px;aspect-ratio:3/4;border-radius:10px;overflow:hidden;border:2px solid ${col};background:#0d1119;box-shadow:0 4px 12px rgba(0,0,0,.5)">
+      <img src="assets/moments/${m.id}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${xpos} center" alt="">
+      <div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.7);color:${col};font-size:10px;font-weight:800;padding:2px 6px;border-radius:5px">${part+1}/3</div>
+    </div>`;
+  }
+  // sestavljen širok moment (panorama)
+  function assembled(m){
+    const col=m.slovenski?'#4da3ff':(m.lowlight?'#9ca3af':'#ffd166');
+    const badge=m.slovenski?'🇸🇮 SLOVENSKI':(m.lowlight?'💀 INFAMOUS':'⭐ ULTRA-RARE');
+    return `<div style="position:relative;width:100%;max-width:440px;margin:0 auto;aspect-ratio:3/1.5;border-radius:12px;overflow:hidden;border:3px solid ${col};box-shadow:0 8px 26px rgba(0,0,0,.6)">
+      <img src="assets/moments/${m.id}.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" alt="">
+      <div style="position:absolute;top:0;left:0;right:0;text-align:center;font-size:10px;letter-spacing:2px;font-weight:800;color:${col};background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);padding:6px 0 14px">${badge}</div>
+      <div style="position:absolute;bottom:0;left:0;right:0;padding:20px 10px 8px;text-align:center;background:linear-gradient(0deg,rgba(0,0,0,.92),transparent)">
+        <div style="font-size:14px;font-weight:900;color:#fff">${escapeHtml(m.name)}</div>
+        <div style="font-size:10px;color:${col}">${escapeHtml(m.moment)} · ${escapeHtml(m.sub)}</div>
+      </div>
+      <!-- ločilne črte med tretjinami (vizualno) -->
+      <div style="position:absolute;top:0;bottom:0;left:33.33%;width:1px;background:rgba(255,255,255,.15)"></div>
+      <div style="position:absolute;top:0;bottom:0;left:66.66%;width:1px;background:rgba(255,255,255,.15)"></div>
+    </div>`;
+  }
+  let html=`<div class="hod-result hod-fade">
+    <div class="hod-alb-header">
+      <button class="hod-alb-backtop" id="hod-split-back">← Nazaj</button>
+      <div class="hod-stage-label" style="margin:0">🎞️ Demo: 3-delni moment</div>
+      <span style="width:90px"></span>
+    </div>
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:18px;max-width:480px;margin-left:auto;margin-right:auto">
+      Vodoravni momenti bi bili razrezani na 3 nalepke (1/3, 2/3, 3/3). Vsako prilepiš sproti. Ko zbereš vse tri, se sestavi cel panoramski moment — šele takrat ga lahko obrneš za zgodbo.
+    </div>`;
+  moms.forEach(m=>{
+    html+=`<div style="margin-bottom:28px">
+      <div style="font-family:'Anton';font-size:15px;color:var(--amber);margin-bottom:8px;text-align:center">${escapeHtml(m.name)} — ${escapeHtml(m.moment)}</div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px">Posamezne nalepke (kot padejo v paketih):</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px">
+        ${thirdSticker(m,0)}${thirdSticker(m,1)}${thirdSticker(m,2)}
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px">Sestavljen (3/3) — širok okvir v albumu:</div>
+      ${assembled(m)}
+    </div>`;
+  });
+  html+=`<div style="margin-top:10px;text-align:center"><button class="hod-btn secondary" id="hod-split-home">← Domov</button></div></div>`;
+  screen.innerHTML=html;
+  document.getElementById('hod-split-back').onclick=()=>showDevGallery();
+  document.getElementById('hod-split-home').onclick=()=>goHome();
 }
 function showMomentDetail(m){
   const ov=document.createElement('div');
