@@ -343,9 +343,9 @@
 .hod-pk-card.swap-in{animation:pkSwapIn .4s ease;}
 @keyframes pkSwapIn{0%{filter:brightness(2);}100%{filter:brightness(1);}}
 .hod-pk-rays{height:12px;background:repeating-linear-gradient(125deg,var(--orange) 0,var(--orange) 10px,#d8481a 10px,#d8481a 20px);position:relative;z-index:1;}
-.hod-pk-head{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:9px 9px 0;}
-.hod-pk-lock{flex:1;text-align:center;font-size:15px;filter:grayscale(1) brightness(0);line-height:1;}
-.hod-pk-pos{font-family:'Anton';font-size:11px;color:#fff;background:var(--orange);border-radius:4px;padding:1px 6px;letter-spacing:.5px;}
+.hod-pk-head{position:relative;z-index:2;display:flex;justify-content:flex-end;align-items:center;padding:9px 9px 0;min-height:30px;}
+.hod-pk-lock{position:absolute;top:9px;left:50%;transform:translateX(-50%);font-size:15px;filter:grayscale(1) brightness(0);line-height:1;}
+.hod-pk-ovr{font-family:'Anton';font-size:30px;color:var(--orange);line-height:.8;text-shadow:0 1px 0 rgba(255,255,255,.4);}
 .hod-pk-ovr{font-family:'Anton';font-size:30px;color:var(--orange);line-height:.8;text-shadow:0 1px 0 rgba(255,255,255,.4);}
 .hod-pk-ovr.fog{color:#b89a78;}
 @keyframes pkspin{0%{transform:rotateY(0) scale(1);opacity:1;}50%{transform:rotateY(90deg) scale(.9);opacity:.3;}100%{transform:rotateY(0) scale(1);opacity:1;}}
@@ -642,7 +642,7 @@
 .hod-hothand{position:fixed;top:80px;left:50%;transform:translateX(-50%) scale(.7);z-index:400;background:linear-gradient(180deg,#ff6a00,#c41d1d);color:#fff;font-family:'Anton';font-size:20px;letter-spacing:1px;padding:10px 22px;border-radius:30px;box-shadow:0 6px 24px rgba(255,80,0,.6);opacity:0;pointer-events:none;transition:.25s;}
 .hod-hothand.show{opacity:1;transform:translateX(-50%) scale(1);}
 .hod-hothand span{color:#ffe08a;font-size:15px;}
-.hod-pk-suit{position:absolute;top:6px;left:6px;z-index:4;font-family:'Anton';font-size:15px;font-weight:900;line-height:1;background:rgba(255,255,255,.95);border:1.5px solid rgba(0,0,0,.3);border-radius:7px;padding:2px 6px;box-shadow:0 1px 4px rgba(0,0,0,.4);min-width:20px;text-align:center;}
+.hod-pk-suit{position:absolute;top:14px;left:6px;z-index:4;font-family:'Anton';font-size:15px;font-weight:900;line-height:1;background:rgba(255,255,255,.95);border:1.5px solid rgba(0,0,0,.3);border-radius:7px;padding:2px 6px;box-shadow:0 1px 4px rgba(0,0,0,.4);min-width:20px;text-align:center;}
 .hod-pk-card.pk-wild{border-color:#ffd60a!important;box-shadow:0 0 16px rgba(255,214,10,.5)!important;}
 .hod-pk-wildtag{position:absolute;top:6px;right:7px;z-index:4;background:#ffd60a;color:#1a1206;font-family:'Anton';font-size:9px;letter-spacing:1px;padding:2px 6px;border-radius:5px;}
 .hod-pk-handlive{font-weight:700;}
@@ -4338,12 +4338,12 @@ function checkSetCompletion(stickId){
 // 36 predelkov: 20 navadni, 5 ekipni, 5 dekadni, 4 zlati, 2 moment
 const ROULETTE_SLOTS=(function(){
   const s=[];
-  for(let i=0;i<20;i++) s.push('basic');
-  for(let i=0;i<5;i++)  s.push('team');
-  for(let i=0;i<5;i++)  s.push('decade');
-  for(let i=0;i<4;i++)  s.push('premium');
-  for(let i=0;i<2;i++)  s.push('moment');
-  // premešaj, da niso vsi isti skupaj (lepši videz kolesa)
+  // 12 mest, isto razmerje kot prej (36-mestna: 20/5/5/4/2)
+  for(let i=0;i<7;i++) s.push('basic');
+  for(let i=0;i<1;i++) s.push('team');
+  for(let i=0;i<1;i++) s.push('decade');
+  for(let i=0;i<2;i++) s.push('premium');
+  for(let i=0;i<1;i++) s.push('moment');
   for(let i=s.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [s[i],s[j]]=[s[j],s[i]]; }
   return s;
 })();
@@ -4355,27 +4355,24 @@ const ROULETTE_STYLE={
   moment: {col:'#ff4d6d', label:'Moment',  ic:'⭐'},
 };
 function showPackRoulette(teamNm, era, testMode){
-  const N=ROULETTE_SLOTS.length; // 36
-  // izberi zmagovalni predelek
+  const N=ROULETTE_SLOTS.length; // 12
   const winIdx=Math.floor(Math.random()*N);
   const winType=ROULETTE_SLOTS[winIdx];
   const seg=360/N;
-  // kolo zavrtimo tako, da zmagovalni predelek pristane na vrhu (kazalec)
-  const spins=5; // polni obrati
+  const spins=5;
   const targetAngle = spins*360 + (360 - (winIdx*seg + seg/2));
-  // SVG kolo
-  const R=150, cx=160, cy=160;
+  // SVG kolo (večji predelki, kot streak)
+  const R=155, cx=170, cy=170;
   let segs='';
   for(let i=0;i<N;i++){
     const a0=(i*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
     const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0);
     const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
     const st=ROULETTE_STYLE[ROULETTE_SLOTS[i]];
-    segs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${st.col}" stroke="#0d1119" stroke-width="1"/>`;
-    // ikona na sredini predelka
-    const am=((i+0.5)*seg-90)*Math.PI/180; const ir=R*0.72;
+    segs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${st.col}" stroke="#0d1119" stroke-width="2"/>`;
+    const am=((i+0.5)*seg-90)*Math.PI/180; const ir=R*0.7;
     const ix=cx+ir*Math.cos(am), iy=cy+ir*Math.sin(am);
-    segs+=`<text x="${ix.toFixed(1)}" y="${iy.toFixed(1)}" font-size="13" text-anchor="middle" dominant-baseline="central">${st.ic}</text>`;
+    segs+=`<text x="${ix.toFixed(1)}" y="${iy.toFixed(1)}" font-size="22" text-anchor="middle" dominant-baseline="central">${st.ic}</text>`;
   }
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
@@ -4384,11 +4381,11 @@ function showPackRoulette(teamNm, era, testMode){
     <div class="hod-roul-team">${escapeHtml(teamNm)} · ${era}</div>
     <div class="hod-roul-sub">Zavrti kolo za nagradni paket!</div>
     <div class="hod-roul-stage">
-      <div class="hod-roul-pointer">▼</div>
-      <svg class="hod-roul-wheel" id="hod-roul-wheel" viewBox="0 0 320 320" width="300" height="300">
+      <div class="hod-strk-pointer">▼</div>
+      <svg class="hod-roul-wheel" id="hod-roul-wheel" viewBox="0 0 340 340" width="290" height="290">
         ${segs}
-        <circle cx="${cx}" cy="${cy}" r="26" fill="#1a1206" stroke="#ffd166" stroke-width="3"/>
-        <text x="${cx}" y="${cy}" font-size="22" text-anchor="middle" dominant-baseline="central">🎁</text>
+        <circle cx="${cx}" cy="${cy}" r="30" fill="#1a1206" stroke="#ffd166" stroke-width="3"/>
+        <text x="${cx}" y="${cy}" font-size="24" text-anchor="middle" dominant-baseline="central">🎁</text>
       </svg>
     </div>
     <div class="hod-roul-legend">
@@ -4971,12 +4968,11 @@ function comboBonus(cards){
 function pokerScore(cards, opts){
   opts=opts||{};
   const base=cards.reduce((a,c)=>a+(c.rating||0),0);
-  const pos=positionScore(cards);
   const chem=chemistryScore(cards);
   const combo=comboBonus(cards);
   const hand=pokerHand(cards); // poker roka
-  // košarkarski skor
-  let kbScore=base+pos.bonus+chem.bonus+combo.bonus;
+  // košarkarski skor (brez položajev)
+  let kbScore=base+chem.bonus+combo.bonus;
   // hot-hand multiplikator (samo za igralca, ne za bota)
   const mult=(!opts.noPlayerBonus && pokerState&&pokerState.hotMult)?pokerState.hotMult:1;
   kbScore=Math.round(kbScore*mult);
@@ -4986,7 +4982,7 @@ function pokerScore(cards, opts){
   if(!opts.noPlayerBonus && pokerState&&pokerState.allInActive&&pokerState.allInResolved){
     total=Math.round(total*(pokerState.allInWon?1.5:0.5));
   }
-  return {base, pos, chem, combo, hand, mult, kbScore, total};
+  return {base, chem, combo, hand, mult, kbScore, total};
 }
 function renderPoker(finished, firstRender){
   const st=pokerState;
@@ -5000,7 +4996,7 @@ function renderPoker(finished, firstRender){
       <div class="hod-pk-rays"></div>
       <div class="hod-pk-suit" style="color:${c.pkWild?'#ffd60a':c.pkSuitCol}">${c.pkWild?'★':c.pkRank+c.pkSuit}</div>
       ${c.pkWild?'<div class="hod-pk-wildtag">WILD</div>':''}
-      <div class="hod-pk-head"><span class="hod-pk-pos">${posLabel(c)}</span><span class="hod-pk-lock">${held?'🔒':''}</span><span class="hod-pk-ovr ${showOvr?'':'fog'}">${showOvr?(c.rating||0):'?'}</span></div>
+      <div class="hod-pk-head"><span class="hod-pk-lock">${held?'🔒':''}</span><span class="hod-pk-ovr ${showOvr?'':'fog'}">${showOvr?(c.rating||0):'?'}</span></div>
       <div class="hod-pk-avatar" style="background:${col}">${avatarImg(c.pid)}</div>
       <div class="hod-pk-name">${escapeHtml(c.name)}</div>
       <div class="hod-pk-meta">${escapeHtml(c.team||'')} · ${c.season}</div>
@@ -5009,7 +5005,6 @@ function renderPoker(finished, firstRender){
     </div>`;
   }).join('');
   const sc = finished ? pokerScore(st.cards) : null;
-  const livePos = positionScore(st.cards);
   const liveChem = chemistryScore(st.cards);
   const liveOverall = pokerTotal();
   const liveHand = pokerHand(st.cards);
@@ -5027,11 +5022,10 @@ function renderPoker(finished, firstRender){
       <div class="hod-pk-bar hod-pk-bar3">
         <span class="hod-pk-stat ${(pokerFog&&!finished)?'fog':''}">Overall<br><b id="hod-pk-overall">${(pokerFog && !finished)?'?':liveOverall}</b></span>
         <span class="hod-pk-stat ${(pokerFog&&!finished)?'fog':''}">Kemija<br><b id="hod-pk-chemlive">${(pokerFog && !finished)?'?':'+'+liveChem.bonus}</b></span>
-        <span class="hod-pk-stat">Položaji<br><b id="hod-pk-poscount" class="${livePos.covered===5?'pos-full':''}">${livePos.covered}/5</b></span>
         <span class="hod-pk-stat">Roka<br><b id="hod-pk-handlive" class="hod-pk-handlive">${liveHand.name}</b></span>
         <span class="hod-pk-stat">Vrtljaji<br><b>${'●'.repeat(st.spinsLeft)}${'○'.repeat(5-st.spinsLeft)}</b></span>
       </div>
-      <div class="hod-pk-hint">${finished?'':(pokerFog?'<b style="color:#c4a8ff">🌫️ MEGLA:</b> overall in kemija sta skrita (položaji vidni)! Sodi po statistiki. Razkrije se ko zakleneš.':'Zakleni dobre karte — <b style="color:var(--gold)">lock je dokončen!</b> Pokrij položaje, gradi kemijo IN poker roko.')}</div>
+      <div class="hod-pk-hint">${finished?'':(pokerFog?'<b style="color:#c4a8ff">🌫️ MEGLA:</b> overall in kemija sta skrita! Sodi po statistiki. Razkrije se ko zakleneš.':'Zakleni dobre karte — <b style="color:var(--gold)">lock je dokončen!</b> Gradi kemijo (ista ekipa) IN poker roko.')}</div>
       <div class="hod-pk-layout">
         <div class="hod-pk-grid">${cards}</div>
         ${!finished?handTable:''}
@@ -5040,7 +5034,6 @@ function renderPoker(finished, firstRender){
         ? `<div class="hod-pk-score">
              <div class="hod-pk-hand-big">${sc.hand.name} ${sc.hand.mult>1?`<span>×${sc.hand.mult}</span>`:''}</div>
              <div class="hod-pk-score-row"><span>Overall (5 igralcev)</span><b>${sc.base}</b></div>
-             <div class="hod-pk-score-row ${sc.pos.bonus>=0?'plus':'minus'}"><span>${sc.pos.note}</span><b>${sc.pos.bonus>=0?'+':''}${sc.pos.bonus}</b></div>
              <div class="hod-pk-score-row plus"><span>Kemija${sc.chem.bonds.length?' ('+sc.chem.bonds.slice(0,2).map(b=>b.label).join(', ')+(sc.chem.bonds.length>2?'…':'')+')':' (brez)'}</span><b>+${sc.chem.bonus}</b></div>
              ${sc.combo.combos.map(cb=>`<div class="hod-pk-score-row combo"><span>${cb.name} <small>${cb.desc}</small></span><b>+${cb.pts}</b></div>`).join('')}
              ${sc.mult>1?`<div class="hod-pk-score-row combo"><span>🔥 Hot hand</span><b>×${sc.mult.toFixed(2)}</b></div>`:''}
@@ -5120,7 +5113,6 @@ function renderPoker(finished, firstRender){
 function updatePokerLiveBar(){
   const st=pokerState; if(!st) return;
   const total=pokerTotal();
-  const livePos=positionScore(st.cards);
   const liveChem=chemistryScore(st.cards);
   const allLocked=st.held.every(h=>h);
   const hideStats=pokerFog && !allLocked;
@@ -5128,13 +5120,8 @@ function updatePokerLiveBar(){
   if(ovEl) ovEl.textContent=hideStats?'?':total;
   const chemEl=document.getElementById('hod-pk-chemlive');
   if(chemEl) chemEl.textContent=hideStats?'?':('+'+liveChem.bonus);
-  const posEl=document.getElementById('hod-pk-poscount');
-  if(posEl){ posEl.textContent=`${livePos.covered}/5`; posEl.className=livePos.covered===5?'pos-full':''; }
   const handEl=document.getElementById('hod-pk-handlive');
   if(handEl){ const h=pokerHand(st.cards); handEl.textContent=h.name; handEl.style.color=h.mult>1.8?'#ffd166':(h.mult>1?'#9ec5e8':'var(--muted)'); }
-  // osveži poudarek v tabeli rok
-  const h=pokerHand(st.cards);
-  document.querySelectorAll('.hod-pk-ht-row').forEach(r=>r.classList.remove('on'));
 }
 function pokerSpin(){
   const st=pokerState;
@@ -5169,7 +5156,6 @@ function pokerSpin(){
       const c=newCards[i];
       const col=nameColor(c.name);
       const showOvr = !pokerFog;
-      el.querySelector('.hod-pk-pos').textContent=posLabel(c);
       const suitEl=el.querySelector('.hod-pk-suit'); if(suitEl){ suitEl.textContent=c.pkWild?'★':c.pkRank+c.pkSuit; suitEl.style.color=c.pkWild?'#ffd60a':c.pkSuitCol; }
       el.classList.toggle('pk-wild', !!c.pkWild);
       let wt=el.querySelector('.hod-pk-wildtag');
@@ -5294,7 +5280,6 @@ function pkMiniCard(c, held, fog){
     ${c.pkRank?`<div class="hod-pkm-suit" style="color:${c.pkWild?'#b8860b':c.pkSuitCol}">${c.pkWild?'★':c.pkRank+c.pkSuit}</div>`:''}
     <div class="hod-pkm-av" style="background:${col}">${avatarImg(c.pid,'')}</div>
     <div class="hod-pkm-name">${escapeHtml(c.name)}</div>
-    <div class="hod-pkm-pos">${posLabel(c)}</div>
     ${fog&&!held?`<div class="hod-pkm-fogstats">${(c.pts||0).toFixed(0)}·${(c.reb||0).toFixed(0)}·${(c.ast||0).toFixed(0)}</div>`:`<div class="hod-pkm-rating ${showOvr?'':'fog'}">${showOvr?(c.rating||0):'?'}</div>`}
   </div>`;
 }
@@ -5449,8 +5434,6 @@ function aiDecide(){
   const effIq = Math.min(1, iq*0.6 + iq*0.4*roundBoost); // iq raste s krogi
   const stepDown={5:0, 4:2, 3:4, 2:7, 1:99}[left] ?? 0;
   const thr=ai.hold - stepDown;
-  // trenutno pokrite pozicije bota
-  const coveredPos=new Set(bot.cards.filter((c,i)=>bot.held[i]).map(c=>(c.pos||'').toUpperCase()));
   const heldTeams=bot.cards.filter((c,i)=>bot.held[i]).map(c=>c.team);
   bot.cards.forEach((c,i)=>{
     if(bot.held[i]) return;
@@ -5459,28 +5442,22 @@ function aiDecide(){
     // 1) rating (osnova)
     if((c.rating||0)>=thr) score+=0.5;
     if((c.rating||0)>=90) score+=0.25;
-    // 2) položaj, ki ga še nima (pomaga pokritju)
-    const pos=(c.pos||'').toUpperCase();
-    if(pos && !coveredPos.has(pos)) score+=0.3*effIq;
-    // 3) kemija: ista ekipa kot že zaklenjena karta
-    if(c.team && heldTeams.includes(c.team)) score+=0.25*effIq;
-    // 4) poker: wild ali bi izboljšal roko
+    // 2) kemija: ista ekipa kot že zaklenjena karta
+    if(c.team && heldTeams.includes(c.team)) score+=0.3*effIq;
+    // 3) poker: wild ali bi izboljšal roko
     if(c.pkWild) score+=0.4*effIq;
-    // 5) visok rating tudi če ne dosega praga (boss ga prepozna)
+    // 4) visok rating tudi če ne dosega praga (boss ga prepozna)
     if((c.rating||0)>=88) score+=0.2*effIq;
     // prag za zaklep: nizek iq = skoraj naključno, visok iq = po score
     let lock;
     if(effIq<0.2){
-      // skoraj naključno: 35% možnost zaklepa ne glede na vse (slabo lovi overall)
       lock = Math.random()<0.35 ? true : ((c.rating||0)>=thr && Math.random()<0.5);
     } else {
-      // odloča po score, z manjšim šumom (manj pri visokem iq)
       const noise=(Math.random()-0.5)*(1-effIq)*0.8;
       lock = (score+noise) >= 0.5;
     }
-    // v zadnjem krogu vsi zaklenejo vse (sicer izgubijo)
     if(left<=1) lock=true;
-    if(lock){ bot.held[i]=true; coveredPos.add(pos); if(c.team) heldTeams.push(c.team); }
+    if(lock){ bot.held[i]=true; if(c.team) heldTeams.push(c.team); }
   });
 }
 function vsAISpin(){
@@ -5546,7 +5523,7 @@ function paintVsResult(youSc, botSc){
   const nextUnlocked = win && !isLast;
   const botCards=st.bot.cards.map((c)=>pkMiniCard(c,true)).join('');
   const yourCards=st.you.cards.map((c)=>pkMiniCard(c,true)).join('');
-  const breakdown=(sc)=>`<span class="hod-vs-bd">${sc.base}${sc.pos.bonus?` <span class="${sc.pos.bonus>=0?'plus':'minus'}">${sc.pos.bonus>=0?'+':''}${sc.pos.bonus}</span>`:''}${sc.chem.bonus?` <span class="plus">+${sc.chem.bonus}</span>`:''}${sc.hand.mult>1?` <span class="hod-vs-hand">${sc.hand.name} ×${sc.hand.mult}</span>`:''}</span>`;
+  const breakdown=(sc)=>`<span class="hod-vs-bd">${sc.base}${sc.chem.bonus?` <span class="plus">+${sc.chem.bonus}</span>`:''}${sc.hand.mult>1?` <span class="hod-vs-hand">${sc.hand.name} ×${sc.hand.mult}</span>`:''}</span>`;
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">${win?'ZMAGA!':tie?'NEODLOČENO':'PORAZ'}</div>
@@ -5555,7 +5532,7 @@ function paintVsResult(youSc, botSc){
       <div class="hod-verdict">${
         win ? (isLast?'Premagal si Popovicha — ti si prvak NBA Pokra! 🏆':`Premagal si ${escapeHtml(ai.name)}! Naslednji nasprotnik odklenjen.`)
         : tie ? 'Izenačeno! Poskusi znova za zmago.'
-        : `${escapeHtml(ai.name)} te je premagal za ${botTotal-youTotal}. ${youSc.pos.covered<5?'Namig: pokrij vseh 5 položajev!':'Poskusi znova!'}`
+        : `${escapeHtml(ai.name)} te je premagal za ${botTotal-youTotal}. Poskusi znova — lovi boljšo poker roko!`
       }</div>
       <div class="hod-vs-side bot" style="margin-top:14px">
         <div class="hod-vs-head"><span class="hod-vs-emoji" style="background:${ai.color}">${ai.emoji}</span> ${escapeHtml(ai.name)} ${breakdown(botSc)}<span class="hod-vs-total">${botTotal}</span></div>
