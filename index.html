@@ -3177,8 +3177,30 @@ const STREAK_STYLE={
   moment:{col:'#ff4d6d',ic:'⭐',label:'Moment paket'},
   coins:{col:'#2ecc71',ic:'🪙',label:'Kovanci'},
 };
-function showDailyStreak(){
-  const d=getStreakData();
+// DEV: izbira nivoja za test streak popupa
+function showStreakTestPicker(){
+  phase="dev";
+  screen.innerHTML=`<div class="hod-result hod-fade">
+    <div class="hod-alb-header">
+      <button class="hod-alb-backtop" id="hod-strk-test-back">← Nazaj</button>
+      <div class="hod-stage-label" style="margin:0">🔥 Test streak</div>
+      <span style="width:80px"></span>
+    </div>
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin:14px auto;max-width:420px">Izberi nivo, da vidiš popup in pripadajočo ruleto. Test ne dodeli pravih nagrad.</div>
+    <div class="hod-shop-row">
+      <div class="hod-shop-card pick" data-strk="3"><div class="hod-shop-ic">🔥</div><div class="hod-shop-nm">Navaden dan</div><div class="hod-shop-sub">niz 3 · paketi+kovanci</div></div>
+      <div class="hod-shop-card pick" data-strk="7"><div class="hod-shop-ic">✨</div><div class="hod-shop-nm">7-dnevni mejnik</div><div class="hod-shop-sub">dobra ruleta</div></div>
+      <div class="hod-shop-card pick gold-card" data-strk="30"><div class="hod-shop-ic">🌟</div><div class="hod-shop-nm">30-dnevni mejnik</div><div class="hod-shop-sub">najboljša ruleta</div></div>
+    </div>
+    <div style="margin-top:18px;text-align:center"><button class="hod-btn secondary" id="hod-strk-test-home">← Domov</button></div>
+  </div>`;
+  document.getElementById('hod-strk-test-back').onclick=()=>showDevGallery();
+  document.getElementById('hod-strk-test-home').onclick=()=>goHome();
+  screen.querySelectorAll('[data-strk]').forEach(el=>el.onclick=()=>showDailyStreak(parseInt(el.dataset.strk)));
+}
+function showDailyStreak(testStreak){
+  const isTest = testStreak!=null;
+  const d=isTest ? {streak:testStreak, lastDay:todayKey(), claimedToday:false} : getStreakData();
   const type=streakDayType(d.streak);
   const slots=streakRouletteSlots(type);
   const N=slots.length, seg=360/N, R=150, cx=170, cy=170;
@@ -3216,6 +3238,7 @@ function showDailyStreak(){
     <div id="hod-strk-result"></div>
   </div>`;
   document.body.appendChild(ov);
+  if(isTest){ ov.onclick=(e)=>{ if(e.target===ov){ ov.remove(); showStreakTestPicker(); } }; }
   const wheel=ov.querySelector('#hod-strk-wheel');
   const spinBtn=ov.querySelector('#hod-strk-spin');
   let spun=false;
@@ -3229,25 +3252,25 @@ function showDailyStreak(){
     setTimeout(()=>{
       // dodeli nagrado
       let label, ic, col;
-      if(win.t==='coins'){ addCoins(win.v); label=`+${win.v} kovancev`; ic='🪙'; col='#2ecc71'; }
+      if(win.t==='coins'){ if(!isTest) addCoins(win.v); label=`+${win.v} kovancev`; ic='🪙'; col='#2ecc71'; }
       else {
         let param=null;
         if(win.pk==='team'){ const ts=Object.keys(TEAM_NAME); param=ts[Math.floor(Math.random()*ts.length)]; }
         else if(win.pk==='decade'){ param=DECADE_GROUPS[Math.floor(Math.random()*DECADE_GROUPS.length)].id; }
-        queuePack({type:win.pk, param});
+        if(!isTest) queuePack({type:win.pk, param});
         const st=STREAK_STYLE[win.pk]; ic=st.ic; col=st.col;
         label=st.label + (param&&win.pk==='team'?` (${TEAM_NAME[param]})`:'');
       }
-      // označi pobrano
-      const sd=getStreakData(); sd.claimedToday=true; setStreakData(sd);
+      // označi pobrano (samo v pravem načinu)
+      if(!isTest){ const sd=getStreakData(); sd.claimedToday=true; setStreakData(sd); }
       playWinChime();
       const res=ov.querySelector('#hod-strk-result');
       res.innerHTML=`<div class="hod-roul-won" style="border-color:${col}">
         <div class="hod-roul-won-ic">${ic}</div>
         <div class="hod-roul-won-t">Osvojil si:<br><b style="color:${col}">${escapeHtml(label)}</b></div>
-        <button class="hod-btn gold" id="hod-strk-ok">${win.t==='coins'?'Super! 🪙':'Odpri paket 📦'}</button>
+        <button class="hod-btn gold" id="hod-strk-ok">${isTest?'Zapri test':(win.t==='coins'?'Super! 🪙':'Odpri paket 📦')}</button>
       </div>`;
-      res.querySelector('#hod-strk-ok').onclick=()=>{ ov.remove(); if(win.t!=='coins') showPackOpening(); else { renderProgress&&renderProgress(); } };
+      res.querySelector('#hod-strk-ok').onclick=()=>{ ov.remove(); if(isTest){ showStreakTestPicker(); } else if(win.t!=='coins') showPackOpening(); else { renderProgress&&renderProgress(); } };
     }, 4400);
   };
 }
@@ -6190,6 +6213,7 @@ function showDevGallery(){
       <button class="hod-btn" id="hod-dev-split" style="background:linear-gradient(180deg,#9b5de5,#6a3bb5)">🎞️ Demo tretjin</button>
       <button class="hod-btn" id="hod-dev-roul" style="background:linear-gradient(180deg,#e8541e,#c43d12)">🎰 Test ruleta</button>
       <button class="hod-btn" id="hod-dev-froul" style="background:linear-gradient(180deg,#1a7d3a,#0d5022)">🎡 Francoska ruleta</button>
+      <button class="hod-btn" id="hod-dev-streak" style="background:linear-gradient(180deg,#ff6a00,#c43d12)">🔥 Test streak</button>
     </div>`;
   // samo momenti
   html+=`<div class="hod-alb-section-t">⭐ Ultra-rare momenti (${ultra.length})</div>`;
@@ -6205,6 +6229,7 @@ function showDevGallery(){
   const dsp=document.getElementById('hod-dev-split'); if(dsp) dsp.onclick=()=>showSplitDemo();
   const drl=document.getElementById('hod-dev-roul'); if(drl) drl.onclick=()=>showPackRoulette('TEST EKIPA','test',true);
   const dfr=document.getElementById('hod-dev-froul'); if(dfr) dfr.onclick=()=>showFrenchRoulette();
+  const dst=document.getElementById('hod-dev-streak'); if(dst) dst.onclick=()=>showStreakTestPicker();
   // klik na moment = predogled full kartice
   screen.querySelectorAll('.moment-cell').forEach(el=>{
     el.onclick=()=>{ const m=MOMENTS.find(x=>x.id===el.dataset.moment); if(m) showMomentDetail(m); };
