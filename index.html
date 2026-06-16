@@ -3945,7 +3945,7 @@ const PACK_TYPES={
   basic:   {name:'Osnovni paket', price:50,  n:3, odds:null, ic:'📦'},
   team:    {name:'Ekipni paket',   price:60,  n:3, odds:null, ic:'👕', filter:'team'},
   decade:  {name:'Dekadni paket',  price:60,  n:3, odds:null, ic:'📅', filter:'decade'},
-  moment:  {name:'Moment paket',   price:120, n:3, odds:{moment:8, legendary:18, rare:35}, ic:'⭐'},
+  moment:  {name:'Moment paket',   price:120, n:3, odds:null, momentBoost:8, ic:'⭐'},
   premium: {name:'Zlati paket',    price:150, n:5, odds:null, guaranteeLegendary:true, ic:'🏆'},
 };
 // dekadne skupine (po tvojem predlogu)
@@ -4021,8 +4021,11 @@ function openOnePack(packCfg){
   packCfg=packCfg||{};
   const n = packCfg.n || (Math.random()<0.10 ? 4 : 3);
   const cards=[];
+  // moment paket: ENA karta ima povišan moment %, ostale navadne
+  const boostOdds = packCfg.momentBoost ? {moment:packCfg.momentBoost, legendary:RARITY_DEFS.legendary.weight, rare:RARITY_DEFS.rare.weight} : null;
   for(let i=0;i<n;i++){
-    const c=rollCard({pool:packCfg.pool, odds:packCfg.odds, momFilter:packCfg.momFilter});
+    const useOdds = (boostOdds && i===0) ? boostOdds : packCfg.odds;
+    const c=rollCard({pool:packCfg.pool, odds:useOdds, momFilter:packCfg.momFilter});
     if(c) cards.push(c);
   }
   // pity: če premium in vse navadne, dvigni eno na redko+
@@ -4051,7 +4054,7 @@ function openOnePack(packCfg){
 // zgradi konfiguracijo paketa iz tipa + parametra (ekipa/dekada)
 function buildPackCfg(type, param){
   const def=PACK_TYPES[type]||PACK_TYPES.basic;
-  const cfg={type, n:def.n, odds:def.odds, pity:def.pity, guaranteeLegendary:def.guaranteeLegendary};
+  const cfg={type, n:def.n, odds:def.odds, pity:def.pity, guaranteeLegendary:def.guaranteeLegendary, momentBoost:def.momentBoost};
   if(type==='team' && param){
     cfg.pool=albumCatalog().filter(c=>c.team===param);
     cfg.momFilter=(m=>m.team===param);
