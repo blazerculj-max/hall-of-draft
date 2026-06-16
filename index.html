@@ -639,15 +639,19 @@
 .hod-task-claim{font-size:12px;padding:6px 11px;}
 /* MARKET */
 .hod-mkt-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0 12px;}
-.hod-setdone-card{background:linear-gradient(160deg,#2a1c0e,#1a1206);border:3px solid var(--gold);border-radius:20px;padding:28px 24px;text-align:center;max-width:340px;box-shadow:0 0 40px rgba(255,209,102,.4);animation:setdonePop .5s cubic-bezier(.34,1.56,.5,1);}
+.hod-roul-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:16px;max-width:360px;}
+.hod-roul-h{font-family:'Anton';font-size:24px;color:var(--gold);letter-spacing:1px;}
+.hod-roul-team{font-family:'Bebas Neue';font-size:18px;color:#fff;letter-spacing:1px;margin-top:2px;}
+.hod-roul-sub{font-size:12px;color:var(--muted);margin:6px 0 14px;}
+.hod-roul-stage{position:relative;width:300px;height:300px;display:flex;align-items:center;justify-content:center;}
+.hod-roul-pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:26px;color:var(--gold);z-index:5;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
+.hod-roul-wheel{transform:rotate(0deg);filter:drop-shadow(0 6px 20px rgba(0,0,0,.6));border-radius:50%;}
+.hod-roul-legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-family:'Oswald';font-size:11px;font-weight:600;margin:14px 0;}
+.hod-roul-won{margin-top:16px;border:2px solid var(--gold);border-radius:14px;padding:16px;background:rgba(0,0,0,.4);animation:setdonePop .5s cubic-bezier(.34,1.56,.5,1);}
+.hod-roul-won-ic{font-size:40px;}
+.hod-roul-won-t{font-family:'Oswald';font-size:15px;color:#fff;margin:6px 0 12px;line-height:1.4;}
+.hod-roul-won-t b{font-family:'Anton';font-size:18px;}
 @keyframes setdonePop{0%{transform:scale(.7);opacity:0;}100%{transform:scale(1);opacity:1;}}
-.hod-setdone-burst{font-size:48px;animation:setdoneBurst 1s ease;}
-@keyframes setdoneBurst{0%{transform:scale(0) rotate(-30deg);}60%{transform:scale(1.3) rotate(10deg);}100%{transform:scale(1) rotate(0);}}
-.hod-setdone-h{font-family:'Anton';font-size:26px;color:var(--gold);letter-spacing:1px;margin:6px 0;}
-.hod-setdone-team{font-family:'Bebas Neue';font-size:20px;color:#fff;letter-spacing:1px;}
-.hod-setdone-sub{font-size:13px;color:var(--muted);margin:8px 0 14px;}
-.hod-setdone-reward{font-family:'Oswald';font-size:14px;color:#fff;background:rgba(255,209,102,.15);border:1px solid var(--gold-warm);border-radius:10px;padding:10px;margin-bottom:16px;}
-.hod-setdone-reward b{color:var(--gold);}
 .hod-mkt-filterbar{display:flex;gap:8px;justify-content:center;margin-bottom:12px;}
 .hod-mkt-fbtn{font-family:'Oswald';font-weight:600;font-size:12px;background:#13192a;border:1px solid var(--gold-warm);color:var(--ink);border-radius:20px;padding:6px 14px;cursor:pointer;transition:.12s;}
 .hod-mkt-fbtn.on{background:var(--gold);color:#1a1206;border-color:var(--gold);}
@@ -4001,27 +4005,107 @@ function checkSetCompletion(stickId){
   let done={}; try{ done=JSON.parse(storeGet('hod-sets-done')||'{}'); }catch(e){}
   if(done[key]) return;
   done[key]=true; storeSet('hod-sets-done', JSON.stringify(done));
-  // NAGRADA: tematski ekipni paket te ekipe (boljša, ciljana nagrada)
-  queuePack({type:'team', param:card.team});
   const teamNm=(typeof TEAM_NAME!=='undefined' && TEAM_NAME[card.team])||card.team;
-  setTimeout(()=>{ showSetCompleteReward(teamNm, card.era); }, 700);
+  // NAGRADA: ruleta paketov (vrti se, izbere paket)
+  setTimeout(()=>{ showPackRoulette(teamNm, card.era); }, 700);
 }
-// prikaz nagrade za dokončan set
-function showSetCompleteReward(teamNm, era){
+// ===== RULETA PAKETOV (nagrada za dokončan set) =====
+// 36 predelkov: 20 navadni, 5 ekipni, 5 dekadni, 4 zlati, 2 moment
+const ROULETTE_SLOTS=(function(){
+  const s=[];
+  for(let i=0;i<20;i++) s.push('basic');
+  for(let i=0;i<5;i++)  s.push('team');
+  for(let i=0;i<5;i++)  s.push('decade');
+  for(let i=0;i<4;i++)  s.push('premium');
+  for(let i=0;i<2;i++)  s.push('moment');
+  // premešaj, da niso vsi isti skupaj (lepši videz kolesa)
+  for(let i=s.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [s[i],s[j]]=[s[j],s[i]]; }
+  return s;
+})();
+const ROULETTE_STYLE={
+  basic:  {col:'#6b7280', label:'Navadni', ic:'📦'},
+  team:   {col:'#3b82f6', label:'Ekipni',  ic:'👕'},
+  decade: {col:'#8b5cf6', label:'Dekadni', ic:'📅'},
+  premium:{col:'#ffd60a', label:'Zlati',   ic:'🏆'},
+  moment: {col:'#ff4d6d', label:'Moment',  ic:'⭐'},
+};
+function showPackRoulette(teamNm, era){
+  const N=ROULETTE_SLOTS.length; // 36
+  // izberi zmagovalni predelek
+  const winIdx=Math.floor(Math.random()*N);
+  const winType=ROULETTE_SLOTS[winIdx];
+  const seg=360/N;
+  // kolo zavrtimo tako, da zmagovalni predelek pristane na vrhu (kazalec)
+  const spins=5; // polni obrati
+  const targetAngle = spins*360 + (360 - (winIdx*seg + seg/2));
+  // SVG kolo
+  const R=150, cx=160, cy=160;
+  let segs='';
+  for(let i=0;i<N;i++){
+    const a0=(i*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
+    const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0);
+    const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
+    const st=ROULETTE_STYLE[ROULETTE_SLOTS[i]];
+    segs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${st.col}" stroke="#0d1119" stroke-width="1"/>`;
+    // ikona na sredini predelka
+    const am=((i+0.5)*seg-90)*Math.PI/180; const ir=R*0.72;
+    const ix=cx+ir*Math.cos(am), iy=cy+ir*Math.sin(am);
+    segs+=`<text x="${ix.toFixed(1)}" y="${iy.toFixed(1)}" font-size="13" text-anchor="middle" dominant-baseline="central">${st.ic}</text>`;
+  }
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
-  ov.innerHTML=`<div class="hod-setdone-card">
-    <div class="hod-setdone-burst">🎉</div>
-    <div class="hod-setdone-h">SET DOKONČAN!</div>
-    <div class="hod-setdone-team">${escapeHtml(teamNm)} · ${era}</div>
-    <div class="hod-setdone-sub">Zbral si vse igralce te ekipe v tem obdobju!</div>
-    <div class="hod-setdone-reward">🎁 Nagrada: <b>${escapeHtml(teamNm)} ekipni paket</b></div>
-    <button class="hod-btn gold" id="hod-setdone-ok">Super!</button>
+  ov.innerHTML=`<div class="hod-roul-wrap">
+    <div class="hod-roul-h">🎉 SET DOKONČAN!</div>
+    <div class="hod-roul-team">${escapeHtml(teamNm)} · ${era}</div>
+    <div class="hod-roul-sub">Zavrti kolo za nagradni paket!</div>
+    <div class="hod-roul-stage">
+      <div class="hod-roul-pointer">▼</div>
+      <svg class="hod-roul-wheel" id="hod-roul-wheel" viewBox="0 0 320 320" width="300" height="300">
+        ${segs}
+        <circle cx="${cx}" cy="${cy}" r="26" fill="#1a1206" stroke="#ffd166" stroke-width="3"/>
+        <text x="${cx}" y="${cy}" font-size="22" text-anchor="middle" dominant-baseline="central">🎁</text>
+      </svg>
+    </div>
+    <div class="hod-roul-legend">
+      <span style="color:#6b7280">📦 Navadni</span>
+      <span style="color:#3b82f6">👕 Ekipni</span>
+      <span style="color:#8b5cf6">📅 Dekadni</span>
+      <span style="color:#ffd60a">🏆 Zlati</span>
+      <span style="color:#ff4d6d">⭐ Moment</span>
+    </div>
+    <button class="hod-btn gold" id="hod-roul-spin">Zavrti! 🎰</button>
+    <div id="hod-roul-result"></div>
   </div>`;
   document.body.appendChild(ov);
-  playSfx&&playSfx('win');
-  ov.querySelector('#hod-setdone-ok').onclick=()=>ov.remove();
-  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
+  const wheel=ov.querySelector('#hod-roul-wheel');
+  const spinBtn=ov.querySelector('#hod-roul-spin');
+  let spun=false;
+  spinBtn.onclick=()=>{
+    if(spun) return; spun=true;
+    spinBtn.disabled=true; spinBtn.textContent='Vrti se…';
+    playSfx&&playSfx('spin');
+    wheel.style.transition='transform 4.2s cubic-bezier(.17,.67,.12,1)';
+    wheel.style.transform=`rotate(${targetAngle}deg)`;
+    setTimeout(()=>{
+      // dodeli nagrado
+      let param=null;
+      if(winType==='team'){ const ts=Object.keys(TEAM_NAME); param=ts[Math.floor(Math.random()*ts.length)]; }
+      else if(winType==='decade'){ param=DECADE_GROUPS[Math.floor(Math.random()*DECADE_GROUPS.length)].id; }
+      queuePack({type:winType, param});
+      const st=ROULETTE_STYLE[winType];
+      let label=st.label+' paket';
+      if(winType==='team') label=`${TEAM_NAME[param]||param} paket`;
+      else if(winType==='decade'){ const g=DECADE_GROUPS.find(x=>x.id===param); label=`${g?g.name:param} paket`; }
+      playSfx&&playSfx('win');
+      const res=ov.querySelector('#hod-roul-result');
+      res.innerHTML=`<div class="hod-roul-won" style="border-color:${st.col}">
+        <div class="hod-roul-won-ic">${st.ic}</div>
+        <div class="hod-roul-won-t">Zadel si:<br><b style="color:${st.col}">${escapeHtml(label)}</b></div>
+        <button class="hod-btn gold" id="hod-roul-open">Odpri paket 📦</button>
+      </div>`;
+      res.querySelector('#hod-roul-open').onclick=()=>{ ov.remove(); showPackOpening(); };
+    }, 4400);
+  };
 }
 // menjaj podvojene istega igralca za točke
 function sellDuplicates(id, rarity){
