@@ -699,6 +699,15 @@
 .hod-pk-allin-note{margin-top:10px;font-family:'Oswald';font-size:13px;color:#ff6a8a;font-weight:600;text-align:center;}
 .hod-pk-allin-hint{margin-top:8px;font-size:11px;color:var(--muted);text-align:center;font-style:italic;}
 .hod-roul-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:16px;max-width:360px;}
+.hod-strk-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px;max-width:340px;}
+.hod-strk-fire{font-family:'Anton';font-size:40px;color:#ff6a00;text-shadow:0 0 20px rgba(255,106,0,.6);line-height:1;}
+.hod-strk-h{font-family:'Anton';font-size:20px;color:var(--gold);letter-spacing:.5px;margin-top:4px;}
+.hod-strk-sub{font-size:12px;color:var(--muted);margin:4px 0 10px;}
+.hod-strk-cal{display:flex;gap:6px;margin-bottom:6px;}
+.hod-strk-day{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;background:#1a1f2e;border:1px solid rgba(255,255,255,.1);color:var(--muted);}
+.hod-strk-day.on{background:rgba(255,106,0,.25);border-color:#ff6a00;color:#ff9a4d;}
+.hod-strk-day.today{outline:2px solid var(--gold);}
+.hod-strk-stage{position:relative;width:280px;height:280px;display:flex;align-items:center;justify-content:center;}
 .hod-roul-h{font-family:'Anton';font-size:24px;color:var(--gold);letter-spacing:1px;}
 .hod-roul-team{font-family:'Bebas Neue';font-size:18px;color:#fff;letter-spacing:1px;margin-top:2px;}
 .hod-roul-sub{font-size:12px;color:var(--muted);margin:6px 0 14px;}
@@ -3105,6 +3114,143 @@ function updateRosterSlot(){
 function leaveDraftFrame(){ /* naslednji full-screen render sam prepiše screen */ }
 
 // ---- SCREENS ----
+// ===== DNEVNI LOGIN STREAK =====
+// klasičen: niz raste vsak zaporedni dan, reset ob izpustu. 7. dan = dobra ruleta, 30. = najboljša.
+function getStreakData(){
+  let d=null; try{ d=JSON.parse(storeGet('hod-streak')||'null'); }catch(e){}
+  return d || {streak:0, lastDay:null, claimedToday:false};
+}
+function setStreakData(d){ storeSet('hod-streak', JSON.stringify(d)); }
+function daysBetween(k1,k2){
+  if(!k1||!k2) return 999;
+  const a=new Date(k1+'T00:00:00'), b=new Date(k2+'T00:00:00');
+  return Math.round((b-a)/86400000);
+}
+// vrne tip dneva: 'mega' (30.), 'special' (7.), 'normal'
+function streakDayType(streak){
+  if(streak>0 && streak%30===0) return 'mega';
+  if(streak>0 && streak%7===0) return 'special';
+  return 'normal';
+}
+// preveri stanje ob prihodu; vrne true, če je dnevna nagrada na voljo
+function checkDailyStreak(){
+  const today=todayKey();
+  let d=getStreakData();
+  if(d.lastDay===today) return !d.claimedToday; // že obiskal danes
+  const gap=daysBetween(d.lastDay, today);
+  if(gap===1){ d.streak=(d.streak||0)+1; }      // zaporedni dan
+  else { d.streak=1; }                           // reset (klasično)
+  d.lastDay=today; d.claimedToday=false;
+  setStreakData(d);
+  return true;
+}
+// ruleta nabori glede na tip dneva (paketi glavni, malo kovancev)
+function streakRouletteSlots(type){
+  const s=[];
+  if(type==='mega'){ // 30. dan — najboljša
+    for(let i=0;i<10;i++) s.push({t:'pack',pk:'premium'});   // zlati
+    for(let i=0;i<6;i++)  s.push({t:'pack',pk:'moment'});    // moment
+    for(let i=0;i<8;i++)  s.push({t:'pack',pk:'team'});
+    for(let i=0;i<8;i++)  s.push({t:'pack',pk:'decade'});
+    for(let i=0;i<4;i++)  s.push({t:'coins',v:100});
+  } else if(type==='special'){ // 7. dan — dobra
+    for(let i=0;i<8;i++)  s.push({t:'pack',pk:'premium'});
+    for(let i=0;i<4;i++)  s.push({t:'pack',pk:'moment'});
+    for(let i=0;i<7;i++)  s.push({t:'pack',pk:'team'});
+    for(let i=0;i<7;i++)  s.push({t:'pack',pk:'decade'});
+    for(let i=0;i<6;i++)  s.push({t:'pack',pk:'basic'});
+    for(let i=0;i<4;i++)  s.push({t:'coins',v:60});
+  } else { // navadni dan — paketi glavni, malo kovancev
+    for(let i=0;i<12;i++) s.push({t:'pack',pk:'basic'});
+    for(let i=0;i<7;i++)  s.push({t:'pack',pk:'decade'});
+    for(let i=0;i<7;i++)  s.push({t:'pack',pk:'team'});
+    for(let i=0;i<6;i++)  s.push({t:'coins',v:25});
+    for(let i=0;i<4;i++)  s.push({t:'coins',v:40});
+  }
+  return s;
+}
+const STREAK_STYLE={
+  basic:{col:'#6b7280',ic:'📦',label:'Navaden paket'},
+  team:{col:'#3b82f6',ic:'👕',label:'Ekipni paket'},
+  decade:{col:'#8b5cf6',ic:'📅',label:'Dekadni paket'},
+  premium:{col:'#ffd60a',ic:'🏆',label:'Zlati paket'},
+  moment:{col:'#ff4d6d',ic:'⭐',label:'Moment paket'},
+  coins:{col:'#2ecc71',ic:'🪙',label:'Kovanci'},
+};
+function showDailyStreak(){
+  const d=getStreakData();
+  const type=streakDayType(d.streak);
+  const slots=streakRouletteSlots(type);
+  const N=slots.length, seg=360/N, R=150, cx=170, cy=170;
+  // premešaj za lep videz
+  for(let i=slots.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [slots[i],slots[j]]=[slots[j],slots[i]]; }
+  const winIdx=Math.floor(Math.random()*N);
+  const win=slots[winIdx];
+  let segs='';
+  for(let i=0;i<N;i++){
+    const sl=slots[i]; const st=sl.t==='coins'?STREAK_STYLE.coins:STREAK_STYLE[sl.pk];
+    const a0=(i*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
+    const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0), x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
+    segs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${st.col}" stroke="#0d1119" stroke-width="1"/>`;
+    const am=((i+0.5)*seg-90)*Math.PI/180, ir=R*0.74;
+    segs+=`<text x="${(cx+ir*Math.cos(am)).toFixed(1)}" y="${(cy+ir*Math.sin(am)).toFixed(1)}" font-size="13" text-anchor="middle" dominant-baseline="central">${st.ic}</text>`;
+  }
+  const dayLabel = type==='mega'?'🌟 30-DNEVNI MEJNIK!':type==='special'?'✨ 7-DNEVNI MEJNIK!':'Dnevna nagrada';
+  // koledar zadnjih 7 dni
+  let cal=''; for(let i=6;i>=0;i--){ const on=i< (d.streak%7||7); cal+=`<span class="hod-strk-day ${i===0?'today':''} ${on?'on':''}">${on?'✓':'·'}</span>`; }
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-strk-wrap">
+    <div class="hod-strk-fire">🔥 ${d.streak}</div>
+    <div class="hod-strk-h">${dayLabel}</div>
+    <div class="hod-strk-sub">${d.streak} ${d.streak===1?'dan':'dni'} zapored${type==='normal'?` · do mejnika še ${7-(d.streak%7||7)+ (d.streak%7===0?7:0)} dni`:''}</div>
+    <div class="hod-strk-cal">${cal}</div>
+    <div class="hod-strk-stage">
+      <div class="hod-roul-pointer">▼</div>
+      <svg class="hod-roul-wheel" id="hod-strk-wheel" viewBox="0 0 340 340" width="280" height="280">${segs}
+        <circle cx="${cx}" cy="${cy}" r="28" fill="#1a1206" stroke="#ffd166" stroke-width="3"/>
+        <text x="${cx}" y="${cy}" font-size="22" text-anchor="middle" dominant-baseline="central">🎁</text>
+      </svg>
+    </div>
+    <button class="hod-btn gold" id="hod-strk-spin">Zavrti dnevno nagrado 🎁</button>
+    <div id="hod-strk-result"></div>
+  </div>`;
+  document.body.appendChild(ov);
+  const wheel=ov.querySelector('#hod-strk-wheel');
+  const spinBtn=ov.querySelector('#hod-strk-spin');
+  let spun=false;
+  spinBtn.onclick=()=>{
+    if(spun) return; spun=true; spinBtn.disabled=true; spinBtn.textContent='Vrti se…';
+    unlockAudio&&unlockAudio();
+    scheduleRouletteTicks(4200, N);
+    const targetAngle=5*360+(360-(winIdx*seg+seg/2));
+    wheel.style.transition='transform 4.2s cubic-bezier(.17,.67,.12,1)';
+    wheel.style.transform=`rotate(${targetAngle}deg)`;
+    setTimeout(()=>{
+      // dodeli nagrado
+      let label, ic, col;
+      if(win.t==='coins'){ addCoins(win.v); label=`+${win.v} kovancev`; ic='🪙'; col='#2ecc71'; }
+      else {
+        let param=null;
+        if(win.pk==='team'){ const ts=Object.keys(TEAM_NAME); param=ts[Math.floor(Math.random()*ts.length)]; }
+        else if(win.pk==='decade'){ param=DECADE_GROUPS[Math.floor(Math.random()*DECADE_GROUPS.length)].id; }
+        queuePack({type:win.pk, param});
+        const st=STREAK_STYLE[win.pk]; ic=st.ic; col=st.col;
+        label=st.label + (param&&win.pk==='team'?` (${TEAM_NAME[param]})`:'');
+      }
+      // označi pobrano
+      const sd=getStreakData(); sd.claimedToday=true; setStreakData(sd);
+      playWinChime();
+      const res=ov.querySelector('#hod-strk-result');
+      res.innerHTML=`<div class="hod-roul-won" style="border-color:${col}">
+        <div class="hod-roul-won-ic">${ic}</div>
+        <div class="hod-roul-won-t">Osvojil si:<br><b style="color:${col}">${escapeHtml(label)}</b></div>
+        <button class="hod-btn gold" id="hod-strk-ok">${win.t==='coins'?'Super! 🪙':'Odpri paket 📦'}</button>
+      </div>`;
+      res.querySelector('#hod-strk-ok').onclick=()=>{ ov.remove(); if(win.t!=='coins') showPackOpening(); else { renderProgress&&renderProgress(); } };
+    }, 4400);
+  };
+}
 function showLanding(){
   phase="landing";
   screen.innerHTML=`
@@ -3148,6 +3294,10 @@ function showLanding(){
   const rb=document.getElementById('hod-go-rewards'); if(rb) rb.onclick=()=>showRewards();
   document.getElementById('hod-go-auth').onclick=()=>{ showAuth(); };
   renderProgress();
+  // dnevni login streak (samo prijavljeni) — pokaži, če nagrada še ni pobrana danes
+  if(isLoggedIn()){
+    if(checkDailyStreak()){ setTimeout(()=>showDailyStreak(), 500); }
+  }
   // preveri nagrade v ozadju -> rdeča pika (tudi dnevne naloge)
   if(isLoggedIn()){
     const dot=document.getElementById('hod-rew-dot');
