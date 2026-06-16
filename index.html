@@ -652,6 +652,32 @@
 .hod-pkm-card{position:relative;}
 .hod-pkm-card.pk-wild{border-color:#ffd60a!important;box-shadow:0 0 10px rgba(255,214,10,.5)!important;}
 .hod-vs-hand{background:var(--gold);color:#1a1206;font-weight:700;padding:1px 6px;border-radius:8px;font-size:10px;}
+/* francoska ruleta */
+.frt-wrap{max-width:480px;margin:0 auto;}
+.frt-balance{text-align:center;font-family:'Oswald';font-size:14px;color:var(--ink);margin-bottom:10px;}
+.frt-balance b{color:var(--gold);font-family:'Anton';}
+.frt-stage{position:relative;display:flex;justify-content:center;align-items:center;height:250px;}
+.frt-pointer{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:22px;color:var(--gold);z-index:5;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
+.frt-wheel{transform:rotate(0deg);filter:drop-shadow(0 6px 18px rgba(0,0,0,.6));}
+.frt-result{text-align:center;min-height:10px;margin:6px 0;}
+.frt-won{display:inline-flex;align-items:center;gap:12px;border:2px solid;border-radius:14px;padding:10px 18px;background:rgba(0,0,0,.4);animation:setdonePop .4s ease;}
+.frt-won-num{font-family:'Anton';font-size:30px;width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;}
+.frt-won-t{font-family:'Oswald';font-size:15px;color:#fff;text-align:left;}
+.frt-red{background:#c4242e!important;color:#fff!important;} .frt-black{background:#1a1a1a!important;color:#fff!important;} .frt-green{background:#1a7d3a!important;color:#fff!important;}
+.frt-table{background:#0c5a2a;border:2px solid #d4af37;border-radius:10px;padding:8px;margin:8px 0;}
+.frt-zero{width:100%;border:1px solid #d4af37;border-radius:6px;padding:6px;font-family:'Anton';font-size:14px;cursor:pointer;margin-bottom:4px;position:relative;}
+.frt-grid{display:flex;flex-direction:column;gap:3px;}
+.frt-numrow{display:flex;gap:3px;}
+.frt-num{flex:1;aspect-ratio:1;border:1px solid rgba(255,255,255,.2);border-radius:4px;color:#fff;font-family:'Oswald';font-weight:700;font-size:11px;cursor:pointer;position:relative;padding:0;}
+.frt-num.frt-red{background:#c4242e;} .frt-num.frt-black{background:#1a1a1a;}
+.frt-num:hover,.frt-out:hover,.frt-zero:hover{outline:2px solid var(--gold);}
+.frt-col{flex:none;width:38px;border:1px solid #d4af37;border-radius:4px;background:#0a4a22;color:var(--gold);font-family:'Oswald';font-weight:700;font-size:11px;cursor:pointer;position:relative;}
+.frt-dozens,.frt-evens{display:flex;gap:3px;margin-top:4px;}
+.frt-out{flex:1;border:1px solid rgba(255,255,255,.3);border-radius:5px;background:#0a4a22;color:#fff;font-family:'Oswald';font-weight:600;font-size:11px;padding:8px 2px;cursor:pointer;position:relative;}
+.frt-chip{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--gold);color:#1a1206;font-family:'Anton';font-size:11px;min-width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.5);border:1.5px solid #fff;z-index:3;}
+.frt-controls{text-align:center;margin-top:10px;}
+.frt-hint{display:block;font-size:11px;color:var(--muted);margin-bottom:8px;font-style:italic;}
+.frt-btns{display:flex;gap:10px;justify-content:center;}
 /* poker layout z multiplier tabelo ob strani */
 .hod-pk-layout{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap;}
 .hod-pk-layout .hod-pk-grid{flex:1;min-width:280px;}
@@ -2352,6 +2378,22 @@ function playTick(pitch){
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.05);
     o.connect(g); g.connect(ctx.destination);
     o.start(); o.stop(ctx.currentTime+0.06);
+  }catch(e){}
+}
+// žeton postavljen (kratek "klink") / odvzet (nižji)
+function playChip(up){
+  if(!_sfxOn) return;
+  const ctx=_getCtx(); if(!ctx) return;
+  if(ctx.state==='suspended') ctx.resume();
+  try{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(up?1400:700, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(up?900:500, ctx.currentTime+0.06);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.12);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+0.14);
   }catch(e){}
 }
 function playWinChime(){
@@ -5997,6 +6039,7 @@ function showDevGallery(){
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px">
       <button class="hod-btn" id="hod-dev-split" style="background:linear-gradient(180deg,#9b5de5,#6a3bb5)">🎞️ Demo tretjin</button>
       <button class="hod-btn" id="hod-dev-roul" style="background:linear-gradient(180deg,#e8541e,#c43d12)">🎰 Test ruleta</button>
+      <button class="hod-btn" id="hod-dev-froul" style="background:linear-gradient(180deg,#1a7d3a,#0d5022)">🎡 Francoska ruleta</button>
     </div>`;
   // samo momenti
   html+=`<div class="hod-alb-section-t">⭐ Ultra-rare momenti (${ultra.length})</div>`;
@@ -6011,12 +6054,173 @@ function showDevGallery(){
   document.getElementById('hod-dev-home').onclick=()=>goHome();
   const dsp=document.getElementById('hod-dev-split'); if(dsp) dsp.onclick=()=>showSplitDemo();
   const drl=document.getElementById('hod-dev-roul'); if(drl) drl.onclick=()=>showPackRoulette('TEST EKIPA','test',true);
+  const dfr=document.getElementById('hod-dev-froul'); if(dfr) dfr.onclick=()=>showFrenchRoulette();
   // klik na moment = predogled full kartice
   screen.querySelectorAll('.moment-cell').forEach(el=>{
     el.onclick=()=>{ const m=MOMENTS.find(x=>x.id===el.dataset.moment); if(m) showMomentDetail(m); };
   });
 }
 // DEV demo: kako izgleda vodoraven moment razrezan na 3 dele + sestavljen
+// ===== FRANCOSKA RULETA (dev demo) =====
+// evropsko kolo (en zero), prave barve, stave z izplačili, hišna prednost (zero)
+const ROULETTE_WHEEL=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const ROUL_RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+function roulColor(n){ return n===0?'green':(ROUL_RED.has(n)?'red':'black'); }
+let _froulBets={}; // {betKey: znesek}
+let _froulBalance=500; // testni žetoni
+function froulPayout(betKey){
+  // vrne množitelj izplačila (brez vložka) za zadetek
+  if(betKey.startsWith('n')) return 35;       // plein (1 številka)
+  if(betKey==='red'||betKey==='black'||betKey==='odd'||betKey==='even'||betKey==='low'||betKey==='high') return 1;
+  if(betKey.startsWith('col')||betKey.startsWith('doz')) return 2;
+  return 0;
+}
+function froulWins(betKey, n){
+  if(betKey==='n'+n) return true;
+  if(n===0) return false; // zero pobere vse zunanje stave (hišna prednost)
+  const c=roulColor(n);
+  if(betKey==='red') return c==='red';
+  if(betKey==='black') return c==='black';
+  if(betKey==='odd') return n%2===1;
+  if(betKey==='even') return n%2===0;
+  if(betKey==='low') return n>=1&&n<=18;
+  if(betKey==='high') return n>=19&&n<=36;
+  if(betKey==='doz1') return n>=1&&n<=12;
+  if(betKey==='doz2') return n>=13&&n<=24;
+  if(betKey==='doz3') return n>=25&&n<=36;
+  if(betKey==='col1') return n%3===1;
+  if(betKey==='col2') return n%3===2;
+  if(betKey==='col3') return n%3===0;
+  return false;
+}
+function showFrenchRoulette(){
+  phase="dev";
+  _froulBets={};
+  const CHIP=10; // vrednost enega žetona
+  // SVG kolo
+  const N=ROULETTE_WHEEL.length, R=130, cx=150, cy=150, seg=360/N;
+  let wheelSegs='';
+  for(let i=0;i<N;i++){
+    const num=ROULETTE_WHEEL[i];
+    const a0=(i*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
+    const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0);
+    const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
+    const fill=num===0?'#1a7d3a':(ROUL_RED.has(num)?'#c4242e':'#1a1a1a');
+    wheelSegs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${fill}" stroke="#d4af37" stroke-width="0.5"/>`;
+    const am=((i+0.5)*seg-90)*Math.PI/180; const ir=R*0.85;
+    const ix=cx+ir*Math.cos(am), iy=cy+ir*Math.sin(am);
+    wheelSegs+=`<text x="${ix.toFixed(1)}" y="${iy.toFixed(1)}" font-size="9" fill="#fff" text-anchor="middle" dominant-baseline="central" transform="rotate(${(i+0.5)*seg},${ix.toFixed(1)},${iy.toFixed(1)})">${num}</text>`;
+  }
+  // miza za stave: številke 1-36 v 3 vrstah + zunanje
+  function numCell(n){ const c=roulColor(n); return `<button class="frt-num frt-${c}" data-bet="n${n}">${n}</button>`; }
+  let grid='';
+  // 3 vrste (kot prava miza): zgoraj 3,6,9... sredina 2,5,8... spodaj 1,4,7...
+  for(let row=2;row>=0;row--){
+    grid+='<div class="frt-numrow">';
+    for(let col=0;col<12;col++){ const n=col*3+row+1; grid+=numCell(n); }
+    grid+=`<button class="frt-col" data-bet="col${row===2?1:row===1?2:3}">2:1</button>`;
+    grid+='</div>';
+  }
+  screen.innerHTML=`<div class="hod-result hod-fade frt-wrap">
+    <div class="hod-alb-header">
+      <button class="hod-alb-backtop" id="hod-frt-back">← Nazaj</button>
+      <div class="hod-stage-label" style="margin:0">🎡 Francoska ruleta</div>
+      <span style="width:80px"></span>
+    </div>
+    <div class="frt-balance">Žetoni: <b id="frt-bal">${_froulBalance}</b> · Vložek: <b id="frt-staked">0</b></div>
+    <div class="frt-stage">
+      <div class="frt-pointer">▼</div>
+      <svg class="frt-wheel" id="frt-wheel" viewBox="0 0 300 300" width="240" height="240">
+        ${wheelSegs}
+        <circle cx="${cx}" cy="${cy}" r="30" fill="#0d1119" stroke="#d4af37" stroke-width="2"/>
+        <text x="${cx}" y="${cy}" font-size="20" text-anchor="middle" dominant-baseline="central">🎡</text>
+      </svg>
+      <div class="frt-ball" id="frt-ball" style="display:none"></div>
+    </div>
+    <div id="frt-result" class="frt-result"></div>
+    <div class="frt-table">
+      <button class="frt-zero frt-green" data-bet="n0">0</button>
+      <div class="frt-grid">${grid}</div>
+      <div class="frt-dozens">
+        <button class="frt-out" data-bet="doz1">1. ducat (1-12)</button>
+        <button class="frt-out" data-bet="doz2">2. ducat (13-24)</button>
+        <button class="frt-out" data-bet="doz3">3. ducat (25-36)</button>
+      </div>
+      <div class="frt-evens">
+        <button class="frt-out" data-bet="low">1-18</button>
+        <button class="frt-out" data-bet="even">PAR</button>
+        <button class="frt-out frt-red" data-bet="red">RDEČA</button>
+        <button class="frt-out frt-black" data-bet="black">ČRNA</button>
+        <button class="frt-out" data-bet="odd">LIH</button>
+        <button class="frt-out" data-bet="high">19-36</button>
+      </div>
+    </div>
+    <div class="frt-controls">
+      <span class="frt-hint">Klikni polje = +${CHIP} žetonov · ponovni klik na isto z desno/dolgo = manj</span>
+      <div class="frt-btns">
+        <button class="hod-btn secondary" id="frt-clear">Počisti</button>
+        <button class="hod-btn gold" id="frt-spin">Zavrti 🎡</button>
+      </div>
+    </div>
+  </div>`;
+  const balEl=document.getElementById('frt-bal');
+  const stakedEl=document.getElementById('frt-staked');
+  function totalStaked(){ return Object.values(_froulBets).reduce((a,b)=>a+b,0); }
+  function refresh(){
+    balEl.textContent=_froulBalance;
+    stakedEl.textContent=totalStaked();
+    document.querySelectorAll('[data-bet]').forEach(el=>{
+      const k=el.dataset.bet; const amt=_froulBets[k]||0;
+      let chip=el.querySelector('.frt-chip');
+      if(amt>0){ if(!chip){ chip=document.createElement('span'); chip.className='frt-chip'; el.appendChild(chip);} chip.textContent=amt; }
+      else if(chip){ chip.remove(); }
+    });
+  }
+  let spinning=false;
+  document.querySelectorAll('[data-bet]').forEach(el=>{
+    el.onclick=()=>{
+      if(spinning) return;
+      const k=el.dataset.bet;
+      if(totalStaked()+CHIP>_froulBalance){ hodToast('Premalo žetonov.'); return; }
+      _froulBets[k]=(_froulBets[k]||0)+CHIP;
+      playChip(true); refresh();
+    };
+    // desni klik / dolg pritisk = odstrani žeton
+    el.oncontextmenu=(e)=>{ e.preventDefault(); const k=el.dataset.bet; if(_froulBets[k]){ _froulBets[k]-=CHIP; if(_froulBets[k]<=0) delete _froulBets[k]; playChip(false); refresh(); } };
+  });
+  document.getElementById('frt-clear').onclick=()=>{ if(spinning)return; _froulBets={}; playChip(false); refresh(); document.getElementById('frt-result').innerHTML=''; };
+  document.getElementById('frt-back').onclick=()=>showDevGallery();
+  document.getElementById('frt-spin').onclick=()=>{
+    if(spinning) return;
+    const staked=totalStaked();
+    if(staked<=0){ hodToast('Najprej postavi stavo.'); return; }
+    spinning=true;
+    _froulBalance-=staked; refresh();
+    const winNum=ROULETTE_WHEEL[Math.floor(Math.random()*N)];
+    const winIdx=ROULETTE_WHEEL.indexOf(winNum);
+    const targetAngle=5*360 + (360-(winIdx*seg+seg/2));
+    const wheel=document.getElementById('frt-wheel');
+    const durMs=4200;
+    scheduleRouletteTicks(durMs, N);
+    wheel.style.transition='transform 4.2s cubic-bezier(.17,.67,.12,1)';
+    wheel.style.transform=`rotate(${targetAngle}deg)`;
+    setTimeout(()=>{
+      // izračun dobitka
+      let payout=0;
+      Object.keys(_froulBets).forEach(k=>{ if(froulWins(k,winNum)){ payout+=_froulBets[k]*(froulPayout(k)+1); } });
+      _froulBalance+=payout;
+      const c=roulColor(winNum);
+      const net=payout-staked;
+      playWinChime();
+      document.getElementById('frt-result').innerHTML=`<div class="frt-won" style="border-color:${c==='red'?'#c4242e':c==='green'?'#1a7d3a':'#444'}">
+        <div class="frt-won-num frt-${c}">${winNum}</div>
+        <div class="frt-won-t">${payout>0?`Dobitek: <b style="color:var(--green)">+${payout}</b>`:`<b style="color:var(--red)">Brez dobitka</b>`}<br><span style="font-size:12px;color:var(--muted)">Neto: ${net>=0?'+':''}${net} žetonov</span></div>
+      </div>`;
+      _froulBets={}; refresh(); spinning=false;
+    }, durMs+200);
+  };
+  refresh();
+}
 function showSplitDemo(){
   phase="dev";
   // vzamemo dva primera (vodoravna momenta)
