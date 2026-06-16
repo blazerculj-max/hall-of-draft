@@ -668,6 +668,21 @@
   .hod-alb-header .hod-stage-label{order:-1;width:100%;text-align:center;}
   .hod-alb-header span{display:none;}
 }
+/* mini-ekipa pod nenalepljenimi (lepljenje na mestu) */
+.hod-mini-wrap{margin-top:16px;background:rgba(255,209,102,.06);border:1px solid rgba(255,209,102,.22);border-radius:12px;padding:12px;animation:miniIn .25s ease;}
+@keyframes miniIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.hod-mini-h{font-family:'Anton';font-size:15px;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.hod-mini-h span{font-family:'Oswald';font-size:11px;color:var(--muted);font-weight:400;}
+.hod-alb-cell.mini-cell{cursor:default;}
+.hod-alb-cell.mini-target{cursor:pointer;animation:miniTargetPulse 1s ease-in-out infinite;border-color:var(--red)!important;}
+@keyframes miniTargetPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,60,60,.5);}50%{box-shadow:0 0 0 6px rgba(220,60,60,0);}}
+.hod-alb-cell.mini-active{outline:2px solid var(--gold);outline-offset:1px;}
+/* peel/žig animacija ob prilepitvi */
+.hod-alb-cell.mini-peel{animation:miniPeel .55s cubic-bezier(.34,1.56,.5,1);}
+@keyframes miniPeel{0%{transform:scale(0) rotate(-12deg);opacity:0;}55%{transform:scale(1.12) rotate(3deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
+.hod-stick-stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:30px;height:30px;border-radius:50%;background:rgba(46,204,113,.92);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;animation:stampIn .5s ease .12s forwards;z-index:5;}
+@keyframes stampIn{0%{transform:translate(-50%,-50%) scale(0) rotate(-30deg);}70%{transform:translate(-50%,-50%) scale(1.25) rotate(8deg);}100%{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:.92;}}
+.hod-alb-emptymark{font-size:20px;opacity:.6;}
 /* lebdeči gumb nenalepljene */
 .hod-unstuck-fab{position:fixed;right:14px;bottom:20px;z-index:250;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:1px;width:64px;height:64px;border-radius:50%;border:2px solid var(--gold-warm);
@@ -1677,7 +1692,7 @@ const QUIZ_QUESTIONS=[
 {q:"Katera ekipa je 1998 izbrala Vincea Carterja kot 5. izbor in ga zamenjala v Toronto?",a:["Golden State Warriors","Milwaukee Bucks","Dallas Mavericks","Denver Nuggets"],c:0,d:13},
 {q:"Kateri igralec je igral za rekordnih 13 različnih NBA franšiz?",a:["Ish Smith","Jim Jackson","Joe Smith","Vince Carter"],c:0,d:14},
 {q:"Kateri igralec drži rekord za največ zgrešenih prostih metov na eni tekmi (23 od 36)?",a:["Andre Drummond","Shaquille O'Neal","Wilt Chamberlain","DeAndre Jordan"],c:0,d:15},
-{q:"Kakšen je bil rezultat najbolj zabite tekme v zgodovini (Pistons proti Nuggets, 1983, 3 podaljški)?",a:["186-184","171-166","192-189","163-158"],c:0,d:13},
+{q:"Kakšen je bil rezultat tekme z največ skupno doseženimi točkami v zgodovini NBA (Pistons proti Nuggets, 1983, trije podaljški)?",a:["186-184","171-166","192-189","163-158"],c:0,d:13},
 {q:"Kdo je 1974 dosegel prvi uradno zabeležen quadruple-double?",a:["Nate Thurmond","Hakeem Olajuwon","Bill Russell","David Robinson"],c:0,d:14},
 {q:"Kateri igralec je v sezoni 2000/01 prejel rekordnih 41 tehničnih napak?",a:["Rasheed Wallace","Dennis Rodman","Ron Artest","Draymond Green"],c:0,d:14},
 {q:"Kateri igralec je odigral največ tekem rednega dela v zgodovini (1611)?",a:["Robert Parish","Kareem Abdul-Jabbar","Vince Carter","Dirk Nowitzki"],c:0,d:13},
@@ -5083,7 +5098,7 @@ function startQuickfire(){
 // ===================== ALBUM UI =====================
 let _albumDecade='80s';
 let _albumTab='album'; // 'album' | 'nove' | 'trgovina'
-let _pendingStick=null, _pendingStickName='', _albumSearch='', _albumSeason='';
+let _pendingStick=null, _pendingStickName='', _albumSearch='', _albumSeason='', _miniStickId=null;
 function showAlbum(){
   if(!isLoggedIn()){ showAlbumLocked(); return; }
   phase="album";
@@ -5520,33 +5535,100 @@ function renderUnstuck(body){
   const decs=DECADE_ORDER.filter(d=>items.some(c=>c.era===d));
   let shown=items.filter(c=>(!_unstuckTeam||c.team===_unstuckTeam)&&(!_unstuckDec||c.era===_unstuckDec));
   shown.sort((a,b)=>(b.rating||0)-(a.rating||0));
-  body.innerHTML=`<div class="hod-alb-hint">Tapni kartico → album skoči na njeno mesto → potrdiš lepljenje. 🔴 = kje te kartica čaka.</div>
+  body.innerHTML=`<div class="hod-alb-hint">Tapni kartico → spodaj se pokaže njena ekipa → tapni utripajoče mesto in jo prilepiš. 🔴 = kam paše.</div>
     <div class="hod-unst-filters">
       <select class="hod-unst-sel" id="hod-unst-team"><option value="">Vse ekipe</option>${teams.map(t=>`<option value="${escapeHtml(t)}" ${t===_unstuckTeam?'selected':''}>${escapeHtml(t)}</option>`).join('')}</select>
       <select class="hod-unst-sel" id="hod-unst-dec"><option value="">Vse dekade</option>${decs.map(d=>`<option value="${d}" ${d===_unstuckDec?'selected':''}>${d}</option>`).join('')}</select>
     </div>
     <div class="hod-alb-cells stick">`+shown.map(c=>{
     const id=c.id||c.uid||(''+c.pid); const cnt=(col[id]&&col[id].count)||1;
-    return `<div class="hod-alb-cell rar-${c.rarity} stickable" data-id="${id}" data-era="${c.era||'moments'}">
+    const sel=(_miniStickId===id)?' mini-active':'';
+    return `<div class="hod-alb-cell rar-${c.rarity} stickable${sel}" data-id="${id}" data-era="${c.era||'moments'}">
       ${c.num?`<div class="hod-alb-num">${c.num}</div>`:''}
       ${cnt>1?`<div class="hod-alb-dup">×${cnt}</div>`:''}
       <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
       <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
       <div class="hod-alb-szn">${c.season||c.moment||''}</div>
       <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
-      <div class="hod-alb-stick">→ poišči mesto</div>
+      <div class="hod-alb-stick">${sel?'↓ prilepi spodaj':'tapni za lepljenje'}</div>
     </div>`;
-  }).join('')+`</div>`;
-  const ts=document.getElementById('hod-unst-team'); if(ts) ts.onchange=()=>{ _unstuckTeam=ts.value; renderUnstuck(body); };
-  const ds=document.getElementById('hod-unst-dec'); if(ds) ds.onchange=()=>{ _unstuckDec=ds.value; renderUnstuck(body); };
+  }).join('')+`</div>
+    <div id="hod-mini-team"></div>`;
+  const ts=document.getElementById('hod-unst-team'); if(ts) ts.onchange=()=>{ _unstuckTeam=ts.value; _miniStickId=null; renderUnstuck(body); };
+  const ds=document.getElementById('hod-unst-dec'); if(ds) ds.onchange=()=>{ _unstuckDec=ds.value; _miniStickId=null; renderUnstuck(body); };
   body.querySelectorAll('.stickable').forEach(el=>el.onclick=()=>{
-    const id=el.dataset.id; const era=el.dataset.era;
-    const c=catMap[id];
-    _pendingStick=id; _pendingStickName=c?c.name:'';
-    _albumTab='album'; _albumDecade=era; _albumSeason=(c&&c.season)?c.season:'';
-    renderAlbumTabsMain();
-    renderAlbumBody();
+    const id=el.dataset.id;
+    _miniStickId=(_miniStickId===id)?null:id;  // toggle
+    renderUnstuck(body);
+    // pomakni pogled rahlo do mini-ekipe
+    if(_miniStickId){
+      setTimeout(()=>{ const mt=document.getElementById('hod-mini-team'); if(mt) mt.scrollIntoView({behavior:'smooth',block:'nearest'}); },60);
+    }
   });
+  // če je izbrana kartica za lepljenje, pokaži njeno ekipo spodaj
+  if(_miniStickId && col[_miniStickId] && !col[_miniStickId].stuck){
+    renderMiniTeam(document.getElementById('hod-mini-team'), _miniStickId, body);
+  }
+}
+// mini prikaz ene ekipe (ali momentne skupine) z utripajočim praznim mestom za lepljenje
+function renderMiniTeam(host, stickId, unstuckBody){
+  if(!host) return;
+  const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
+  const col=getCollected();
+  const target=catMap[stickId];
+  if(!target){ host.innerHTML=''; return; }
+  const isMoment=!!target.moment || ['moment','lowlight','slovenski'].includes(target.rarity);
+  let group, title;
+  if(isMoment){
+    group=MOMENTS.map(m=>({...m,rarity:momentRarity(m),uid:m.id}));
+    title='⭐ Momenti';
+  } else {
+    // ista ekipa + ista sezona (kot v albumu)
+    group=albumCatalog().filter(c=>c.team===target.team && c.season===target.season);
+    title=`${escapeHtml(target.team||'')} · ${target.season||''}`;
+  }
+  group.sort((a,b)=>(b.rating||0)-(a.rating||0));
+  const cellOf=(c)=>{
+    const id=c.id||c.uid;
+    const stuck=col[id]&&col[id].stuck;
+    const isTgt=(id===stickId);
+    if(stuck){
+      return `<div class="hod-alb-cell rar-${c.rarity} mini-cell">
+        <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
+        <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
+        <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div></div>`;
+    }
+    // prazno mesto — če je to naša kartica, utripa in je klikabilno
+    return `<div class="hod-alb-cell empty mini-cell ${isTgt?'target mini-target':''}" ${isTgt?`data-ministick="${id}"`:''}>
+      <div class="hod-alb-emptymark">${isTgt?'🔴':'?'}</div>
+      <div class="hod-alb-fullnm" style="opacity:.5">${escapeHtml(c.name||'')}</div></div>`;
+  };
+  host.innerHTML=`<div class="hod-mini-wrap">
+    <div class="hod-mini-h">${title} <span>tapni 🔴 in prilepiš</span></div>
+    <div class="hod-alb-cells">${group.map(cellOf).join('')}</div>
+  </div>`;
+  // klik na utripajoče mesto = prilepi
+  const tgt=host.querySelector('[data-ministick]');
+  if(tgt) tgt.onclick=()=>{
+    const id=tgt.dataset.ministick;
+    if(stickCard(id)){
+      playSfx('stick');
+      taskProgress('stick5');
+      // peel + žig animacija na mestu
+      const c=catMap[id];
+      tgt.classList.remove('empty','target','mini-target');
+      tgt.classList.add('rar-'+c.rarity,'mini-peel');
+      tgt.innerHTML=`<div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
+        <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
+        <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
+        <div class="hod-stick-stamp">✓</div>`;
+      hodToast('✅ <b>Prilepljeno!</b>');
+      if(typeof syncProgress==='function') syncProgress();
+      // po kratki animaciji osveži seznam (ostani na nenalepljenih)
+      _miniStickId=null;
+      setTimeout(()=>{ renderUnstuck(unstuckBody); }, 620);
+    }
+  };
 }
 // ===== MARKET UI =====
 let _marketView='browse'; // browse | mine | sell
