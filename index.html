@@ -771,11 +771,12 @@
 /* ===== FULL-BLEED FLIP MOMENTNA KARTICA ===== */
 .hod-mom-overlay{display:flex;align-items:center;justify-content:center;}
 .hod-mom-wrap{display:flex;flex-direction:column;align-items:center;}
-.hod-mom-flip{width:300px;height:420px;perspective:1400px;cursor:pointer;}
-@media(max-width:430px){ .hod-mom-flip{width:84vw;height:117vw;max-height:74vh;} }
+.hod-mom-flip{perspective:1400px;cursor:pointer;}
 .hod-mom-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .7s cubic-bezier(.4,.2,.2,1);}
 .hod-mom-flip.flipped .hod-mom-inner{transform:rotateY(180deg);-webkit-transform:rotateY(180deg);}
 .hod-mom-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;overflow:hidden;-webkit-transform:translateZ(0);}
+/* odprta slika — cela, brez popačenja in rezanja (kartica je istega razmerja) */
+.hod-mom-fullimg-contain{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .hod-mom-front{transform:rotateY(0deg);-webkit-transform:rotateY(0deg);border:4px solid #ffd166;box-shadow:0 16px 50px rgba(0,0,0,.7),0 0 34px rgba(255,209,102,.45);background:#1a0a2e;}
 .hod-mom-flip.lowlight .hod-mom-front{border-color:#8a9099;box-shadow:0 16px 50px rgba(0,0,0,.8),0 0 30px rgba(138,144,153,.4);background:#0a0b0e;}
 .hod-mom-flip.slovenski .hod-mom-front{border-color:#0073e6;box-shadow:0 16px 50px rgba(0,0,0,.7),0 0 34px rgba(0,115,230,.5);background:#0a1426;}
@@ -4010,15 +4011,19 @@ function hasMomentImg(id){ return MOMENT_IMG.has(id); }
 // slike, kjer je glava/akcija višje — fokusiramo proti vrhu
 const MOMENT_FOC_TOP=new Set(['udrih','nachbar','dragic_asg']);   // glava čisto pri vrhu
 const MOMENT_FOC_HIGH=new Set(['milic','doncic_trade']);          // rahlo višje
+// približna razmerja (širina/višina) moment slik — za prikaz cele slike brez popačenja
+const MOMENT_AR={
+  kobe81:0.71, wilt100:0.71, mj63:0.75, magic42:0.75, tonya:0.75,
+  udrih:0.67, nachbar:0.81, dragic_asg:0.67, cancar:1.0, doncic73:0.80,
+  klay37:1.34, lebron:1.50, tmac:1.33, malice:1.54, artest:1.33,
+  barkley:1.33, sprewell:1.33, mj_retire:1.50, milic:1.34, nesterovic:1.39,
+  vujacic:1.50, doncic_trade:1.50
+};
+function momentAspect(id){ return MOMENT_AR[id]||0.72; }
 function momentImgTag(m){
   if(hasMomentImg(m.id)){
-    const framed=MOMENT_FRAMED.has(m.id);
-    let cls = framed ? 'hod-mom-fullimg framed' : 'hod-mom-fullimg';
-    if(MOMENT_FOC_TOP.has(m.id)) cls+=' foc-top';
-    else if(MOMENT_FOC_HIGH.has(m.id)) cls+=' foc-high';
-    // posebej: nesterovič je skrajno desno na sliki
-    let extra = (m.id==='nesterovic') ? ' style="object-position:78% 30%"' : '';
-    return `<img class="${cls}" src="assets/moments/${m.id}.png"${extra} alt="${escapeHtml(m.name)}" onerror="this.style.display='none'">`;
+    // odprta kartica prikaže CELO sliko brez rezanja (kartica je istega razmerja kot slika)
+    return `<img class="hod-mom-fullimg-contain" src="assets/moments/${m.id}.png" alt="${escapeHtml(m.name)}" onerror="this.style.display='none'">`;
   }
   // fallback: foto igralca
   return `<div class="hod-mom-fallback">${avatarImg(m.pid,'')}</div>`;
@@ -5560,7 +5565,7 @@ function showMomentDetail(m){
   const badgeF = slo?'🇸🇮 SLOVENSKI MOMENT':(low?'💀 INFAMOUS MOMENT':'⭐ ULTRA-RARE MOMENT');
   const badgeB = slo?'🇸🇮 SLOVENSKI':(low?'💀 INFAMOUS':'⭐ MOMENT');
   ov.innerHTML=`<div class="hod-mom-wrap">
-    <div class="hod-mom-flip ${flipCls}" id="hod-mom-flip">
+    <div class="hod-mom-flip ${flipCls}" id="hod-mom-flip" data-ar="${momentAspect(m.id)}">
       <div class="hod-mom-inner">
         <div class="hod-mom-face hod-mom-front">
           ${momentImgTag(m)}
@@ -5587,6 +5592,22 @@ function showMomentDetail(m){
   </div>`;
   document.body.appendChild(ov);
   const flip=ov.querySelector('#hod-mom-flip');
+  // prilagodi velikost kartice razmerju slike (cela slika, brez popačenja/rezanja)
+  const ar=parseFloat(flip.dataset.ar)||0.72;
+  (function sizeFlip(){
+    const vw=Math.min(window.innerWidth*0.9, 460);
+    const vh=window.innerHeight*0.74;
+    let w, h;
+    if(ar>=1){ // vodoravna
+      w=vw; h=w/ar;
+      if(h>vh){ h=vh; w=h*ar; }
+    } else { // pokončna
+      h=Math.min(vh, 460); w=h*ar;
+      if(w>vw){ w=vw; h=w/ar; }
+    }
+    flip.style.width=Math.round(w)+'px';
+    flip.style.height=Math.round(h)+'px';
+  })();
   flip.onclick=(e)=>{ if(e.target.id!=='hod-moment-close') flip.classList.toggle('flipped'); };
   ov.querySelector('#hod-moment-close').onclick=(e)=>{ e.stopPropagation(); ov.remove(); };
   ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
