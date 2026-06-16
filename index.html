@@ -642,12 +642,28 @@
 .hod-hothand{position:fixed;top:80px;left:50%;transform:translateX(-50%) scale(.7);z-index:400;background:linear-gradient(180deg,#ff6a00,#c41d1d);color:#fff;font-family:'Anton';font-size:20px;letter-spacing:1px;padding:10px 22px;border-radius:30px;box-shadow:0 6px 24px rgba(255,80,0,.6);opacity:0;pointer-events:none;transition:.25s;}
 .hod-hothand.show{opacity:1;transform:translateX(-50%) scale(1);}
 .hod-hothand span{color:#ffe08a;font-size:15px;}
-.hod-pk-suit{position:absolute;top:6px;left:7px;z-index:4;font-family:'Anton';font-size:15px;font-weight:900;line-height:1;text-shadow:0 1px 2px rgba(255,255,255,.6);}
+.hod-pk-suit{position:absolute;top:6px;left:6px;z-index:4;font-family:'Anton';font-size:15px;font-weight:900;line-height:1;background:rgba(255,255,255,.95);border:1.5px solid rgba(0,0,0,.3);border-radius:7px;padding:2px 6px;box-shadow:0 1px 4px rgba(0,0,0,.4);min-width:20px;text-align:center;}
 .hod-pk-card.pk-wild{border-color:#ffd60a!important;box-shadow:0 0 16px rgba(255,214,10,.5)!important;}
 .hod-pk-wildtag{position:absolute;top:6px;right:7px;z-index:4;background:#ffd60a;color:#1a1206;font-family:'Anton';font-size:9px;letter-spacing:1px;padding:2px 6px;border-radius:5px;}
 .hod-pk-handlive{font-weight:700;}
 .hod-pk-hand-big{font-family:'Anton';font-size:20px;color:var(--gold);text-align:center;padding:6px 0 10px;letter-spacing:.5px;}
 .hod-pk-hand-big span{color:#fff;background:var(--orange);padding:2px 10px;border-radius:20px;font-size:16px;margin-left:6px;}
+/* poker layout z multiplier tabelo ob strani */
+.hod-pk-layout{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap;}
+.hod-pk-layout .hod-pk-grid{flex:1;min-width:280px;}
+.hod-pk-handtable{flex:none;width:150px;background:rgba(13,17,25,.7);border:1px solid var(--gold-warm);border-radius:12px;padding:10px;}
+.hod-pk-ht-title{font-family:'Anton';font-size:13px;color:var(--gold);text-align:center;margin-bottom:8px;}
+.hod-pk-ht-row{display:flex;justify-content:space-between;font-family:'Oswald';font-size:11px;color:var(--muted);padding:3px 6px;border-radius:5px;}
+.hod-pk-ht-row b{color:var(--ink);}
+.hod-pk-ht-row.on{background:var(--gold);color:#1a1206;}
+.hod-pk-ht-row.on b{color:#1a1206;}
+@media(max-width:560px){ .hod-pk-handtable{width:100%;display:flex;flex-wrap:wrap;gap:4px;} .hod-pk-ht-title{width:100%;} .hod-pk-ht-row{flex:1;min-width:90px;font-size:10px;} }
+/* tri-postavkovni bar */
+.hod-pk-bar3{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+.hod-pk-stat{text-align:center;font-family:'Oswald';font-size:10px;color:var(--muted);line-height:1.3;}
+.hod-pk-stat b{display:block;font-family:'Anton';font-size:15px;color:var(--ink);font-weight:400;}
+.hod-pk-stat.fog b{color:#c4a8ff;}
+.hod-pk-stat .pos-full{color:var(--green)!important;}
 .hod-pk-score-row.combo{color:#ffd166;}
 .hod-pk-score-row.combo small{color:var(--muted);font-size:10px;}
 .hod-pk-allin-note{margin-top:10px;font-family:'Oswald';font-size:13px;color:#ff6a8a;font-weight:600;text-align:center;}
@@ -4744,17 +4760,32 @@ function renderPoker(finished, firstRender){
   }).join('');
   const sc = finished ? pokerScore(st.cards) : null;
   const livePos = positionScore(st.cards);
+  const liveChem = chemistryScore(st.cards);
+  const liveOverall = pokerTotal();
+  const liveHand = pokerHand(st.cards);
+  // tabela poker rok (multiplierji) — ob strani
+  const handTable=`<div class="hod-pk-handtable">
+    <div class="hod-pk-ht-title">🎴 Poker roke</div>
+    ${[['Par','×1.5'],['Dva para','×1.8'],['Tris','×2.2'],['Lestvica','×2.8'],['Barva','×3.2'],['Full House','×4'],['Poker (4)','×5'],['Poker (5)','×6'],['Straight Flush','×7'],['👑 Royal Flush','×10']].map(([n,m])=>{
+      const active=liveHand.name.toLowerCase().includes(n.toLowerCase().split(' ')[0]) || (n==='Par'&&liveHand.key==='pair') || (n==='Dva para'&&liveHand.key==='twopair') || (n==='Tris'&&liveHand.key==='trips') || (n==='Lestvica'&&liveHand.key==='straight') || (n==='Barva'&&liveHand.key==='flush') || (n==='Full House'&&liveHand.key==='full') || (n==='Poker (4)'&&liveHand.key==='four') || (n==='Poker (5)'&&liveHand.key==='five') || (n==='Straight Flush'&&liveHand.key==='sflush') || (liveHand.key==='royal'&&n.includes('Royal'));
+      return `<div class="hod-pk-ht-row ${active?'on':''}"><span>${n}</span><b>${m}</b></div>`;
+    }).join('')}
+  </div>`;
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">NBA Poker</div>
-      <div class="hod-pk-bar">
-        <span>Overall: <b id="hod-pk-overall">${(pokerFog && !finished)?'?':total}</b></span>
-        <span id="hod-pk-poscount" class="${livePos.covered===5?'pos-full':''}">Položaji: ${livePos.covered}/5</span>
-        <span id="hod-pk-handlive" class="hod-pk-handlive">${pokerHand(st.cards).name}</span>
-        <span>Vrtljaji: ${'●'.repeat(st.spinsLeft)}${'○'.repeat(5-st.spinsLeft)}</span>
+      <div class="hod-pk-bar hod-pk-bar3">
+        <span class="hod-pk-stat ${(pokerFog&&!finished)?'fog':''}">Overall<br><b id="hod-pk-overall">${(pokerFog && !finished)?'?':liveOverall}</b></span>
+        <span class="hod-pk-stat ${(pokerFog&&!finished)?'fog':''}">Kemija<br><b id="hod-pk-chemlive">${(pokerFog && !finished)?'?':'+'+liveChem.bonus}</b></span>
+        <span class="hod-pk-stat">Položaji<br><b id="hod-pk-poscount" class="${livePos.covered===5?'pos-full':''}">${livePos.covered}/5</b></span>
+        <span class="hod-pk-stat">Roka<br><b id="hod-pk-handlive" class="hod-pk-handlive">${liveHand.name}</b></span>
+        <span class="hod-pk-stat">Vrtljaji<br><b>${'●'.repeat(st.spinsLeft)}${'○'.repeat(5-st.spinsLeft)}</b></span>
       </div>
-      <div class="hod-pk-hint">${finished?'':(pokerFog?'<b style="color:#c4a8ff">🌫️ MEGLA:</b> overall je skrit! Sodi po statistiki (PTS/REB/AST). Razkrije se šele ko zakleneš.':'Zakleni dobre karte — <b style="color:var(--gold)">lock je dokončen!</b> Pokrij vseh 5 položajev (PG/SG/SF/PF/C) in poišči soigralce za kemijo.')}</div>
-      <div class="hod-pk-grid">${cards}</div>
+      <div class="hod-pk-hint">${finished?'':(pokerFog?'<b style="color:#c4a8ff">🌫️ MEGLA:</b> overall in kemija sta skrita (položaji vidni)! Sodi po statistiki. Razkrije se ko zakleneš.':'Zakleni dobre karte — <b style="color:var(--gold)">lock je dokončen!</b> Pokrij položaje, gradi kemijo IN poker roko.')}</div>
+      <div class="hod-pk-layout">
+        <div class="hod-pk-grid">${cards}</div>
+        ${!finished?handTable:''}
+      </div>
       ${finished
         ? `<div class="hod-pk-score">
              <div class="hod-pk-hand-big">${sc.hand.name} ${sc.hand.mult>1?`<span>×${sc.hand.mult}</span>`:''}</div>
@@ -4840,12 +4871,20 @@ function updatePokerLiveBar(){
   const st=pokerState; if(!st) return;
   const total=pokerTotal();
   const livePos=positionScore(st.cards);
+  const liveChem=chemistryScore(st.cards);
+  const allLocked=st.held.every(h=>h);
+  const hideStats=pokerFog && !allLocked;
   const ovEl=document.getElementById('hod-pk-overall');
-  if(ovEl) ovEl.textContent=(pokerFog && !st.held.every(h=>h))?'?':total;
+  if(ovEl) ovEl.textContent=hideStats?'?':total;
+  const chemEl=document.getElementById('hod-pk-chemlive');
+  if(chemEl) chemEl.textContent=hideStats?'?':('+'+liveChem.bonus);
   const posEl=document.getElementById('hod-pk-poscount');
-  if(posEl){ posEl.textContent=`Položaji: ${livePos.covered}/5`; posEl.className=livePos.covered===5?'pos-full':''; }
+  if(posEl){ posEl.textContent=`${livePos.covered}/5`; posEl.className=livePos.covered===5?'pos-full':''; }
   const handEl=document.getElementById('hod-pk-handlive');
   if(handEl){ const h=pokerHand(st.cards); handEl.textContent=h.name; handEl.style.color=h.mult>1.8?'#ffd166':(h.mult>1?'#9ec5e8':'var(--muted)'); }
+  // osveži poudarek v tabeli rok
+  const h=pokerHand(st.cards);
+  document.querySelectorAll('.hod-pk-ht-row').forEach(r=>r.classList.remove('on'));
 }
 function pokerSpin(){
   const st=pokerState;
