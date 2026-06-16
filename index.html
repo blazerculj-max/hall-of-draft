@@ -648,6 +648,10 @@
 .hod-pk-handlive{font-weight:700;}
 .hod-pk-hand-big{font-family:'Anton';font-size:20px;color:var(--gold);text-align:center;padding:6px 0 10px;letter-spacing:.5px;}
 .hod-pk-hand-big span{color:#fff;background:var(--orange);padding:2px 10px;border-radius:20px;font-size:16px;margin-left:6px;}
+.hod-pkm-suit{position:absolute;top:3px;left:3px;z-index:4;font-family:'Anton';font-size:11px;font-weight:900;line-height:1;background:rgba(255,255,255,.95);border:1px solid rgba(0,0,0,.3);border-radius:5px;padding:1px 4px;box-shadow:0 1px 3px rgba(0,0,0,.4);}
+.hod-pkm-card{position:relative;}
+.hod-pkm-card.pk-wild{border-color:#ffd60a!important;box-shadow:0 0 10px rgba(255,214,10,.5)!important;}
+.hod-vs-hand{background:var(--gold);color:#1a1206;font-weight:700;padding:1px 6px;border-radius:8px;font-size:10px;}
 /* poker layout z multiplier tabelo ob strani */
 .hod-pk-layout{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap;}
 .hod-pk-layout .hod-pk-grid{flex:1;min-width:280px;}
@@ -4491,12 +4495,13 @@ function playerAvatar(p, cls){
 let pokerState=null;
 // ===== POKER MENI + AI PIRAMIDA =====
 let pokerFog=false; // megla: overall skrit do zaklepa
+// hold = prag ratinga; iq = kako dobro upošteva pozicije/kemijo/poker roko (0=naključno, 1=optimalno)
 const POKER_AI=[
-  {id:0, name:"Igor Začetnik", title:"ne loči žoge od balona", emoji:"🤷", hold:78, color:"#7d8597"},
-  {id:1, name:"Tara Influencerka", title:"NBA TikTok zvezda", emoji:"📱", hold:80, color:"#e07a9c"},
-  {id:2, name:"Marko Navijač", title:"redni gledalec", emoji:"🍿", hold:81, color:"#4cc9f0"},
-  {id:3, name:"Dr. Stat", title:"košarkarski strokovnjak", emoji:"🧠", hold:83, color:"#ffb627"},
-  {id:4, name:"Gregg Popovich", title:"zadnji boss", emoji:"🏆", hold:84, color:"#e6394a"},
+  {id:0, name:"Igor Začetnik", title:"ne loči žoge od balona", emoji:"🤷", hold:78, iq:0.10, color:"#7d8597"},
+  {id:1, name:"Tara Influencerka", title:"NBA TikTok zvezda", emoji:"📱", hold:80, iq:0.30, color:"#e07a9c"},
+  {id:2, name:"Marko Navijač", title:"redni gledalec", emoji:"🍿", hold:81, iq:0.50, color:"#4cc9f0"},
+  {id:3, name:"Dr. Stat", title:"košarkarski strokovnjak", emoji:"🧠", hold:83, iq:0.75, color:"#ffb627"},
+  {id:4, name:"Gregg Popovich", title:"zadnji boss", emoji:"🏆", hold:84, iq:1.0, color:"#e6394a"},
 ];
 // napredek po AI piramidi je SAMO za trenutni run (vsak nov vstop = od začetka)
 let _pokerRun={beaten:-1, powerups:{reroll:0,steal:0,peek:0}};
@@ -4582,10 +4587,11 @@ function startPoker(){
 const POKER_RANKS=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const POKER_SUITS=[{s:'♠',c:'#1a1a1a'},{s:'♥',c:'#d8334a'},{s:'♦',c:'#d8334a'},{s:'♣',c:'#1a1a1a'}];
 function pokerPick(){
-  const l=pokerState.list;
-  const base=l[Math.floor(Math.random()*l.length)];
-  // dodaj poker identiteto (kopija, da ne spreminjamo originala)
-  const isWild=Math.random()<0.05; // ~5% WILD
+  return pokerIdentity(pokerState.list[Math.floor(Math.random()*pokerState.list.length)]);
+}
+// doda poker identiteto (vrednost/barva/wild) poljubni karti
+function pokerIdentity(base){
+  const isWild=Math.random()<0.05;
   const rank=POKER_RANKS[Math.floor(Math.random()*POKER_RANKS.length)];
   const suit=POKER_SUITS[Math.floor(Math.random()*POKER_SUITS.length)];
   return {...base, pkWild:isWild, pkRank:rank, pkSuit:suit.s, pkSuitCol:suit.c};
@@ -4719,7 +4725,8 @@ function comboBonus(cards){
   else if(avg>=85){ bonus+=8; combos.push({name:'💪 Močna peterka',desc:'povprečje 85+',pts:8}); }
   return {bonus, combos};
 }
-function pokerScore(cards){
+function pokerScore(cards, opts){
+  opts=opts||{};
   const base=cards.reduce((a,c)=>a+(c.rating||0),0);
   const pos=positionScore(cards);
   const chem=chemistryScore(cards);
@@ -4727,13 +4734,13 @@ function pokerScore(cards){
   const hand=pokerHand(cards); // poker roka
   // košarkarski skor
   let kbScore=base+pos.bonus+chem.bonus+combo.bonus;
-  // hot-hand multiplikator
-  const mult=pokerState&&pokerState.hotMult?pokerState.hotMult:1;
+  // hot-hand multiplikator (samo za igralca, ne za bota)
+  const mult=(!opts.noPlayerBonus && pokerState&&pokerState.hotMult)?pokerState.hotMult:1;
   kbScore=Math.round(kbScore*mult);
   // POKER ROKA = glavni multiplikator
   let total=Math.round(kbScore*hand.mult);
-  // all-in množitelj
-  if(pokerState&&pokerState.allInActive&&pokerState.allInResolved){
+  // all-in množitelj (samo igralec)
+  if(!opts.noPlayerBonus && pokerState&&pokerState.allInActive&&pokerState.allInResolved){
     total=Math.round(total*(pokerState.allInWon?1.5:0.5));
   }
   return {base, pos, chem, combo, hand, mult, kbScore, total};
@@ -5018,8 +5025,8 @@ function startPokerVsAI(aiIdx){
   const ai=POKER_AI[aiIdx];
   pkAI={
     list, ai, aiIdx,
-    you:{ cards:[0,1,2,3,4].map(()=>list[Math.floor(Math.random()*list.length)]), held:[false,false,false,false,false], spins:5 },
-    bot:{ cards:[0,1,2,3,4].map(()=>list[Math.floor(Math.random()*list.length)]), held:[false,false,false,false,false], spins:5 },
+    you:{ cards:[0,1,2,3,4].map(()=>pokerIdentity(list[Math.floor(Math.random()*list.length)])), held:[false,false,false,false,false], spins:5 },
+    bot:{ cards:[0,1,2,3,4].map(()=>pokerIdentity(list[Math.floor(Math.random()*list.length)])), held:[false,false,false,false,false], spins:5 },
     done:false, usedPU:[], pending:null, peekShown:null
   };
   pokerPreloadList(list, 16);
@@ -5039,8 +5046,9 @@ function posLabel(c){
 function pkMiniCard(c, held, fog){
   const col=nameColor(c.name);
   const showOvr = held || !fog;
-  return `<div class="hod-pkm-card ${held?'held':''}">
+  return `<div class="hod-pkm-card ${held?'held':''} ${c.pkWild?'pk-wild':''}">
     ${held?'<div class="hod-pkm-lock">🔒</div>':''}
+    ${c.pkRank?`<div class="hod-pkm-suit" style="color:${c.pkWild?'#b8860b':c.pkSuitCol}">${c.pkWild?'★':c.pkRank+c.pkSuit}</div>`:''}
     <div class="hod-pkm-av" style="background:${col}">${avatarImg(c.pid,'')}</div>
     <div class="hod-pkm-name">${escapeHtml(c.name)}</div>
     <div class="hod-pkm-pos">${posLabel(c)}</div>
@@ -5084,7 +5092,7 @@ function renderPokerVsAI(){
       const i=+el.dataset.i;
       if(st.pending==='reroll'){
         if(!st.you.held[i]) return; // reroll samo na zaklenjeni
-        st.you.cards[i]=st.list[Math.floor(Math.random()*st.list.length)];
+        st.you.cards[i]=pokerIdentity(st.list[Math.floor(Math.random()*st.list.length)]);
         st.you.held[i]=true; // ostane zaklenjena (nova)
         st.pending=null;
         renderPokerVsAI();
@@ -5187,19 +5195,49 @@ function activatePowerup(key){
 }
 // AI se odloči katere karte zakleniti pred svojim vrtljajem.
 // Strategija: prag pada z vsakim vrtljajem (zgodaj izbirčen, pozno popustljiv).
-// Višji bazni 'hold' = boljša strategija = močnejši nasprotnik.
+// AI presodi, katere karte zakleniti. Nizek iq = skoraj naključno; visok iq = upošteva
+// rating, položaje, kemijo in poker roko. Skozi kroge (manj spinov) postaja previdnejši.
 function aiDecide(){
   const st=pkAI; const ai=st.ai; const bot=st.bot;
   const left=bot.spins; // 5..1
+  const iq=ai.iq!=null?ai.iq:0.5;
+  // skozi kroge se "zbistri": v zgodnjih krogih manj optimalno, proti koncu bolj
+  const roundBoost = (5-left)/4; // 0 (prvi krog) -> 1 (zadnji)
+  const effIq = Math.min(1, iq*0.6 + iq*0.4*roundBoost); // iq raste s krogi
   const stepDown={5:0, 4:2, 3:4, 2:7, 1:99}[left] ?? 0;
   const thr=ai.hold - stepDown;
-  // v megli AI ne vidi overalla -> z verjetnostjo se zmoti (šibki bolj pogosto)
-  const errRate = pokerFog ? [0.42,0.30,0.20,0.08,0.0][ai.id] : 0;
+  // trenutno pokrite pozicije bota
+  const coveredPos=new Set(bot.cards.filter((c,i)=>bot.held[i]).map(c=>(c.pos||'').toUpperCase()));
+  const heldTeams=bot.cards.filter((c,i)=>bot.held[i]).map(c=>c.team);
   bot.cards.forEach((c,i)=>{
     if(bot.held[i]) return;
-    let good=(c.rating||0)>=thr; // prava odločitev
-    if(errRate>0 && Math.random()<errRate) good=!good; // napaka v presoji
-    if(good) bot.held[i]=true;
+    // --- IZRAČUN "vrednosti" karte za zaklep ---
+    let score=0;
+    // 1) rating (osnova)
+    if((c.rating||0)>=thr) score+=0.5;
+    if((c.rating||0)>=90) score+=0.25;
+    // 2) položaj, ki ga še nima (pomaga pokritju)
+    const pos=(c.pos||'').toUpperCase();
+    if(pos && !coveredPos.has(pos)) score+=0.3*effIq;
+    // 3) kemija: ista ekipa kot že zaklenjena karta
+    if(c.team && heldTeams.includes(c.team)) score+=0.25*effIq;
+    // 4) poker: wild ali bi izboljšal roko
+    if(c.pkWild) score+=0.4*effIq;
+    // 5) visok rating tudi če ne dosega praga (boss ga prepozna)
+    if((c.rating||0)>=88) score+=0.2*effIq;
+    // prag za zaklep: nizek iq = skoraj naključno, visok iq = po score
+    let lock;
+    if(effIq<0.2){
+      // skoraj naključno: 35% možnost zaklepa ne glede na vse (slabo lovi overall)
+      lock = Math.random()<0.35 ? true : ((c.rating||0)>=thr && Math.random()<0.5);
+    } else {
+      // odloča po score, z manjšim šumom (manj pri visokem iq)
+      const noise=(Math.random()-0.5)*(1-effIq)*0.8;
+      lock = (score+noise) >= 0.5;
+    }
+    // v zadnjem krogu vsi zaklenejo vse (sicer izgubijo)
+    if(left<=1) lock=true;
+    if(lock){ bot.held[i]=true; coveredPos.add(pos); if(c.team) heldTeams.push(c.team); }
   });
 }
 function vsAISpin(){
@@ -5222,10 +5260,10 @@ function vsAISpin(){
   });
   // po kratkem zamiku dejansko zavrti (zamenjaj vrednosti) in ponovno izriši
   setTimeout(()=>{
-    st.you.cards=st.you.cards.map((c,i)=> st.you.held[i]?c:st.list[Math.floor(Math.random()*st.list.length)]);
+    st.you.cards=st.you.cards.map((c,i)=> st.you.held[i]?c:pokerIdentity(st.list[Math.floor(Math.random()*st.list.length)]));
     st.you.spins--;
     if(st.bot.spins>0){
-      st.bot.cards=st.bot.cards.map((c,i)=> st.bot.held[i]?c:st.list[Math.floor(Math.random()*st.list.length)]);
+      st.bot.cards=st.bot.cards.map((c,i)=> st.bot.held[i]?c:pokerIdentity(st.list[Math.floor(Math.random()*st.list.length)]));
       st.bot.spins--;
     }
     pokerPreloadList(st.list, 8);
@@ -5239,12 +5277,12 @@ function vsAIFinish(){
   st.you.held=[true,true,true,true,true];
   while(st.bot.spins>0 && !st.bot.held.every(h=>h)){
     aiDecide();
-    st.bot.cards=st.bot.cards.map((c,i)=> st.bot.held[i]?c:st.list[Math.floor(Math.random()*st.list.length)]);
+    st.bot.cards=st.bot.cards.map((c,i)=> st.bot.held[i]?c:pokerIdentity(st.list[Math.floor(Math.random()*st.list.length)]));
     st.bot.spins--;
   }
   st.bot.held=[true,true,true,true,true];
   st.done=true;
-  const youSc=pokerScore(st.you.cards), botSc=pokerScore(st.bot.cards);
+  const youSc=pokerScore(st.you.cards), botSc=pokerScore(st.bot.cards, {noPlayerBonus:true});
   const youTotal=youSc.total, botTotal=botSc.total;
   if(pokerFog){
     bigRevealVs(youTotal, botTotal, st.ai.name, ()=>paintVsResult(youSc,botSc));
@@ -5265,7 +5303,7 @@ function paintVsResult(youSc, botSc){
   const nextUnlocked = win && !isLast;
   const botCards=st.bot.cards.map((c)=>pkMiniCard(c,true)).join('');
   const yourCards=st.you.cards.map((c)=>pkMiniCard(c,true)).join('');
-  const breakdown=(sc)=>`<span class="hod-vs-bd">${sc.base}${sc.pos.bonus?` <span class="${sc.pos.bonus>=0?'plus':'minus'}">${sc.pos.bonus>=0?'+':''}${sc.pos.bonus}</span>`:''}${sc.chem.bonus?` <span class="plus">+${sc.chem.bonus}</span>`:''}</span>`;
+  const breakdown=(sc)=>`<span class="hod-vs-bd">${sc.base}${sc.pos.bonus?` <span class="${sc.pos.bonus>=0?'plus':'minus'}">${sc.pos.bonus>=0?'+':''}${sc.pos.bonus}</span>`:''}${sc.chem.bonus?` <span class="plus">+${sc.chem.bonus}</span>`:''}${sc.hand.mult>1?` <span class="hod-vs-hand">${sc.hand.name} ×${sc.hand.mult}</span>`:''}</span>`;
   screen.innerHTML=`
     <div class="hod-result hod-fade">
       <div class="hod-stage-label">${win?'ZMAGA!':tie?'NEODLOČENO':'PORAZ'}</div>
