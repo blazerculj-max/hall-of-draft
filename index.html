@@ -508,8 +508,8 @@
 .hod-toast b{color:var(--amber);}
 /* ===== ALBUM ===== */
 .hod-pack-badge{background:var(--orange);color:#fff;border-radius:20px;padding:0 7px;font-size:13px;margin-left:4px;}
-.hod-alb-summary{font-family:'Oswald';font-size:15px;color:var(--ink);margin:4px 0 8px;}
-.hod-alb-summary b{color:var(--amber);font-family:'Anton';font-size:20px;}
+.hod-alb-summary{font-family:'Oswald';font-size:15px;color:#fff;margin:4px 0 8px;background:rgba(13,17,25,.82);border:1px solid var(--gold-warm);border-radius:8px;padding:5px 12px;display:inline-block;}
+.hod-alb-summary b{color:var(--gold);font-family:'Anton';font-size:20px;}
 .hod-alb-hint{font-size:12px;color:var(--muted);max-width:420px;margin:4px auto 8px;line-height:1.4;font-style:italic;}
 .hod-alb-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0;}
 .hod-alb-tab{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;background:#161b2a;border:1px solid var(--gold-warm);
@@ -864,6 +864,8 @@
 .hod-alb-tabsmain{display:flex;gap:6px;justify-content:center;margin:10px 0;flex-wrap:wrap;}
 .hod-alb-tabm{font-family:'Bebas Neue';font-size:15px;letter-spacing:1px;background:#161b2a;border:1px solid var(--gold-warm);
   color:var(--amber);border-radius:9px;padding:7px 14px;cursor:pointer;}
+.hod-alb-tabm.big{font-size:20px;padding:11px 22px;border-width:2px;box-shadow:0 3px 0 rgba(0,0,0,.3);font-weight:600;}
+.hod-alb-tabm.big.on{box-shadow:0 3px 0 #a8470d;}
 .hod-alb-tabm.on{background:var(--orange);color:#fff;border-color:var(--orange);}
 .hod-alb-tab.moment.on{background:#ff4d6d;border-color:#ff4d6d;}
 .hod-alb-cell.rar-moment{border-color:#ff4d6d;box-shadow:0 0 14px rgba(255,77,109,.6);}
@@ -5129,10 +5131,10 @@ function showAlbum(){
       ${gotDaily?'<div class="hod-alb-daily">🎁 Dnevni brezplačni paket dodan!</div>':''}
       ${packs>0?`<button class="hod-btn gold" id="hod-alb-open" style="margin:4px auto 8px">📦 Odpri paket (${packs})</button>`:''}
       <div class="hod-alb-tabsmain">
-        <button class="hod-alb-tabm ${_albumTab==='album'?'on':''}" data-t="album">Album</button>
+        <button class="hod-alb-tabm big ${_albumTab==='album'?'on':''}" data-t="album">📒 Album</button>
         <button class="hod-alb-tabm ${_albumTab==='nove'?'on':''}" data-t="nove">Nenalepljene${unstuckTotal>0?` (${unstuckTotal})`:''}</button>
-        <button class="hod-alb-tabm ${_albumTab==='market'?'on':''}" data-t="market">🔁 Market</button>
-        <button class="hod-alb-tabm ${_albumTab==='trgovina'?'on':''}" data-t="trgovina">Trgovina</button>
+        <button class="hod-alb-tabm big ${_albumTab==='market'?'on':''}" data-t="market">🔁 Market</button>
+        <button class="hod-alb-tabm big ${_albumTab==='trgovina'?'on':''}" data-t="trgovina">🛒 Trgovina</button>
       </div>
       <div id="hod-alb-body"></div>
       <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:10px">
@@ -5223,7 +5225,12 @@ function renderAlbumBody(){
     const ns=document.getElementById('hod-alb-search'); if(ns){ ns.focus(); ns.setSelectionRange(ns.value.length,ns.value.length); }
   };
   const cs=document.getElementById('hod-cancel-stick'); if(cs) cs.onclick=()=>{ _pendingStick=null; renderAlbumBody(); };
-  body.querySelectorAll('.hod-alb-tab').forEach(b=>b.onclick=()=>{ _albumDecade=b.dataset.dec; renderAlbumGrid(byDec); });
+  body.querySelectorAll('.hod-alb-tab').forEach(b=>b.onclick=()=>{
+    _albumDecade=b.dataset.dec;
+    // posodobi aktivni gumb (highlight) brez ponovnega izrisa celega telesa
+    body.querySelectorAll('.hod-alb-tab').forEach(x=>x.classList.toggle('on', x.dataset.dec===_albumDecade));
+    renderAlbumGrid(byDec);
+  });
   renderAlbumGrid(byDec);
 }
 // koliko nenalepljenih čaka po dekadi (za rdečo piko + številko)
