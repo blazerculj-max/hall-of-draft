@@ -3945,7 +3945,7 @@ const PACK_TYPES={
   team:    {name:'Ekipni paket',   price:60,  n:3, odds:null, ic:'👕', filter:'team'},
   decade:  {name:'Dekadni paket',  price:60,  n:3, odds:null, ic:'📅', filter:'decade'},
   moment:  {name:'Moment paket',   price:120, n:3, odds:{moment:8, legendary:18, rare:35}, ic:'⭐'},
-  premium: {name:'Zlati paket',    price:150, n:5, odds:{moment:4, legendary:22, rare:44}, pity:true, ic:'🏆'},
+  premium: {name:'Zlati paket',    price:150, n:5, odds:null, guaranteeLegendary:true, ic:'🏆'},
 };
 // dekadne skupine (po tvojem predlogu)
 const DECADE_GROUPS=[
@@ -4029,6 +4029,12 @@ function openOnePack(packCfg){
     const better=rollCard({pool:packCfg.pool, odds:packCfg.odds, momFilter:packCfg.momFilter, forceRare:true});
     if(better) cards[Math.floor(Math.random()*cards.length)]=better;
   }
+  // zlati paket: garantirana vsaj 1 legendarna (zlata) — ostalo navadne šanse
+  if(packCfg.guaranteeLegendary && cards.length && !cards.some(c=>c.rarity==='legendary'||c.rarity==='moment'||c.rarity==='slovenski'||c.rarity==='lowlight')){
+    const legPool=(packCfg.pool||albumCatalog()).filter(c=>c.rarity==='legendary');
+    const leg = legPool.length ? legPool[Math.floor(Math.random()*legPool.length)] : null;
+    if(leg) cards[Math.floor(Math.random()*cards.length)]=leg;
+  }
   const col=getCollected();
   const result=cards.map(c=>{
     const id=c.id||c.uid||(''+c.pid);
@@ -4044,7 +4050,7 @@ function openOnePack(packCfg){
 // zgradi konfiguracijo paketa iz tipa + parametra (ekipa/dekada)
 function buildPackCfg(type, param){
   const def=PACK_TYPES[type]||PACK_TYPES.basic;
-  const cfg={type, n:def.n, odds:def.odds, pity:def.pity};
+  const cfg={type, n:def.n, odds:def.odds, pity:def.pity, guaranteeLegendary:def.guaranteeLegendary};
   if(type==='team' && param){
     cfg.pool=albumCatalog().filter(c=>c.team===param);
     cfg.momFilter=(m=>m.team===param);
@@ -6149,7 +6155,7 @@ function renderShop(body){
     <div class="hod-shop-row">
       <div class="hod-shop-card special"><div class="hod-shop-ic">⭐</div><div class="hod-shop-nm">Moment paket</div><div class="hod-shop-sub">večja možnost za moment</div><div class="hod-shop-pr">🪙 120</div>
         <button class="hod-btn ${can(120)?'gold':''}" id="hod-buy-moment" ${can(120)?'':'disabled'}>Kupi</button></div>
-      <div class="hod-shop-card special gold-card"><div class="hod-shop-ic">🏆</div><div class="hod-shop-nm">Zlati paket</div><div class="hod-shop-sub">5 kart · garantirana redka+</div><div class="hod-shop-pr">🪙 150</div>
+      <div class="hod-shop-card special gold-card"><div class="hod-shop-ic">🏆</div><div class="hod-shop-nm">Zlati paket</div><div class="hod-shop-sub">5 kart · 1 garantirana zlata</div><div class="hod-shop-pr">🪙 150</div>
         <button class="hod-btn ${can(150)?'gold':''}" id="hod-buy-premium" ${can(150)?'':'disabled'}>Kupi</button></div>
     </div>
 
