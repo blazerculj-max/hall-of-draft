@@ -939,6 +939,7 @@
 .hod-flip.rar-legendary.flipped .hod-leg-rays,.hod-flip.rar-moment.flipped .hod-leg-rays{animation:pkoLegRays 1.4s linear forwards;}
 @keyframes pkoLegRays{0%{opacity:0;transform:rotate(0) scale(.5);}30%{opacity:.8;}100%{opacity:0;transform:rotate(80deg) scale(1.3);}}
 .hod-pko-ctrl{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center;}
+.hod-pko-next-btn{background:linear-gradient(180deg,#ff8500,#d96e00)!important;color:#fff!important;box-shadow:0 5px 0 #a85400,0 8px 20px rgba(0,0,0,.4)!important;}
 .hod-pko-done-btn{background:linear-gradient(180deg,#3a4660,#28324a)!important;color:#fff!important;
   border:2px solid var(--gold-warm)!important;box-shadow:0 4px 0 #18203200,0 6px 14px rgba(0,0,0,.4)!important;}
 .hod-pko-overlay{align-items:flex-start;}
@@ -2974,7 +2975,7 @@ async function showRewards(){
     <div class="hod-alb-header">
       <button class="hod-alb-backtop" id="hod-rew-back">← Nazaj</button>
       <div class="hod-stage-label" style="margin:0">🎁 Nagrade in naloge</div>
-      <span style="width:90px"></span>
+      <button class="hod-alb-backtop" id="hod-rew-album">📒 Album</button>
     </div>
     <div id="hod-cap-box"></div>
     <div id="hod-tasks-box"></div>
@@ -2984,8 +2985,15 @@ async function showRewards(){
     </div>
     <div id="hod-rew-list"><div class="hod-alb-hint">Preverjam nagrade…</div></div>
     <div id="hod-rew-profile" style="margin-top:18px"></div>
+    <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="hod-btn secondary" id="hod-rew-home2">← Domov</button>
+      <button class="hod-btn gold" id="hod-rew-album2">📒 Odpri Album</button>
+    </div>
   </div>`;
   document.getElementById('hod-rew-back').onclick=()=>goHome();
+  document.getElementById('hod-rew-album').onclick=()=>showAlbum();
+  document.getElementById('hod-rew-home2').onclick=()=>goHome();
+  document.getElementById('hod-rew-album2').onclick=()=>showAlbum();
   renderCapBox();
   renderTasksBox();
   // profil zmag
@@ -5811,7 +5819,7 @@ function showPackOpening(){
     </div>
     <div class="hod-pko-ctrl" id="hod-pko-ctrl" style="display:none">
       <button class="hod-btn gold" id="hod-pko-flipall">Obrni vse</button>
-      <button class="hod-btn" id="hod-pko-next" style="display:none">Naslednji paket →</button>
+      <button class="hod-btn hod-pko-next-btn" id="hod-pko-next" style="display:none">Naslednji paket →</button>
       <button class="hod-btn secondary hod-pko-done-btn" id="hod-pko-done">Zaključi</button>
     </div>
   </div>`;
