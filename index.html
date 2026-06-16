@@ -682,6 +682,7 @@
 @keyframes miniPeel{0%{transform:scale(0) rotate(-12deg);opacity:0;}55%{transform:scale(1.12) rotate(3deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
 .hod-stick-stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:30px;height:30px;border-radius:50%;background:rgba(46,204,113,.92);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;animation:stampIn .5s ease .12s forwards;z-index:5;}
 @keyframes stampIn{0%{transform:translate(-50%,-50%) scale(0) rotate(-30deg);}70%{transform:translate(-50%,-50%) scale(1.25) rotate(8deg);}100%{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:.92;}}
+.hod-mini-season{font-family:'Oswald';font-size:12px;font-weight:600;color:var(--gold-deep);margin:10px 0 5px;letter-spacing:.5px;border-bottom:1px solid rgba(255,209,102,.15);padding-bottom:3px;}
 .hod-alb-emptymark{font-size:20px;opacity:.6;}
 /* lebdeči gumb nenalepljene */
 .hod-unstuck-fab{position:fixed;right:14px;bottom:20px;z-index:250;display:flex;flex-direction:column;align-items:center;
@@ -5578,16 +5579,25 @@ function renderMiniTeam(host, stickId, unstuckBody){
   const target=catMap[stickId];
   if(!target){ host.innerHTML=''; return; }
   const isMoment=!!target.moment || ['moment','lowlight','slovenski'].includes(target.rarity);
-  let group, title;
+  let title, sections;
   if(isMoment){
-    group=MOMENTS.map(m=>({...m,rarity:momentRarity(m),uid:m.id}));
+    const group=MOMENTS.map(m=>({...m,rarity:momentRarity(m),uid:m.id}));
+    group.sort((a,b)=>(b.rating||0)-(a.rating||0));
     title='⭐ Momenti';
+    sections=[{label:'', cards:group}];
   } else {
-    // ista ekipa + ista sezona (kot v albumu)
-    group=albumCatalog().filter(c=>c.team===target.team && c.season===target.season);
-    title=`${escapeHtml(target.team||'')} · ${target.season||''}`;
+    // VSA ekipa skozi vse sezone, grupirano po sezoni (da vidiš kdo manjka)
+    const all=albumCatalog().filter(c=>c.team===target.team);
+    const bySeason={};
+    all.forEach(c=>{ (bySeason[c.season]=bySeason[c.season]||[]).push(c); });
+    const seasons=Object.keys(bySeason).sort();  // kronološko
+    const gotAll=all.filter(c=>{const id=c.id||c.uid; return col[id]&&col[id].stuck;}).length;
+    title=`${escapeHtml(target.team||'')} — ${gotAll}/${all.length} prilepljenih`;
+    sections=seasons.map(sz=>{
+      const arr=bySeason[sz].slice().sort((a,b)=>(b.rating||0)-(a.rating||0));
+      return {label:sz, cards:arr};
+    });
   }
-  group.sort((a,b)=>(b.rating||0)-(a.rating||0));
   const cellOf=(c)=>{
     const id=c.id||c.uid;
     const stuck=col[id]&&col[id].stuck;
@@ -5605,7 +5615,10 @@ function renderMiniTeam(host, stickId, unstuckBody){
   };
   host.innerHTML=`<div class="hod-mini-wrap">
     <div class="hod-mini-h">${title} <span>tapni 🔴 in prilepiš</span></div>
-    <div class="hod-alb-cells">${group.map(cellOf).join('')}</div>
+    ${sections.map(sec=>`
+      ${sec.label?`<div class="hod-mini-season">${escapeHtml(sec.label)}</div>`:''}
+      <div class="hod-alb-cells">${sec.cards.map(cellOf).join('')}</div>
+    `).join('')}
   </div>`;
   // klik na utripajoče mesto = prilepi
   const tgt=host.querySelector('[data-ministick]');
@@ -5624,12 +5637,33 @@ function renderMiniTeam(host, stickId, unstuckBody){
         <div class="hod-stick-stamp">✓</div>`;
       hodToast('✅ <b>Prilepljeno!</b>');
       if(typeof syncProgress==='function') syncProgress();
-      // po kratki animaciji osveži seznam (ostani na nenalepljenih)
-      _miniStickId=null;
-      setTimeout(()=>{ renderUnstuck(unstuckBody); }, 620);
+      setTimeout(()=>{
+        const stillTeam=target.team;
+        // poišči NASLEDNJO nenalepljeno karto iste ekipe -> postane nov cilj (verižno lepljenje)
+        let nextId=null;
+        const colNow=getCollected();
+        if(!isMoment && stillTeam){
+          const cand=albumCatalog().filter(x=>x.team===stillTeam).find(x=>{const xid=x.uid||x.id; return colNow[xid]&&!colNow[xid].stuck&&(colNow[xid].count||0)>0;});
+          if(cand) nextId=cand.uid||cand.id;
+        } else if(isMoment){
+          const cand=MOMENTS.find(m=>colNow[m.id]&&!colNow[m.id].stuck&&(colNow[m.id].count||0)>0);
+          if(cand) nextId=cand.id;
+        }
+        _miniStickId=nextId; // če je še kaj iste ekipe, ostane cilj; sicer null
+        renderUnstuck(unstuckBody);
+        // če ni več nenalepljenih iz te ekipe, vseeno pokaži ekipo (samo za ogled rezultata)
+        if(!nextId){
+          const mt=document.getElementById('hod-mini-team');
+          if(mt){
+            const anchor=isMoment?stickId:(albumCatalog().find(x=>x.team===stillTeam)||{}).uid;
+            if(anchor) renderMiniTeam(mt, anchor, unstuckBody);
+          }
+        }
+      }, 650);
     }
   };
 }
+// (osveževanje seznama gre prek renderUnstuck)
 // ===== MARKET UI =====
 let _marketView='browse'; // browse | mine | sell
 async function renderMarket(body){
