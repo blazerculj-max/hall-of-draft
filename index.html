@@ -683,6 +683,7 @@
 .hod-stick-stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:30px;height:30px;border-radius:50%;background:rgba(46,204,113,.92);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;animation:stampIn .5s ease .12s forwards;z-index:5;}
 @keyframes stampIn{0%{transform:translate(-50%,-50%) scale(0) rotate(-30deg);}70%{transform:translate(-50%,-50%) scale(1.25) rotate(8deg);}100%{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:.92;}}
 .hod-mini-season{font-family:'Oswald';font-size:12px;font-weight:600;color:var(--gold-deep);margin:10px 0 5px;letter-spacing:.5px;border-bottom:1px solid rgba(255,209,102,.15);padding-bottom:3px;}
+.hod-mini-season.target-season{color:#fff;background:rgba(220,60,60,.25);border:1px solid rgba(220,60,60,.5);border-radius:6px;padding:4px 8px;}
 .hod-alb-emptymark{font-size:20px;opacity:.6;}
 /* lebdeči gumb nenalepljene */
 .hod-unstuck-fab{position:fixed;right:14px;bottom:20px;z-index:250;display:flex;flex-direction:column;align-items:center;
@@ -5779,12 +5780,18 @@ function renderMiniTeam(host, stickId, unstuckBody){
     const all=albumCatalog().filter(c=>c.team===target.team);
     const bySeason={};
     all.forEach(c=>{ (bySeason[c.season]=bySeason[c.season]||[]).push(c); });
-    const seasons=Object.keys(bySeason).sort();  // kronološko
+    // ciljna sezona (kamor lepiš) na VRH, ostale od novejših do starejših
+    const targetSeason=target.season;
+    const seasons=Object.keys(bySeason).sort((a,b)=>{
+      if(a===targetSeason) return -1;   // ciljna vedno prva
+      if(b===targetSeason) return 1;
+      return b.localeCompare(a);         // ostale: novejše -> starejše
+    });
     const gotAll=all.filter(c=>{const id=c.id||c.uid; return col[id]&&col[id].stuck;}).length;
     title=`${escapeHtml(target.team||'')} — ${gotAll}/${all.length} prilepljenih`;
     sections=seasons.map(sz=>{
       const arr=bySeason[sz].slice().sort((a,b)=>(b.rating||0)-(a.rating||0));
-      return {label:sz, cards:arr};
+      return {label:sz, cards:arr, isTarget:sz===targetSeason};
     });
   }
   const cellOf=(c)=>{
@@ -5805,7 +5812,7 @@ function renderMiniTeam(host, stickId, unstuckBody){
   host.innerHTML=`<div class="hod-mini-wrap">
     <div class="hod-mini-h">${title} <span>tapni 🔴 in prilepiš</span></div>
     ${sections.map(sec=>`
-      ${sec.label?`<div class="hod-mini-season">${escapeHtml(sec.label)}</div>`:''}
+      ${sec.label?`<div class="hod-mini-season${sec.isTarget?' target-season':''}">${sec.isTarget?'📍 ':''}${escapeHtml(sec.label)}${sec.isTarget?' · tukaj lepiš':''}</div>`:''}
       <div class="hod-alb-cells">${sec.cards.map(cellOf).join('')}</div>
     `).join('')}
   </div>`;
