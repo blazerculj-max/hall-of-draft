@@ -5982,16 +5982,23 @@ function renderMiniTeam(host, stickId, unstuckBody){
   const cellOf=(c)=>{
     const id=c.id||c.uid;
     const stuck=col[id]&&col[id].stuck;
-    const isTgt=(id===stickId);
     if(stuck){
       return `<div class="hod-alb-cell rar-${c.rarity} mini-cell">
         <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
         <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
         <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div></div>`;
     }
-    // prazno mesto — če je to naša kartica, utripa in je klikabilno
-    return `<div class="hod-alb-cell empty mini-cell ${isTgt?'target mini-target':''}" ${isTgt?`data-ministick="${id}"`:''}>
-      <div class="hod-alb-emptymark">${isTgt?'🔴':'?'}</div>
+    // imaš to karto nenalepljeno? -> rdeča pika, klikneš in prilepiš
+    const haveUnstuck = col[id] && !col[id].stuck && (col[id].count||0)>0;
+    if(haveUnstuck){
+      return `<div class="hod-alb-cell empty mini-cell target mini-target" data-ministick="${id}">
+        <div class="hod-alb-photo" style="opacity:.35">${avatarImg(c.pid,'')}</div>
+        <div class="hod-alb-emptymark">🔴</div>
+        <div class="hod-alb-fullnm" style="opacity:.7">${escapeHtml(c.name||'')}</div></div>`;
+    }
+    // nimaš -> prazno mesto "?"
+    return `<div class="hod-alb-cell empty mini-cell">
+      <div class="hod-alb-emptymark">?</div>
       <div class="hod-alb-fullnm" style="opacity:.5">${escapeHtml(c.name||'')}</div></div>`;
   };
   host.innerHTML=`<div class="hod-mini-wrap">
@@ -6001,48 +6008,34 @@ function renderMiniTeam(host, stickId, unstuckBody){
       <div class="hod-alb-cells">${sec.cards.map(cellOf).join('')}</div>
     `).join('')}
   </div>`;
-  // klik na utripajoče mesto = prilepi
-  const tgt=host.querySelector('[data-ministick]');
-  if(tgt) tgt.onclick=()=>{
-    const id=tgt.dataset.ministick;
-    if(stickCard(id)){
-      playSfx('stick');
-      taskProgress('stick5');
-      // peel + žig animacija na mestu
-      const c=catMap[id];
-      tgt.classList.remove('empty','target','mini-target');
-      tgt.classList.add('rar-'+c.rarity,'mini-peel');
-      tgt.innerHTML=`<div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
-        <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
-        <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
-        <div class="hod-stick-stamp">✓</div>`;
-      hodToast('✅ <b>Prilepljeno!</b>');
-      if(typeof syncProgress==='function') syncProgress();
-      setTimeout(()=>{
-        const stillTeam=target.team;
-        // poišči NASLEDNJO nenalepljeno karto iste ekipe -> postane nov cilj (verižno lepljenje)
-        let nextId=null;
-        const colNow=getCollected();
-        if(!isMoment && stillTeam){
-          const cand=albumCatalog().filter(x=>x.team===stillTeam).find(x=>{const xid=x.uid||x.id; return colNow[xid]&&!colNow[xid].stuck&&(colNow[xid].count||0)>0;});
-          if(cand) nextId=cand.uid||cand.id;
-        } else if(isMoment){
-          const cand=MOMENTS.find(m=>colNow[m.id]&&!colNow[m.id].stuck&&(colNow[m.id].count||0)>0);
-          if(cand) nextId=cand.id;
-        }
-        _miniStickId=nextId; // če je še kaj iste ekipe, ostane cilj; sicer null
-        renderUnstuck(unstuckBody);
-        // če ni več nenalepljenih iz te ekipe, vseeno pokaži ekipo (samo za ogled rezultata)
-        if(!nextId){
+  // klik na KATEROKOLI rdečo piko = prilepi (vse so klikabilne)
+  host.querySelectorAll('[data-ministick]').forEach(tgt=>{
+    tgt.onclick=()=>{
+      const id=tgt.dataset.ministick;
+      if(stickCard(id)){
+        playSfx('stick');
+        taskProgress('stick5');
+        const c=catMap[id];
+        tgt.classList.remove('empty','target','mini-target');
+        tgt.classList.add('rar-'+c.rarity,'mini-peel');
+        tgt.innerHTML=`<div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
+          <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
+          <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
+          <div class="hod-stick-stamp">✓</div>`;
+        hodToast('✅ <b>Prilepljeno!</b>');
+        if(typeof syncProgress==='function') syncProgress();
+        // mini-ekipa OSTANE odprta — po kratki animaciji osveži (ostale pike ostanejo aktivne)
+        setTimeout(()=>{
+          renderUnstuck(unstuckBody);
           const mt=document.getElementById('hod-mini-team');
           if(mt){
-            const anchor=isMoment?stickId:(albumCatalog().find(x=>x.team===stillTeam)||{}).uid;
+            const anchor=isMoment?stickId:(albumCatalog().find(x=>x.team===target.team)||{uid:stickId}).uid;
             if(anchor) renderMiniTeam(mt, anchor, unstuckBody);
           }
-        }
-      }, 650);
-    }
-  };
+        }, 650);
+      }
+    };
+  });
 }
 // (osveževanje seznama gre prek renderUnstuck)
 // ===== MARKET UI =====
