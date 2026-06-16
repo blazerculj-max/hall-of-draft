@@ -94,7 +94,7 @@
 }
 .hod-btn:active{transform:translateY(4px) scale(.97);box-shadow:0 1px 0 #9c6400,0 4px 12px rgba(0,0,0,.4);}
 .hod-btn:disabled{opacity:.4;cursor:not-allowed;}
-.hod-btn.secondary{background:transparent;color:var(--muted);border:1px solid var(--line);box-shadow:none;font-size:16px;padding:8px 22px;}
+.hod-btn.secondary{background:linear-gradient(180deg,#3a4356,#2a3140);color:#dfe4ee;border:1px solid var(--gold-warm);box-shadow:0 3px 0 #1a1f2a,0 5px 12px rgba(0,0,0,.3);font-size:16px;padding:8px 22px;text-transform:none;}
 .hod-btn.secondary:active{transform:scale(.95);}
 
 .hod-season-choices{display:flex;flex-direction:column;gap:10px;margin:8px 0 20px;}
@@ -707,7 +707,15 @@
 .hod-strk-day{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;background:#1a1f2e;border:1px solid rgba(255,255,255,.1);color:var(--muted);}
 .hod-strk-day.on{background:rgba(255,106,0,.25);border-color:#ff6a00;color:#ff9a4d;}
 .hod-strk-day.today{outline:2px solid var(--gold);}
-.hod-strk-stage{position:relative;width:280px;height:280px;display:flex;align-items:center;justify-content:center;}
+.hod-strk-stage{position:relative;width:290px;height:290px;display:flex;align-items:center;justify-content:center;}
+.hod-strk-pointer{position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:38px;color:#ff2d2d;z-index:6;line-height:1;filter:drop-shadow(0 3px 5px rgba(0,0,0,.7));text-shadow:0 0 8px rgba(255,45,45,.7);}
+.hod-strk-spinbtn{font-size:18px!important;padding:14px 28px!important;margin-top:8px;box-shadow:0 5px 0 #a8470d,0 8px 20px rgba(0,0,0,.4)!important;animation:strkPulse 1.8s ease-in-out infinite;}
+@keyframes strkPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+.hod-strk-upcoming{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+.hod-strk-up-t{font-family:'Oswald';font-size:11px;color:var(--muted);}
+.hod-strk-up{display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:4px 9px;}
+.hod-strk-up span{font-size:9px;color:var(--muted);font-family:'Oswald';}
+.hod-strk-up b{font-size:16px;}
 .hod-roul-h{font-family:'Anton';font-size:24px;color:var(--gold);letter-spacing:1px;}
 .hod-roul-team{font-family:'Bebas Neue';font-size:18px;color:#fff;letter-spacing:1px;margin-top:2px;}
 .hod-roul-sub{font-size:12px;color:var(--muted);margin:6px 0 14px;}
@@ -3147,25 +3155,25 @@ function checkDailyStreak(){
 // ruleta nabori glede na tip dneva (paketi glavni, malo kovancev)
 function streakRouletteSlots(type){
   const s=[];
-  if(type==='mega'){ // 30. dan — najboljša
-    for(let i=0;i<10;i++) s.push({t:'pack',pk:'premium'});   // zlati
-    for(let i=0;i<6;i++)  s.push({t:'pack',pk:'moment'});    // moment
-    for(let i=0;i<8;i++)  s.push({t:'pack',pk:'team'});
-    for(let i=0;i<8;i++)  s.push({t:'pack',pk:'decade'});
-    for(let i=0;i<4;i++)  s.push({t:'coins',v:100});
-  } else if(type==='special'){ // 7. dan — dobra
-    for(let i=0;i<8;i++)  s.push({t:'pack',pk:'premium'});
-    for(let i=0;i<4;i++)  s.push({t:'pack',pk:'moment'});
-    for(let i=0;i<7;i++)  s.push({t:'pack',pk:'team'});
-    for(let i=0;i<7;i++)  s.push({t:'pack',pk:'decade'});
-    for(let i=0;i<6;i++)  s.push({t:'pack',pk:'basic'});
-    for(let i=0;i<4;i++)  s.push({t:'coins',v:60});
-  } else { // navadni dan — paketi glavni, malo kovancev
-    for(let i=0;i<12;i++) s.push({t:'pack',pk:'basic'});
-    for(let i=0;i<7;i++)  s.push({t:'pack',pk:'decade'});
-    for(let i=0;i<7;i++)  s.push({t:'pack',pk:'team'});
-    for(let i=0;i<6;i++)  s.push({t:'coins',v:25});
-    for(let i=0;i<4;i++)  s.push({t:'coins',v:40});
+  if(type==='mega'){ // 30. dan — najboljša (12 mest)
+    for(let i=0;i<4;i++) s.push({t:'pack',pk:'premium'});
+    for(let i=0;i<2;i++) s.push({t:'pack',pk:'moment'});
+    for(let i=0;i<2;i++) s.push({t:'pack',pk:'team'});
+    for(let i=0;i<2;i++) s.push({t:'pack',pk:'decade'});
+    for(let i=0;i<2;i++) s.push({t:'coins',v:100});
+  } else if(type==='special'){ // 7. dan — dobra (12 mest)
+    for(let i=0;i<3;i++) s.push({t:'pack',pk:'premium'});
+    for(let i=0;i<1;i++) s.push({t:'pack',pk:'moment'});
+    for(let i=0;i<2;i++) s.push({t:'pack',pk:'team'});
+    for(let i=0;i<2;i++) s.push({t:'pack',pk:'decade'});
+    for(let i=0;i<2;i++) s.push({t:'pack',pk:'basic'});
+    for(let i=0;i<2;i++) s.push({t:'coins',v:60});
+  } else { // navadni dan (12 mest) — paketi glavni, malo kovancev
+    for(let i=0;i<4;i++) s.push({t:'pack',pk:'basic'});
+    for(let i=0;i<2;i++) s.push({t:'pack',pk:'decade'});
+    for(let i=0;i<2;i++) s.push({t:'pack',pk:'team'});
+    for(let i=0;i<2;i++) s.push({t:'coins',v:25});
+    for(let i=0;i<2;i++) s.push({t:'coins',v:40});
   }
   return s;
 }
@@ -3203,7 +3211,7 @@ function showDailyStreak(testStreak){
   const d=isTest ? {streak:testStreak, lastDay:todayKey(), claimedToday:false} : getStreakData();
   const type=streakDayType(d.streak);
   const slots=streakRouletteSlots(type);
-  const N=slots.length, seg=360/N, R=150, cx=170, cy=170;
+  const N=slots.length, seg=360/N, R=155, cx=170, cy=170;
   // premešaj za lep videz
   for(let i=slots.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [slots[i],slots[j]]=[slots[j],slots[i]]; }
   const winIdx=Math.floor(Math.random()*N);
@@ -3213,28 +3221,36 @@ function showDailyStreak(testStreak){
     const sl=slots[i]; const st=sl.t==='coins'?STREAK_STYLE.coins:STREAK_STYLE[sl.pk];
     const a0=(i*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
     const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0), x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
-    segs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${st.col}" stroke="#0d1119" stroke-width="1"/>`;
-    const am=((i+0.5)*seg-90)*Math.PI/180, ir=R*0.74;
-    segs+=`<text x="${(cx+ir*Math.cos(am)).toFixed(1)}" y="${(cy+ir*Math.sin(am)).toFixed(1)}" font-size="13" text-anchor="middle" dominant-baseline="central">${st.ic}</text>`;
+    segs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${st.col}" stroke="#0d1119" stroke-width="2"/>`;
+    const am=((i+0.5)*seg-90)*Math.PI/180, ir=R*0.7;
+    const ix=(cx+ir*Math.cos(am)), iy=(cy+ir*Math.sin(am));
+    // večja ikona + (pri kovancih) znesek
+    segs+=`<text x="${ix.toFixed(1)}" y="${(iy-3).toFixed(1)}" font-size="22" text-anchor="middle" dominant-baseline="central">${st.ic}</text>`;
+    if(sl.t==='coins') segs+=`<text x="${ix.toFixed(1)}" y="${(iy+13).toFixed(1)}" font-size="11" font-weight="bold" fill="#fff" text-anchor="middle" dominant-baseline="central">${sl.v}</text>`;
   }
   const dayLabel = type==='mega'?'🌟 30-DNEVNI MEJNIK!':type==='special'?'✨ 7-DNEVNI MEJNIK!':'Dnevna nagrada';
   // koledar zadnjih 7 dni
   let cal=''; for(let i=6;i>=0;i--){ const on=i< (d.streak%7||7); cal+=`<span class="hod-strk-day ${i===0?'today':''} ${on?'on':''}">${on?'✓':'·'}</span>`; }
+  // pregled prihodnjih dni (kaj te čaka)
+  function dayTypeFor(streak){ if(streak%30===0)return'🌟';if(streak%7===0)return'✨';return'🎁'; }
+  let upcoming='';
+  for(let k=1;k<=4;k++){ const fs=d.streak+k; upcoming+=`<div class="hod-strk-up"><span>+${k}d</span><b>${dayTypeFor(fs)}</b></div>`; }
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
   ov.innerHTML=`<div class="hod-strk-wrap">
     <div class="hod-strk-fire">🔥 ${d.streak}</div>
     <div class="hod-strk-h">${dayLabel}</div>
-    <div class="hod-strk-sub">${d.streak} ${d.streak===1?'dan':'dni'} zapored${type==='normal'?` · do mejnika še ${7-(d.streak%7||7)+ (d.streak%7===0?7:0)} dni`:''}</div>
+    <div class="hod-strk-sub">${d.streak} ${d.streak===1?'dan':'dni'} zapored${type==='normal'?` · do ✨ mejnika še ${(7-(d.streak%7||7))+(d.streak%7===0?7:0)} dni`:''}</div>
     <div class="hod-strk-cal">${cal}</div>
     <div class="hod-strk-stage">
-      <div class="hod-roul-pointer">▼</div>
-      <svg class="hod-roul-wheel" id="hod-strk-wheel" viewBox="0 0 340 340" width="280" height="280">${segs}
-        <circle cx="${cx}" cy="${cy}" r="28" fill="#1a1206" stroke="#ffd166" stroke-width="3"/>
-        <text x="${cx}" y="${cy}" font-size="22" text-anchor="middle" dominant-baseline="central">🎁</text>
+      <div class="hod-strk-pointer">▼</div>
+      <svg class="hod-roul-wheel" id="hod-strk-wheel" viewBox="0 0 340 340" width="290" height="290">${segs}
+        <circle cx="${cx}" cy="${cy}" r="30" fill="#1a1206" stroke="#ffd166" stroke-width="3"/>
+        <text x="${cx}" y="${cy}" font-size="24" text-anchor="middle" dominant-baseline="central">🎁</text>
       </svg>
     </div>
-    <button class="hod-btn gold" id="hod-strk-spin">Zavrti dnevno nagrado 🎁</button>
+    <button class="hod-btn gold hod-strk-spinbtn" id="hod-strk-spin">Zavrti dnevno nagrado 🎁</button>
+    <div class="hod-strk-upcoming"><div class="hod-strk-up-t">Prihaja:</div>${upcoming}</div>
     <div id="hod-strk-result"></div>
   </div>`;
   document.body.appendChild(ov);
@@ -3268,9 +3284,15 @@ function showDailyStreak(testStreak){
       res.innerHTML=`<div class="hod-roul-won" style="border-color:${col}">
         <div class="hod-roul-won-ic">${ic}</div>
         <div class="hod-roul-won-t">Osvojil si:<br><b style="color:${col}">${escapeHtml(label)}</b></div>
-        <button class="hod-btn gold" id="hod-strk-ok">${isTest?'Zapri test':(win.t==='coins'?'Super! 🪙':'Odpri paket 📦')}</button>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px">
+          ${(isTest||win.t==='coins')?'':'<button class="hod-btn gold" id="hod-strk-open">Odpri zdaj 📦</button>'}
+          <button class="hod-btn secondary" id="hod-strk-ok">${isTest?'Zapri test':'OK'}</button>
+        </div>
       </div>`;
-      res.querySelector('#hod-strk-ok').onclick=()=>{ ov.remove(); if(isTest){ showStreakTestPicker(); } else if(win.t!=='coins') showPackOpening(); else { renderProgress&&renderProgress(); } };
+      const okB=res.querySelector('#hod-strk-ok');
+      okB.onclick=()=>{ ov.remove(); if(isTest){ showStreakTestPicker(); } else { renderProgress&&renderProgress(); } };
+      const openB=res.querySelector('#hod-strk-open');
+      if(openB) openB.onclick=()=>{ ov.remove(); showPackOpening(); };
     }, 4400);
   };
 }
@@ -4408,9 +4430,15 @@ function showPackRoulette(teamNm, era, testMode){
       res.innerHTML=`<div class="hod-roul-won" style="border-color:${st.col}">
         <div class="hod-roul-won-ic">${st.ic}</div>
         <div class="hod-roul-won-t">Zadel si:<br><b style="color:${st.col}">${escapeHtml(label)}</b></div>
-        <button class="hod-btn gold" id="hod-roul-open">${testMode?'Zavrti znova 🎰':'Odpri paket 📦'}</button>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px">
+          ${testMode?'':'<button class="hod-btn gold" id="hod-roul-open">Odpri zdaj 📦</button>'}
+          <button class="hod-btn secondary" id="hod-roul-ok">${testMode?'Zavrti znova 🎰':'OK'}</button>
+        </div>
       </div>`;
-      res.querySelector('#hod-roul-open').onclick=()=>{ ov.remove(); if(testMode) showPackRoulette(teamNm, era, true); else showPackOpening(); };
+      const okB=res.querySelector('#hod-roul-ok');
+      okB.onclick=()=>{ ov.remove(); if(testMode) showPackRoulette(teamNm, era, true); };
+      const openB=res.querySelector('#hod-roul-open');
+      if(openB) openB.onclick=()=>{ ov.remove(); showPackOpening(); };
     }, 4400);
   };
 }
