@@ -656,7 +656,7 @@
 .frt-wrap{max-width:480px;margin:0 auto;}
 .frt-balance{text-align:center;font-family:'Oswald';font-size:14px;color:var(--ink);margin-bottom:10px;}
 .frt-balance b{color:var(--gold);font-family:'Anton';}
-.frt-stage{position:relative;display:flex;justify-content:center;align-items:center;height:250px;}
+.frt-stage{position:relative;display:flex;justify-content:center;align-items:center;height:330px;}
 .frt-pointer{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:22px;color:var(--gold);z-index:5;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
 .frt-wheel{transform:rotate(0deg);filter:drop-shadow(0 6px 18px rgba(0,0,0,.6));}
 .frt-result{text-align:center;min-height:10px;margin:6px 0;}
@@ -6098,7 +6098,7 @@ function showFrenchRoulette(){
   _froulBets={};
   const CHIP=10; // vrednost enega žetona
   // SVG kolo
-  const N=ROULETTE_WHEEL.length, R=130, cx=150, cy=150, seg=360/N;
+  const N=ROULETTE_WHEEL.length, R=180, cx=200, cy=200, seg=360/N;
   let wheelSegs='';
   for(let i=0;i<N;i++){
     const num=ROULETTE_WHEEL[i];
@@ -6106,10 +6106,10 @@ function showFrenchRoulette(){
     const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0);
     const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
     const fill=num===0?'#1a7d3a':(ROUL_RED.has(num)?'#c4242e':'#1a1a1a');
-    wheelSegs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${fill}" stroke="#d4af37" stroke-width="0.5"/>`;
-    const am=((i+0.5)*seg-90)*Math.PI/180; const ir=R*0.85;
+    wheelSegs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${fill}" stroke="#d4af37" stroke-width="0.7"/>`;
+    const am=((i+0.5)*seg-90)*Math.PI/180; const ir=R*0.86;
     const ix=cx+ir*Math.cos(am), iy=cy+ir*Math.sin(am);
-    wheelSegs+=`<text x="${ix.toFixed(1)}" y="${iy.toFixed(1)}" font-size="9" fill="#fff" text-anchor="middle" dominant-baseline="central" transform="rotate(${(i+0.5)*seg},${ix.toFixed(1)},${iy.toFixed(1)})">${num}</text>`;
+    wheelSegs+=`<text x="${ix.toFixed(1)}" y="${iy.toFixed(1)}" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle" dominant-baseline="central" transform="rotate(${(i+0.5)*seg},${ix.toFixed(1)},${iy.toFixed(1)})">${num}</text>`;
   }
   // miza za stave: številke 1-36 v 3 vrstah + zunanje
   function numCell(n){ const c=roulColor(n); return `<button class="frt-num frt-${c}" data-bet="n${n}">${n}</button>`; }
@@ -6130,10 +6130,10 @@ function showFrenchRoulette(){
     <div class="frt-balance">Žetoni: <b id="frt-bal">${_froulBalance}</b> · Vložek: <b id="frt-staked">0</b></div>
     <div class="frt-stage">
       <div class="frt-pointer">▼</div>
-      <svg class="frt-wheel" id="frt-wheel" viewBox="0 0 300 300" width="240" height="240">
+      <svg class="frt-wheel" id="frt-wheel" viewBox="0 0 400 400" width="320" height="320">
         ${wheelSegs}
-        <circle cx="${cx}" cy="${cy}" r="30" fill="#0d1119" stroke="#d4af37" stroke-width="2"/>
-        <text x="${cx}" y="${cy}" font-size="20" text-anchor="middle" dominant-baseline="central">🎡</text>
+        <circle cx="${cx}" cy="${cy}" r="38" fill="#0d1119" stroke="#d4af37" stroke-width="2.5"/>
+        <text x="${cx}" y="${cy}" font-size="26" text-anchor="middle" dominant-baseline="central">🎡</text>
       </svg>
       <div class="frt-ball" id="frt-ball" style="display:none"></div>
     </div>
@@ -6189,7 +6189,7 @@ function showFrenchRoulette(){
     el.oncontextmenu=(e)=>{ e.preventDefault(); const k=el.dataset.bet; if(_froulBets[k]){ _froulBets[k]-=CHIP; if(_froulBets[k]<=0) delete _froulBets[k]; playChip(false); refresh(); } };
   });
   document.getElementById('frt-clear').onclick=()=>{ if(spinning)return; _froulBets={}; playChip(false); refresh(); document.getElementById('frt-result').innerHTML=''; };
-  document.getElementById('frt-back').onclick=()=>showDevGallery();
+  document.getElementById('hod-frt-back').onclick=()=>showDevGallery();
   document.getElementById('frt-spin').onclick=()=>{
     if(spinning) return;
     const staked=totalStaked();
