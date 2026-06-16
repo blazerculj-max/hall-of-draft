@@ -889,6 +889,29 @@
 .hod-shop-sell-h{font-family:'Bebas Neue';font-size:16px;letter-spacing:1px;color:var(--amber);margin-bottom:6px;}
 .hod-shop-sell-d{font-size:13px;color:var(--ink);margin-bottom:10px;}
 .hod-shop-sell-d b{color:var(--amber);}
+/* nova trgovina */
+.hod-shop-h{font-family:'Anton';font-size:16px;color:#fff;margin:16px auto 2px;max-width:480px;text-align:left;}
+.hod-shop-sub2{font-size:11px;color:var(--muted);max-width:480px;margin:0 auto 6px;text-align:left;font-style:italic;}
+.hod-shop-back{font-family:'Oswald';font-size:13px;color:var(--gold);cursor:pointer;max-width:480px;margin:0 auto 8px;text-align:left;}
+.hod-shop-back:hover{text-decoration:underline;}
+.hod-shop-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.hod-shop-card.pick{cursor:pointer;transition:.15s;}
+.hod-shop-card.pick:hover{border-color:var(--orange);transform:translateY(-2px);}
+.hod-shop-card.pick.dis{opacity:.45;pointer-events:none;}
+.hod-shop-card.special{width:165px;}
+.hod-shop-card.gold-card{border-color:#ffd60a;box-shadow:0 6px 18px rgba(0,0,0,.5),0 0 16px rgba(255,214,10,.25);}
+.hod-shop-teams{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:480px;margin:0 auto;}
+.hod-shop-team{font-family:'Oswald';font-weight:600;font-size:13px;background:#161b2a;border:1px solid var(--gold-warm);color:var(--ink);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.12s;}
+.hod-shop-team:hover{border-color:var(--orange);background:#1d2438;transform:translateY(-1px);}
+.hod-shop-team.dis{opacity:.4;pointer-events:none;}
+.hod-shop-offer{background:linear-gradient(135deg,#2a1838,#3a2050);border:2px solid #b388ff;border-radius:16px;padding:16px;max-width:420px;margin:6px auto 14px;text-align:center;box-shadow:0 0 22px rgba(179,136,255,.3);animation:offerGlow 2.4s ease-in-out infinite;}
+@keyframes offerGlow{0%,100%{box-shadow:0 0 18px rgba(179,136,255,.25);}50%{box-shadow:0 0 30px rgba(179,136,255,.5);}}
+.hod-shop-offer-tag{font-family:'Anton';font-size:11px;letter-spacing:1px;color:#d4b3ff;margin-bottom:6px;}
+.hod-shop-offer-nm{font-family:'Bebas Neue';font-size:22px;letter-spacing:1px;color:#fff;}
+.hod-shop-offer-pr{font-family:'Oswald';font-size:15px;color:var(--ink);margin:6px 0 10px;}
+.hod-shop-offer-pr s{color:var(--muted);font-size:13px;}
+.hod-shop-offer-pr b{color:#ffd166;font-size:18px;}
+.hod-shop-offer-pr span{color:var(--green);font-size:12px;font-weight:700;}
 /* PACK OPENING animacije */
 .hod-pko-wrap{display:flex;flex-direction:column;align-items:center;padding:16px;width:100%;}
 .hod-pko-stage{width:100%;max-width:420px;min-height:240px;display:flex;align-items:center;justify-content:center;position:relative;}
@@ -2959,7 +2982,7 @@ function showLanding(){
         </button>
       </div>
       <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="hod-btn gold hod-landing-action" id="hod-go-album">📒 Album${getPendingPacks()>0?` <span class="hod-pack-badge">${getPendingPacks()} 📦</span>`:''}</button>
+        <button class="hod-btn gold hod-landing-action" id="hod-go-album">📒 Album${totalPacks()>0?` <span class="hod-pack-badge">${totalPacks()} 📦</span>`:''}</button>
         ${isLoggedIn()?`<button class="hod-btn hod-landing-action" id="hod-go-rewards" style="background:linear-gradient(180deg,#3a4356,#252c3a);box-shadow:0 5px 0 #161b2a,0 8px 18px rgba(0,0,0,.4);color:var(--amber);position:relative">🎁 Nagrade<span id="hod-rew-dot" class="hod-rew-dot" style="display:none"></span></button>`:''}
         <button class="hod-btn hod-landing-action" id="hod-go-auth" style="background:linear-gradient(180deg,#3a4356,#252c3a);box-shadow:0 5px 0 #161b2a,0 8px 18px rgba(0,0,0,.4);color:var(--amber)">${isLoggedIn()?'👤 '+escapeHtml(currentUser()):'🔑 Prijava'}</button>
       </div>
@@ -3913,6 +3936,24 @@ const RARITY_DEFS={
   slovenski:{name:'SLOVENSKI', col:'#0073e6', weight:0.5}
 };
 const DECADE_ORDER=['70s','80s','90s','2000s','2010s','2020s'];
+
+// ===== TIPI PAKETOV =====
+// Tematski paketi NE spreminjajo verjetnosti — le bazen kart (filter). Moment/premium pa spremenijo %.
+// odds: {moment, legendary, rare} v %, ostalo = common. n=število kart, pity=garancija redke+.
+const PACK_TYPES={
+  basic:   {name:'Osnovni paket', price:50,  n:3, odds:null, ic:'📦'},
+  team:    {name:'Ekipni paket',   price:60,  n:3, odds:null, ic:'👕', filter:'team'},
+  decade:  {name:'Dekadni paket',  price:60,  n:3, odds:null, ic:'📅', filter:'decade'},
+  moment:  {name:'Moment paket',   price:120, n:3, odds:{moment:8, legendary:18, rare:35}, ic:'⭐'},
+  premium: {name:'Zlati paket',    price:150, n:5, odds:{moment:4, legendary:22, rare:44}, pity:true, ic:'🏆'},
+};
+// dekadne skupine (po tvojem predlogu)
+const DECADE_GROUPS=[
+  {id:'legends', name:'Legends', sub:'70. in 80. leta', eras:['70s','80s']},
+  {id:'iconic',  name:'Iconic Players', sub:'90. in 2000. leta', eras:['90s','2000s']},
+  {id:'2010s',   name:'2010s', sub:'2010. leta', eras:['2010s']},
+  {id:'2020s',   name:'2020s', sub:'2020. leta', eras:['2020s']},
+];
 // zbrane kartice: { pid: {stuck:bool, count:int} }  stuck=prilepljena v album
 function getCollected(){
   try{ return JSON.parse(storeGet('hod-album')||'{}'); }catch(e){ return {}; }
@@ -3943,24 +3984,51 @@ function setPendingPacks(n){ storeSet('hod-packs', String(Math.max(0,n))); if(ty
 function awardPack(n){ setPendingPacks(getPendingPacks()+(n||1)); }
 
 // izberi naključno kartico po teži redkosti (vključno z momenti)
-function rollCard(){
-  const cat=albumCatalog(); const mom=momentCatalog();
-  if(!cat.length) return null;
+// opts: {pool, odds, forceRare}  pool=filtriran bazen kart (brez momentov), odds={moment,legendary,rare}, forceRare=garancija
+function rollCard(opts){
+  opts=opts||{};
+  const allCat=albumCatalog(); const mom=momentCatalog();
+  if(!allCat.length) return null;
+  const cat = opts.pool || allCat;  // filtriran bazen (ekipa/dekada) ali vse
+  // verjetnosti: privzete iz RARITY_DEFS, ali custom (moment/premium paket)
+  let wM, wL, wR;
+  if(opts.odds){ wM=opts.odds.moment; wL=opts.odds.legendary; wR=opts.odds.rare; }
+  else { wM=RARITY_DEFS.moment.weight+RARITY_DEFS.lowlight.weight+RARITY_DEFS.slovenski.weight; wL=RARITY_DEFS.legendary.weight; wR=RARITY_DEFS.rare.weight; }
   const r=Math.random()*100;
-  const wM=RARITY_DEFS.moment.weight, wL=RARITY_DEFS.legendary.weight, wR=RARITY_DEFS.rare.weight;
   let want;
-  if(r<wM) want='moment';
+  if(opts.forceRare){ want = (r<(wM)) ? 'moment' : (r<wM+wL+15 ? 'legendary' : 'rare'); }  // garancija: vsaj redka
+  else if(r<wM) want='moment';
   else if(r<wM+wL) want='legendary';
   else if(r<wM+wL+wR) want='rare';
   else want='common';
-  let pool = want==='moment' ? mom : cat.filter(c=>c.rarity===want);
-  if(!pool.length) pool=cat;
+  // moment bazen: če je paket filtriran po ekipi/dekadi, omeji tudi momente
+  let pool;
+  if(want==='moment'){
+    pool=mom;
+    if(opts.momFilter) pool=mom.filter(opts.momFilter);
+    if(!pool.length){ want='legendary'; } // ni momenta v bazenu -> prelij v legendarno
+  }
+  if(want!=='moment'){
+    pool=cat.filter(c=>c.rarity===want);
+    if(!pool.length) pool=cat; // če v bazenu ni te redkosti, vzemi karkoli iz bazena
+  }
+  if(!pool.length) pool=allCat;
   return pool[Math.floor(Math.random()*pool.length)];
 }
-// odpri en paket = 4 kartice (nove gredo med nenalepljene)
-function openOnePack(){
-  const n = Math.random()<0.10 ? 4 : 3; // 90% tri, 10% štiri
-  const cards=[]; for(let i=0;i<n;i++){ const c=rollCard(); if(c) cards.push(c); }
+// odpri en paket — packCfg: {type, pool, odds, momFilter, n, pity}
+function openOnePack(packCfg){
+  packCfg=packCfg||{};
+  const n = packCfg.n || (Math.random()<0.10 ? 4 : 3);
+  const cards=[];
+  for(let i=0;i<n;i++){
+    const c=rollCard({pool:packCfg.pool, odds:packCfg.odds, momFilter:packCfg.momFilter});
+    if(c) cards.push(c);
+  }
+  // pity: če premium in vse navadne, dvigni eno na redko+
+  if(packCfg.pity && cards.length && cards.every(c=>c.rarity==='common')){
+    const better=rollCard({pool:packCfg.pool, odds:packCfg.odds, momFilter:packCfg.momFilter, forceRare:true});
+    if(better) cards[Math.floor(Math.random()*cards.length)]=better;
+  }
   const col=getCollected();
   const result=cards.map(c=>{
     const id=c.id||c.uid||(''+c.pid);
@@ -3973,6 +4041,34 @@ function openOnePack(){
   setCollected(col);
   return result;
 }
+// zgradi konfiguracijo paketa iz tipa + parametra (ekipa/dekada)
+function buildPackCfg(type, param){
+  const def=PACK_TYPES[type]||PACK_TYPES.basic;
+  const cfg={type, n:def.n, odds:def.odds, pity:def.pity};
+  if(type==='team' && param){
+    cfg.pool=albumCatalog().filter(c=>c.team===param);
+    cfg.momFilter=(m=>m.team===param);
+    cfg.label=TEAM_NAME[param]||param;
+  } else if(type==='decade' && param){
+    const grp=DECADE_GROUPS.find(g=>g.id===param);
+    const eras=grp?grp.eras:[param];
+    cfg.pool=albumCatalog().filter(c=>eras.includes(c.era));
+    cfg.momFilter=(m=>eras.includes(m.era));
+    cfg.label=grp?grp.name:param;
+  }
+  return cfg;
+}
+// zaloga odprtih paketov po tipu: hod-packs (osnovni) + hod-packq (tematski v čakanju)
+function queuePack(cfg){
+  // shranimo konfiguracijo paketa za odpiranje (samo nujno za rekonstrukcijo)
+  let q=[]; try{ q=JSON.parse(storeGet('hod-packq')||'[]'); }catch(e){}
+  q.push({type:cfg.type, param:cfg.param||null});
+  storeSet('hod-packq', JSON.stringify(q));
+}
+function getQueuedPacks(){ try{ return JSON.parse(storeGet('hod-packq')||'[]'); }catch(e){ return []; } }
+function setQueuedPacks(q){ storeSet('hod-packq', JSON.stringify(q)); }
+// skupno število neodprtih paketov (osnovni zasluženi + kupljeni tematski v vrsti)
+function totalPacks(){ return getPendingPacks()+getQueuedPacks().length; }
 // ===================== KONEC ALBUM LOGIKA =====================
 
 // ULTRA-RARE MOMENTI (kurirani ikonični dogodki)
@@ -5117,7 +5213,7 @@ function showAlbum(){
   const cat=albumCatalog();
   const total=cat.length+MOMENTS.length;
   const stuck=stuckCount();
-  const packs=getPendingPacks();
+  const packs=totalPacks();
   const coins=getCoins();
   const col=getCollected();
   const unstuckTotal=Object.keys(col).reduce((a,k)=>a+(col[k].stuck?0:(col[k].count||0)),0);
@@ -5970,43 +6066,162 @@ function showMissingReport(){
   document.getElementById('hod-mr-copy').onclick=()=>{ try{ navigator.clipboard.writeText(r.txt); hodToast('Kopirano!'); }catch(e){ hodToast('Ozna\u010di in kopiraj ro\u010dno'); } };
   document.getElementById('hod-mr-close').onclick=()=>ov.remove();
 }
+// stanje trgovine: katero kategorijo gledamo
+let _shopView='main', _shopConf='', _shopTeamPick='';
 function renderShop(body){
   const col=getCollected();
   const catMap={}; albumCatalog().forEach(c=>catMap[c.uid]=c); MOMENTS.forEach(m=>catMap[m.id]={...m,rarity:momentRarity(m)});
   const dups=Object.keys(col).filter(k=>(col[k].count||0)>0).map(k=>({c:catMap[k],n:col[k].count})).filter(x=>x.c);
   const dupValue=dups.reduce((a,x)=>a+(DUP_VALUE[x.c.rarity]||3)*x.n,0);
+  const coins=getCoins();
+  const can=(p)=>coins>=p;
+
+  // --- IZBIRA EKIPE (konferenca -> ekipa) ---
+  if(_shopView==='team'){
+    if(!_shopConf){
+      body.innerHTML=`<div class="hod-shop-back" id="hod-shop-back">← Nazaj v trgovino</div>
+        <div class="hod-shop-h">👕 Ekipni paket — izberi konferenco</div>
+        <div class="hod-shop-row">
+          <div class="hod-shop-card pick" data-conf="E"><div class="hod-shop-ic">🟢</div><div class="hod-shop-nm">Vzhod</div><div class="hod-shop-sub">Eastern</div></div>
+          <div class="hod-shop-card pick" data-conf="W"><div class="hod-shop-ic">🔵</div><div class="hod-shop-nm">Zahod</div><div class="hod-shop-sub">Western</div></div>
+        </div>`;
+      body.querySelector('#hod-shop-back').onclick=()=>{ _shopView='main'; renderShop(body); };
+      body.querySelectorAll('[data-conf]').forEach(el=>el.onclick=()=>{ _shopConf=el.dataset.conf; renderShop(body); });
+      return;
+    }
+    // seznam ekip izbrane konference
+    const teams=Object.keys(TEAM_NAME).filter(t=>CONFERENCE[t]===_shopConf).sort((a,b)=>TEAM_NAME[a].localeCompare(TEAM_NAME[b]));
+    body.innerHTML=`<div class="hod-shop-back" id="hod-shop-back">← Konferenca</div>
+      <div class="hod-shop-h">👕 ${_shopConf==='E'?'Vzhod':'Zahod'} — izberi ekipo (${PACK_TYPES.team.price} 🪙)</div>
+      <div class="hod-shop-teams">${teams.map(t=>`<button class="hod-shop-team ${can(PACK_TYPES.team.price)?'':'dis'}" data-team="${t}">${escapeHtml(TEAM_NAME[t])}</button>`).join('')}</div>`;
+    body.querySelector('#hod-shop-back').onclick=()=>{ _shopConf=''; renderShop(body); };
+    body.querySelectorAll('[data-team]').forEach(el=>el.onclick=()=>{
+      const t=el.dataset.team;
+      if(!can(PACK_TYPES.team.price)){ hodToast('Premalo 🪙 kovancev.'); return; }
+      if(spendCoins(PACK_TYPES.team.price)){ queuePack({type:'team',param:t}); hodToast(`👕 <b>${escapeHtml(TEAM_NAME[t])} paket kupljen!</b>`); _shopView='main'; _shopConf=''; openNextQueuedOrAlbum(); }
+    });
+    return;
+  }
+
+  // --- IZBIRA DEKADE ---
+  if(_shopView==='decade'){
+    body.innerHTML=`<div class="hod-shop-back" id="hod-shop-back">← Nazaj v trgovino</div>
+      <div class="hod-shop-h">📅 Dekadni paket — izberi obdobje (${PACK_TYPES.decade.price} 🪙)</div>
+      <div class="hod-shop-row" style="flex-wrap:wrap">
+        ${DECADE_GROUPS.map(g=>`<div class="hod-shop-card pick ${can(PACK_TYPES.decade.price)?'':'dis'}" data-dec="${g.id}">
+          <div class="hod-shop-ic">📅</div><div class="hod-shop-nm">${g.name}</div><div class="hod-shop-sub">${g.sub}</div></div>`).join('')}
+      </div>`;
+    body.querySelector('#hod-shop-back').onclick=()=>{ _shopView='main'; renderShop(body); };
+    body.querySelectorAll('[data-dec]').forEach(el=>el.onclick=()=>{
+      const d=el.dataset.dec;
+      if(!can(PACK_TYPES.decade.price)){ hodToast('Premalo 🪙 kovancev.'); return; }
+      if(spendCoins(PACK_TYPES.decade.price)){ const g=DECADE_GROUPS.find(x=>x.id===d); queuePack({type:'decade',param:d}); hodToast(`📅 <b>${g.name} paket kupljen!</b>`); _shopView='main'; openNextQueuedOrAlbum(); }
+    });
+    return;
+  }
+
+  // --- GLAVNA TRGOVINA ---
+  const offer=getDailyOffer();
   body.innerHTML=`
+    ${offer && !offer.used ? `<div class="hod-shop-offer" id="hod-shop-offer">
+      <div class="hod-shop-offer-tag">⚡ DANAŠNJA PONUDBA · samo 1×</div>
+      <div class="hod-shop-offer-nm">${offer.ic} ${escapeHtml(offer.label)}</div>
+      <div class="hod-shop-offer-pr"><s>${offer.full} 🪙</s> <b>${offer.price} 🪙</b> <span>−40%</span></div>
+      <button class="hod-btn gold" id="hod-buy-offer" ${can(offer.price)?'':'disabled'}>Izkoristi ponudbo</button>
+    </div>`:''}
+
+    <div class="hod-shop-h">📦 Osnovni paketi</div>
     <div class="hod-shop-row">
-      <div class="hod-shop-card">
-        <div class="hod-shop-ic">📦</div><div class="hod-shop-nm">1 paket</div>
-        <div class="hod-shop-pr">🪙 50</div>
-        <button class="hod-btn ${getCoins()<50?'':'gold'}" id="hod-buy1" ${getCoins()<50?'disabled':''}>Kupi</button>
-      </div>
-      <div class="hod-shop-card">
-        <div class="hod-shop-ic">📦×5</div><div class="hod-shop-nm">5 paketov</div>
-        <div class="hod-shop-pr">🪙 200 <span>−20%</span></div>
-        <button class="hod-btn ${getCoins()<200?'':'gold'}" id="hod-buy5" ${getCoins()<200?'disabled':''}>Kupi</button>
-      </div>
+      <div class="hod-shop-card"><div class="hod-shop-ic">📦</div><div class="hod-shop-nm">1 paket</div><div class="hod-shop-pr">🪙 50</div>
+        <button class="hod-btn ${can(50)?'gold':''}" id="hod-buy1" ${can(50)?'':'disabled'}>Kupi</button></div>
+      <div class="hod-shop-card"><div class="hod-shop-ic">📦×5</div><div class="hod-shop-nm">5 paketov</div><div class="hod-shop-pr">🪙 200 <span>−20%</span></div>
+        <button class="hod-btn ${can(200)?'gold':''}" id="hod-buy5" ${can(200)?'':'disabled'}>Kupi</button></div>
     </div>
+
+    <div class="hod-shop-h">🎯 Tematski paketi</div>
+    <div class="hod-shop-sub2">Iste možnosti za redkost, le karte so omejene na izbor.</div>
+    <div class="hod-shop-row">
+      <div class="hod-shop-card pick" id="hod-pick-team"><div class="hod-shop-ic">👕</div><div class="hod-shop-nm">Ekipni</div><div class="hod-shop-pr">🪙 60</div></div>
+      <div class="hod-shop-card pick" id="hod-pick-decade"><div class="hod-shop-ic">📅</div><div class="hod-shop-nm">Dekadni</div><div class="hod-shop-pr">🪙 60</div></div>
+    </div>
+
+    <div class="hod-shop-h">✨ Posebni paketi</div>
+    <div class="hod-shop-row">
+      <div class="hod-shop-card special"><div class="hod-shop-ic">⭐</div><div class="hod-shop-nm">Moment paket</div><div class="hod-shop-sub">večja možnost za moment</div><div class="hod-shop-pr">🪙 120</div>
+        <button class="hod-btn ${can(120)?'gold':''}" id="hod-buy-moment" ${can(120)?'':'disabled'}>Kupi</button></div>
+      <div class="hod-shop-card special gold-card"><div class="hod-shop-ic">🏆</div><div class="hod-shop-nm">Zlati paket</div><div class="hod-shop-sub">5 kart · garantirana redka+</div><div class="hod-shop-pr">🪙 150</div>
+        <button class="hod-btn ${can(150)?'gold':''}" id="hod-buy-premium" ${can(150)?'':'disabled'}>Kupi</button></div>
+    </div>
+
     <div class="hod-shop-sell">
-      <div class="hod-shop-sell-h">Dvojniki</div>
+      <div class="hod-shop-sell-h">💰 Dvojniki</div>
       ${dups.length?`<div class="hod-shop-sell-d">Imaš ${dups.reduce((a,x)=>a+x.n,0)} dvojnikov v vrednosti <b>🪙 ${dupValue}</b></div>
       <button class="hod-btn" id="hod-sell-all" ${dupValue<=0?'disabled':''}>Prodaj vse dvojnike (🪙 ${dupValue})</button>`
       :'<div class="hod-shop-sell-d">Nimaš dvojnikov za prodajo.</div>'}
     </div>`;
-  const b1=document.getElementById('hod-buy1'); if(b1) b1.onclick=()=>{ if(buyPack()){ hodToast('📦 <b>Paket kupljen!</b> Odpri ga.'); showAlbum(); } };
-  const b5=document.getElementById('hod-buy5'); if(b5) b5.onclick=()=>{ if(buyPack5()){ hodToast('📦 <b>5 paketov kupljenih!</b>'); showAlbum(); } };
+
+  // osnovni
+  const b1=document.getElementById('hod-buy1'); if(b1) b1.onclick=()=>{ if(spendCoins(50)){ queuePack({type:'basic'}); hodToast('📦 <b>Paket kupljen!</b>'); openNextQueuedOrAlbum(); } };
+  const b5=document.getElementById('hod-buy5'); if(b5) b5.onclick=()=>{ if(spendCoins(200)){ for(let i=0;i<5;i++) queuePack({type:'basic'}); hodToast('📦 <b>5 paketov kupljenih!</b>'); openNextQueuedOrAlbum(); } };
+  // tematski (izbira)
+  const pt=document.getElementById('hod-pick-team'); if(pt) pt.onclick=()=>{ _shopView='team'; _shopConf=''; renderShop(body); };
+  const pd=document.getElementById('hod-pick-decade'); if(pd) pd.onclick=()=>{ _shopView='decade'; renderShop(body); };
+  // posebni
+  const bm=document.getElementById('hod-buy-moment'); if(bm) bm.onclick=()=>{ if(spendCoins(120)){ queuePack({type:'moment'}); hodToast('⭐ <b>Moment paket kupljen!</b>'); openNextQueuedOrAlbum(); } };
+  const bp=document.getElementById('hod-buy-premium'); if(bp) bp.onclick=()=>{ if(spendCoins(150)){ queuePack({type:'premium'}); hodToast('🏆 <b>Zlati paket kupljen!</b>'); openNextQueuedOrAlbum(); } };
+  // dnevna ponudba
+  const bo=document.getElementById('hod-buy-offer'); if(bo) bo.onclick=()=>{
+    const o=getDailyOffer(); if(!o||o.used) return;
+    if(spendCoins(o.price)){ queuePack({type:o.type,param:o.param}); markOfferUsed(); hodToast(`⚡ <b>Ponudba izkoriščena!</b>`); openNextQueuedOrAlbum(); }
+  };
+  // prodaja dvojnikov
   const sa=document.getElementById('hod-sell-all'); if(sa) sa.onclick=()=>{
     let got=0; const c2=getCollected();
     Object.keys(c2).forEach(k=>{ if((c2[k].count||0)>0){ const cc=catMap[k]; if(cc){ got+=(DUP_VALUE[cc.rarity]||3)*c2[k].count; c2[k].count=0; } } });
     setCollected(c2); addCoins(got); hodToast(`🪙 <b>+${got} točk</b> za dvojnike!`); showAlbum();
   };
 }
+// odpri naslednji paket iz vrste, sicer nazaj v album
+function openNextQueuedOrAlbum(){
+  const q=getQueuedPacks();
+  if(q.length){ showPackOpening(); }
+  else showAlbum();
+}
+// ===== DNEVNA PONUDBA (one-time offer) =====
+function getDailyOffer(){
+  const today=todaySeed();
+  let saved=null; try{ saved=JSON.parse(storeGet('hod-offer')||'null'); }catch(e){}
+  if(saved && saved.day===today) return saved;
+  // generiraj novo ponudbo: naključno ekipni ALI dekadni, -40%
+  const isTeam = (today%2===0);
+  let offer;
+  if(isTeam){
+    const teams=Object.keys(TEAM_NAME);
+    const t=teams[today%teams.length];
+    offer={day:today, type:'team', param:t, label:TEAM_NAME[t]+' paket', ic:'👕', full:PACK_TYPES.team.price, price:Math.round(PACK_TYPES.team.price*0.6), used:false};
+  } else {
+    const g=DECADE_GROUPS[today%DECADE_GROUPS.length];
+    offer={day:today, type:'decade', param:g.id, label:g.name+' paket', ic:'📅', full:PACK_TYPES.decade.price, price:Math.round(PACK_TYPES.decade.price*0.6), used:false};
+  }
+  storeSet('hod-offer', JSON.stringify(offer));
+  return offer;
+}
+function markOfferUsed(){ const o=getDailyOffer(); o.used=true; storeSet('hod-offer', JSON.stringify(o)); }
 // odpiranje paketa z animacijo razkrivanja
 function showPackOpening(){
-  if(getPendingPacks()<=0){ showAlbum(); return; }
-  setPendingPacks(getPendingPacks()-1);
-  const results=openOnePack();
+  // najprej preveri vrsto tematskih/kupljenih paketov, nato osnovne zaslužene (hod-packs)
+  let q=getQueuedPacks();
+  let cfg=null, fromQueue=false, packDef=PACK_TYPES.basic;
+  if(q.length){
+    const item=q.shift(); setQueuedPacks(q); fromQueue=true;
+    cfg=buildPackCfg(item.type, item.param);
+    packDef=PACK_TYPES[item.type]||PACK_TYPES.basic;
+  } else if(getPendingPacks()>0){
+    setPendingPacks(getPendingPacks()-1);
+    cfg=buildPackCfg('basic');
+  } else { showAlbum(); return; }
+  const results=openOnePack(cfg);
+  const packLabel = cfg.label ? `${packDef.name} · ${cfg.label}` : packDef.name;
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay hod-pko-overlay';
   ov.innerHTML=`<div class="hod-pko-wrap">
@@ -6015,7 +6230,7 @@ function showPackOpening(){
         <div class="hod-pko-rays"></div>
         <div class="hod-pko-tear"></div>
         <div class="hod-pko-logo">HALL <span>OF</span> DRAFT</div>
-        <div class="hod-pko-sub">PAKET SLIČIC</div>
+        <div class="hod-pko-sub">${escapeHtml(packLabel)}</div>
         <div class="hod-pko-tap">tapni za odpiranje</div>
       </div>
       <div class="hod-pko-fan" id="hod-pko-fan"></div>
@@ -6032,9 +6247,9 @@ function showPackOpening(){
   const ctrl=ov.querySelector('#hod-pko-ctrl');
   const nextBtn=ov.querySelector('#hod-pko-next');
   // pokaži "naslednji paket" če jih je še kaj v čakanju
-  if(getPendingPacks()>0 && nextBtn){
+  if(totalPacks()>0 && nextBtn){
     nextBtn.style.display='inline-flex';
-    nextBtn.textContent=`Naslednji paket → (${getPendingPacks()})`;
+    nextBtn.textContent=`Naslednji paket → (${totalPacks()})`;
   }
   let flippedCount=0;
   pack.onclick=()=>{
