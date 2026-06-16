@@ -2306,6 +2306,61 @@ function updateSfxBtn(){
   const b=document.getElementById('hod-sfx-btn');
   if(b) b.textContent=_sfxOn?'🔊':'🔇';
 }
+// ===== SINTETIČNI ZVOKI (Web Audio, brez datotek) — za ruleto =====
+function playTick(pitch){
+  if(!_sfxOn) return;
+  const ctx=_getCtx(); if(!ctx) return;
+  if(ctx.state==='suspended') ctx.resume();
+  try{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='square'; o.frequency.value=pitch||900;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime+0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.05);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+0.06);
+  }catch(e){}
+}
+function playWinChime(){
+  if(!_sfxOn) return;
+  const ctx=_getCtx(); if(!ctx) return;
+  if(ctx.state==='suspended') ctx.resume();
+  // vesel troglasni akord (C-E-G zvišano)
+  const notes=[523.25, 659.25, 783.99, 1046.5];
+  notes.forEach((f,i)=>{
+    try{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='triangle'; o.frequency.value=f;
+      const t0=ctx.currentTime+i*0.09;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.22, t0+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+0.5);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t0); o.stop(t0+0.55);
+    }catch(e){}
+  });
+}
+// razporedi "tike" rulete: gosti na začetku, vse redkejši proti koncu (kot prava ruleta)
+function scheduleRouletteTicks(durationMs, slots){
+  if(!_sfxOn) return;
+  const total=durationMs/1000;
+  // easeOut: kot animacija kolesa (cubic-bezier .17,.67,.12,1) — aproksimiramo s 1-(1-t)^3
+  let elapsed=0; const ticks=[];
+  // koliko predelkov "preteče" — približno 5 obratov * slots
+  const passes=Math.round(5*slots);
+  for(let i=0;i<passes;i++){
+    const frac=(i+1)/passes;
+    // čas, ko ta predelek preteče (inverz easeOut)
+    const t=1-Math.pow(1-frac, 1/3);
+    ticks.push(t*total);
+  }
+  ticks.forEach((t,i)=>{
+    setTimeout(()=>{
+      // pitch rahlo niha, da ni monotono
+      playTick(820 + (i%3)*60);
+    }, t*1000);
+  });
+}
 // ===== GLASBA (lo-fi loop v ozadju) =====
 const MUSIC_FILE='music'; // assets/sounds/music.mp3
 let _musicOn = (storeGet('hod-music')!=='0'); // privzeto vklopljena
@@ -4083,7 +4138,9 @@ function showPackRoulette(teamNm, era){
   spinBtn.onclick=()=>{
     if(spun) return; spun=true;
     spinBtn.disabled=true; spinBtn.textContent='Vrti se…';
-    playSfx&&playSfx('spin');
+    unlockAudio&&unlockAudio();
+    const durMs=4200;
+    scheduleRouletteTicks(durMs, N); // tiki sinhronizirani s kolesom
     wheel.style.transition='transform 4.2s cubic-bezier(.17,.67,.12,1)';
     wheel.style.transform=`rotate(${targetAngle}deg)`;
     setTimeout(()=>{
@@ -4096,7 +4153,7 @@ function showPackRoulette(teamNm, era){
       let label=st.label+' paket';
       if(winType==='team') label=`${TEAM_NAME[param]||param} paket`;
       else if(winType==='decade'){ const g=DECADE_GROUPS.find(x=>x.id===param); label=`${g?g.name:param} paket`; }
-      playSfx&&playSfx('win');
+      playWinChime();
       const res=ov.querySelector('#hod-roul-result');
       res.innerHTML=`<div class="hod-roul-won" style="border-color:${st.col}">
         <div class="hod-roul-won-ic">${st.ic}</div>
