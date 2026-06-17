@@ -406,6 +406,7 @@
 .hod-hol-buttons{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
 .hod-hol-btn{font-family:'Bebas Neue';font-size:18px;letter-spacing:1px;padding:9px 12px;border-radius:10px;
   cursor:pointer;border:2px solid;transition:.13s;}
+.hod-hol-cat{color:var(--gold);background:rgba(255,209,102,.12);padding:2px 10px;border-radius:8px;font-family:'Anton';letter-spacing:.5px;}
 .hod-hol-btn.higher{background:var(--green);border-color:#1a7268;color:#06302b;}
 .hod-hol-btn.higher:hover{background:#3ad8c9;}
 .hod-hol-btn.lower{background:var(--red);border-color:#a02631;color:#fff;}
@@ -4017,20 +4018,39 @@ function holPlayerList(){
   });
   return out;
 }
+// statistične kategorije za Over/Under. minSeasonYr = od katere sezone je statistika veljavna
+// (trojke od 1979-80, bloki od 1973-74; ostalo od nekdaj)
 const HOL_STATS=[
-  {key:'pts', label:'točk na tekmo', short:'TOČKE'},
-  {key:'reb', label:'skokov na tekmo', short:'SKOKI'},
-  {key:'ast', label:'asistenc na tekmo', short:'ASIST.'},
+  {key:'pts',  label:'točk na tekmo',      short:'TOČKE',    minYr:1970, dec:1},
+  {key:'reb',  label:'skokov na tekmo',    short:'SKOKI',    minYr:1970, dec:1},
+  {key:'ast',  label:'asistenc na tekmo',  short:'ASIST.',   minYr:1970, dec:1},
+  {key:'blk',  label:'blokad na tekmo',    short:'BLOKADE',  minYr:1974, dec:1},
+  {key:'fg3a', label:'poskusov za 3 na tekmo', short:'TROJKE (3PA)', minYr:1980, dec:1},
+  {key:'mpg',  label:'minut na tekmo',     short:'MINUTE',   minYr:1970, dec:1},
+  {key:'gp',   label:'odigranih tekem',    short:'TEKME',    minYr:1970, dec:0},
 ];
+// vrne začetno leto sezone igralca (npr "1985-86" -> 1985)
+function seasonYr(p){ const m=(''+(p.season||'')).match(/^(\d{4})/); return m?parseInt(m[1]):1970; }
+// ali ima igralec to statistiko veljavno (glede na leto)
+function statValid(p, stat){
+  if(seasonYr(p) < stat.minYr) return false;
+  // dodatna varovalka: če je vrednost 0 pri statistiki, ki bi morala obstajati, je verjetno ni
+  if((stat.key==='blk'||stat.key==='fg3a') && (p[stat.key]||0)===0 && seasonYr(p)<stat.minYr+1) return false;
+  return true;
+}
+// izberi naključno statistiko, ki je veljavna za OBA igralca
+function holPickStat(a, b){
+  const valid=HOL_STATS.filter(s=> (!a||statValid(a,s)) && (!b||statValid(b,s)));
+  const pool=valid.length?valid:HOL_STATS.slice(0,3); // fallback pts/reb/ast
+  return pool[Math.floor(Math.random()*pool.length)];
+}
 let holState=null;
 function startHigherLower(){
   const list=holPlayerList();
   if(list.length<10){ alert("Premalo podatkov. Najprej objavi players.json."); showQuizMenu(); return; }
-  // izberi statistiko naključno za ta krog
-  const stat=HOL_STATS[Math.floor(Math.random()*HOL_STATS.length)];
-  holState={ list, stat, streak:0, best:0, left:null, right:null };
+  holState={ list, stat:null, streak:0, best:0, left:null, right:null };
   holState.left=holPick();
-  holState.right=holPickDifferent(holState.left);
+  holState.right=holPickDifferentForStat(holState.left);
   renderHigherLower(false);
   holPreload(14);
 }
@@ -4048,33 +4068,39 @@ function holPreload(n){
     }
   }
 }
-function holPickDifferent(other){
-  // izberi igralca z jasno različno vrednostjo (ne enako), da ni dvoumno
-  const stat=holState.stat.key;
-  for(let tries=0;tries<40;tries++){
+function holPickDifferentForStat(other){
+  // izberi desnega igralca + statistiko, veljavno za OBA, z jasno razliko
+  for(let tries=0;tries<60;tries++){
     const c=holPick();
-    if(c===other) continue;
-    if(c.name===other.name) continue; // ne isti igralec
-    if(Math.abs((c[stat]||0)-(other[stat]||0))<0.2) continue; // prevelika bližina
+    if(c===other || c.name===other.name) continue;
+    // izberi stat, veljavno za oba
+    const stat=holPickStat(other, c);
+    const diff=Math.abs((c[stat.key]||0)-(other[stat.key]||0));
+    const minDiff = stat.key==='gp'?2:(stat.key==='mpg'?1.5:0.4);
+    if(diff<minDiff) continue; // prevelika bližina = dvoumno
+    holState.stat=stat; // nastavi statistiko za ta krog
     return c;
   }
+  // fallback
+  holState.stat=holPickStat(other, null);
   return holPick();
 }
 function holVal(p){ return (p[holState.stat.key]||0); }
+function holFmt(v){ return holState.stat.dec===0 ? Math.round(v).toString() : v.toFixed(1); }
 function renderHigherLower(revealRight){
   const st=holState; const stat=st.stat;
   const lv=holVal(st.left), rv=holVal(st.right);
   screen.innerHTML=`
     <div class="hod-result hod-fade">
-      <div class="hod-stage-label">Higher or Lower</div>
-      <div class="hod-hol-bar"><span>Niz: <b>${st.streak}</b></span><span>Rekord: ${st.best}</span></div>
-      <div class="hod-hol-sub">Kdo ima višje povprečje · <b>${stat.short}</b></div>
+      <div class="hod-stage-label">Over / Under</div>
+      <div class="hod-hol-bar"><span>Niz: <b>${st.streak}</b>${st.streak>=5?' 🔥':''}</span><span>Rekord: ${st.best}</span></div>
+      <div class="hod-hol-sub">Kdo ima višje · <b class="hod-hol-cat">${stat.short}</b><br><span style="font-size:11px;color:var(--muted)">${stat.label} · kategorija se menja vsak krog</span></div>
       <div class="hod-hol-cards">
         <div class="hod-hol-card">
           ${playerAvatar(st.left,'hod-hol-avatar')}
           <div class="hod-hol-name">${escapeHtml(st.left.name)}</div>
           <div class="hod-hol-team">${escapeHtml(st.left.team||'')} · ${st.left.season}</div>
-          <div class="hod-hol-stat">${lv.toFixed(1)}</div>
+          <div class="hod-hol-stat">${holFmt(lv)}</div>
           <div class="hod-hol-statlabel">${stat.label}</div>
         </div>
         <div class="hod-hol-vs">VS</div>
@@ -4083,7 +4109,7 @@ function renderHigherLower(revealRight){
           <div class="hod-hol-name">${escapeHtml(st.right.name)}</div>
           <div class="hod-hol-team">${escapeHtml(st.right.team||'')} · ${st.right.season}</div>
           ${revealRight
-            ? `<div class="hod-hol-stat reveal">${rv.toFixed(1)}</div><div class="hod-hol-statlabel">${stat.label}</div>`
+            ? `<div class="hod-hol-stat reveal">${holFmt(rv)}</div><div class="hod-hol-statlabel">${stat.label}</div>`
             : `<div class="hod-hol-stat hidden">?</div>
                <div class="hod-hol-buttons">
                  <button class="hod-hol-btn higher" id="hod-hol-higher">▲ Višje</button>
@@ -4097,6 +4123,10 @@ function renderHigherLower(revealRight){
     document.getElementById('hod-hol-higher').onclick=()=>holGuess('higher');
     document.getElementById('hod-hol-lower').onclick=()=>holGuess('lower');
     document.getElementById('hod-hol-quit').onclick=()=>endHigherLower();
+  } else {
+    // animiraj razkritje desne vrednosti
+    const rEl=screen.querySelector('.hod-hol-stat.reveal');
+    if(rEl){ countUp(rEl, rv, 700); if(stat.dec===1) setTimeout(()=>{rEl.textContent=holFmt(rv);},720); }
   }
 }
 function holGuess(dir){
@@ -4112,9 +4142,10 @@ function holGuess(dir){
     st.streak++;
     if(st.streak>st.best) st.best=st.streak;
     if(st.streak>=4) taskProgress('hlStreak4');
-    // desni postane levi, nov desni
+    playWinChime&&playWinChime();
+    // desni postane levi, izberi nov desni + novo statistiko (veljavno za oba)
     st.left=st.right;
-    st.right=holPickDifferent(st.left);
+    st.right=holPickDifferentForStat(st.left);
     renderHigherLower(false);
     holPreload(8);
   }, 1300);
