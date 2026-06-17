@@ -4302,22 +4302,39 @@ function todayTasks(){
   return [...four, ...one];
 }
 const DAILY_TASKS=TASK_POOL; // za nazaj-kompatibilnost (taskProgress išče po id)
-// zabeleži napredek naloge
+// en game-event lahko šteje k več izzivom (npr. draft -> draft3 IN draft5card)
+const TASK_EVENT_GROUPS=[
+  ['draft3','draft5card'],       // odigran draft
+  ['poker2'],                    // odigran poker
+  ['pokerWin1','pokerWin2card'], // zmaga proti AI
+  ['stick5','stick10card'],      // prilepljena sličica
+];
+// zabeleži napredek naloge (in vseh povezanih iz iste skupine)
 function taskProgress(id, inc){
   const d=dailyData();
-  d.tasks[id]=(d.tasks[id]||0)+(inc||1);
+  // poišči vse ide, ki pripadajo istemu eventu
+  let ids=[id];
+  const grp=TASK_EVENT_GROUPS.find(g=>g.includes(id));
+  if(grp) ids=grp;
+  const today=todayTasks().map(t=>t.id);
+  ids.forEach(tid=>{
+    d.tasks[tid]=(d.tasks[tid]||0)+(inc||1);
+  });
   saveDailyData(d);
-  // preveri, ali je naloga pravkar dosežena -> obvestilo
-  const t=DAILY_TASKS.find(x=>x.id===id);
-  if(t && d.tasks[id]>=t.goal && !d.taskClaimed[id] && !d._notified?.[id]){
-    d._notified=d._notified||{}; d._notified[id]=true; saveDailyData(d);
-    setTimeout(()=>hodToast(`✅ <b>Naloga opravljena!</b> ${t.label} — poberi v 🎁 Nagrade`),700);
-  }
+  // obvestilo SAMO za izzive, ki so dejansko med današnjimi 5
+  ids.forEach(tid=>{
+    if(!today.includes(tid)) return;
+    const t=TASK_POOL.find(x=>x.id===tid);
+    if(t && d.tasks[tid]>=t.goal && !d.taskClaimed[tid] && !(d._notified&&d._notified[tid])){
+      d._notified=d._notified||{}; d._notified[tid]=true; saveDailyData(d);
+      setTimeout(()=>hodToast(`✅ <b>Izziv opravljen!</b> ${t.label} — poberi v 🎁 Nagrade`),700);
+    }
+  });
 }
-// koliko nalog je opravljenih in nepobranih
+// koliko DANAŠNJIH izzivov je opravljenih in nepobranih (za rdečo piko)
 function tasksPendingClaim(){
   const d=dailyData();
-  return DAILY_TASKS.filter(t=>(d.tasks[t.id]||0)>=t.goal && !d.taskClaimed[t.id]).length;
+  return todayTasks().filter(t=>(d.tasks[t.id]||0)>=t.goal && !d.taskClaimed[t.id]).length;
 }
 // dodeli točke z dnevno omejitvijo; vrne dejansko dodano
 function earnCoins(n, ignoreCap){
