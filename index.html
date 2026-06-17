@@ -4391,8 +4391,8 @@ function claimDailyPack(){
 // nakup paketov
 function buyPack(){ if(spendCoins(50)){ awardPack(1); return true; } return false; }
 function buyPack5(){ if(spendCoins(200)){ awardPack(5); return true; } return false; }
-// menjava podvojenih za točke: navadna 3 / redka 10 / legendarna 30
-const DUP_VALUE={common:3, rare:10, legendary:30};
+// menjava podvojenih trgovini: 1 kovanec na dvojnik (spodbuda za peer-to-peer market)
+const DUP_VALUE={common:1, rare:1, legendary:1, moment:1, slovenski:1, lowlight:1};
 // ===================== KONEC EKONOMIJA =====================
 
 // ===================== PANINI ALBUM =====================
@@ -4575,7 +4575,7 @@ function showPackRoulette(teamNm, era, testMode){
 function sellDuplicates(id, rarity){
   const col=getCollected(); const c=col[id];
   if(!c || (c.count||0)<=0) return 0;
-  const val=(DUP_VALUE[rarity]||3)*c.count;
+  const val=(DUP_VALUE[rarity]||1)*c.count;
   addCoins(val); c.count=0; setCollected(col); return val;
 }
 
@@ -7165,7 +7165,7 @@ function renderShop(body){
   const col=getCollected();
   const catMap=buildCatMap();
   const dups=Object.keys(col).filter(k=>(col[k].count||0)>0).map(k=>({c:catMap[k],n:col[k].count})).filter(x=>x.c);
-  const dupValue=dups.reduce((a,x)=>a+(DUP_VALUE[x.c.rarity]||3)*x.n,0);
+  const dupValue=dups.reduce((a,x)=>a+(DUP_VALUE[x.c.rarity]||1)*x.n,0);
   const coins=getCoins();
   const can=(p)=>coins>=p;
 
@@ -7248,8 +7248,8 @@ function renderShop(body){
 
     <div class="hod-shop-sell">
       <div class="hod-shop-sell-h">💰 Dvojniki</div>
-      ${dups.length?`<div class="hod-shop-sell-d">Imaš ${dups.reduce((a,x)=>a+x.n,0)} dvojnikov v vrednosti <b>🪙 ${dupValue}</b></div>
-      <button class="hod-btn" id="hod-sell-all" ${dupValue<=0?'disabled':''}>Prodaj vse dvojnike (🪙 ${dupValue})</button>`
+      ${dups.length?`<div class="hod-shop-sell-d">Imaš <b>${dups.reduce((a,x)=>a+x.n,0)}</b> dvojnikov. Trgovina jih odkupi po <b>1 🪙 na kos</b>.<br><span style="font-size:11px;color:var(--muted)">💡 Namig: na 🔁 Menjavi jih lahko zamenjaš z igralci za veliko več!</span></div>
+      <button class="hod-btn secondary" id="hod-sell-all" ${dupValue<=0?'disabled':''}>Prodaj vse trgovini (🪙 ${dupValue})</button>`
       :'<div class="hod-shop-sell-d">Nimaš dvojnikov za prodajo.</div>'}
     </div>`;
 
@@ -7270,7 +7270,7 @@ function renderShop(body){
   // prodaja dvojnikov
   const sa=document.getElementById('hod-sell-all'); if(sa) sa.onclick=()=>{
     let got=0; const c2=getCollected();
-    Object.keys(c2).forEach(k=>{ if((c2[k].count||0)>0){ const cc=catMap[k]; if(cc){ got+=(DUP_VALUE[cc.rarity]||3)*c2[k].count; c2[k].count=0; } } });
+    Object.keys(c2).forEach(k=>{ if((c2[k].count||0)>0){ const cc=catMap[k]; if(cc){ got+=(DUP_VALUE[cc.rarity]||1)*c2[k].count; c2[k].count=0; } } });
     setCollected(c2); addCoins(got); hodToast(`🪙 <b>+${got} točk</b> za dvojnike!`); showAlbum();
   };
 }
