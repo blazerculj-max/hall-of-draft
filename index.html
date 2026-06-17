@@ -5779,7 +5779,18 @@ function paintVsResult(youSc, botSc){
   document.getElementById('hod-vs-again').onclick=()=>startPokerVsAI(st.aiIdx);
   document.getElementById('hod-vs-ladder').onclick=()=>showPokerLadder();
   // ob zmagi: nagradno kolo, ko igralec klikne (ima čas pregledati rezultat)
-  if(win){ const rb=document.getElementById('hod-vs-reward'); if(rb) rb.onclick=()=>showPowerupSlot(); }
+  if(win){
+    const rb=document.getElementById('hod-vs-reward');
+    if(rb){
+      if(st.rewardClaimed){ rb.disabled=true; rb.textContent='✓ Nagrada pobrana'; rb.classList.remove('gold'); rb.classList.add('secondary'); }
+      else rb.onclick=()=>{
+        if(st.rewardClaimed) return;
+        st.rewardClaimed=true;
+        rb.disabled=true; rb.textContent='✓ Nagrada pobrana'; rb.classList.remove('gold'); rb.classList.add('secondary');
+        showPowerupSlot();
+      };
+    }
+  }
 }
 
 // ===== BIG REVEAL (megla) =====
