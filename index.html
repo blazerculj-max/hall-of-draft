@@ -652,6 +652,8 @@
 .hod-pkm-card{position:relative;}
 .hod-pkm-card.pk-wild{border-color:#ffd60a!important;box-shadow:0 0 10px rgba(255,214,10,.5)!important;}
 .hod-vs-hand{background:var(--gold);color:#1a1206;font-weight:700;padding:1px 6px;border-radius:8px;font-size:10px;}
+.hod-task-cardtag{font-size:9px;background:linear-gradient(90deg,#ff4d6d,#ff8c42);color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:700;vertical-align:middle;}
+.hod-task-row.card-task{border:1px solid rgba(255,77,109,.35);border-radius:10px;background:rgba(255,77,109,.05);}
 .hod-vs-handlive{text-align:center;font-family:'Oswald';font-size:13px;color:var(--ink);margin:8px 0 4px;}
 .hod-vs-handtable{max-width:340px;margin:0 auto 4px;font-family:'Oswald';}
 .hod-vs-handtable summary{cursor:pointer;font-size:12px;color:var(--gold);text-align:center;list-style:none;padding:4px;}
@@ -3456,20 +3458,22 @@ function renderCapBox(){
 function renderTasksBox(){
   const box=document.getElementById('hod-tasks-box'); if(!box) return;
   const d=dailyData();
-  box.innerHTML=`<div class="hod-rew-secth">📋 Dnevne naloge</div>`+
-    `<div class="hod-tasks-list">`+DAILY_TASKS.map(t=>{
+  const tasks=todayTasks();
+  box.innerHTML=`<div class="hod-rew-secth">📋 Dnevni izzivi <span style="font-size:11px;color:var(--muted);font-weight:400">· menjajo se vsak dan</span></div>`+
+    `<div class="hod-tasks-list">`+tasks.map(t=>{
       const prog=Math.min(t.goal, d.tasks[t.id]||0);
       const done=prog>=t.goal;
       const claimed=!!d.taskClaimed[t.id];
-      const capFull=(d.taskBonus>=DAILY_TASK_CAP);
+      const capFull=(d.taskBonus>=DAILY_TASK_CAP) && !t.rewardCard;
       let btn;
+      const rewardLbl = t.rewardCard ? '🎴 karta' : `🪙${t.reward}`;
       if(claimed) btn=`<span class="hod-task-done">✓ pobrano</span>`;
-      else if(done) btn=`<button class="hod-btn gold hod-task-claim" data-id="${t.id}" ${capFull?'disabled title="Dosegel si dnevni bonus limit"':''}>Poberi 🪙${t.reward}</button>`;
+      else if(done) btn=`<button class="hod-btn gold hod-task-claim" data-id="${t.id}" ${capFull?'disabled title="Dosegel si dnevni bonus limit"':''}>Poberi ${rewardLbl}</button>`;
       else btn=`<span class="hod-task-prog">${prog}/${t.goal}</span>`;
-      return `<div class="hod-task-row ${done?'done':''}">
+      return `<div class="hod-task-row ${done?'done':''} ${t.rewardCard?'card-task':''}">
         <div class="hod-task-ico">${done?'✅':t.icon}</div>
         <div class="hod-task-info">
-          <div class="hod-task-lbl">${t.label}</div>
+          <div class="hod-task-lbl">${t.label}${t.rewardCard?' <span class="hod-task-cardtag">nagrada: karta</span>':''}</div>
           <div class="hod-task-bar"><div class="hod-task-fill" style="width:${Math.round(prog/t.goal*100)}%"></div></div>
         </div>
         <div class="hod-task-amt">${btn}</div>
@@ -3479,17 +3483,50 @@ function renderTasksBox(){
 }
 function claimTask(id){
   const d=dailyData();
-  const t=DAILY_TASKS.find(x=>x.id===id); if(!t) return;
+  const t=TASK_POOL.find(x=>x.id===id); if(!t) return;
   if((d.tasks[id]||0)<t.goal || d.taskClaimed[id]) return;
+  // RANDOM KARTA nagrada
+  if(t.rewardCard){
+    d.taskClaimed[id]=true; saveDailyData(d);
+    const card=rollCard({}); // res naključna karta iz celotnega bazena
+    if(card){
+      const cid=card.id||card.uid||(''+card.pid);
+      const col=getCollected();
+      if(!col[cid]) col[cid]={stuck:false,count:1}; else col[cid].count=(col[cid].count||0)+1;
+      setCollected(col);
+      playSfx('coins');
+      showRandomCardReward(card);
+    }
+    renderTasksBox();
+    return;
+  }
   const room=Math.max(0, DAILY_TASK_CAP - d.taskBonus);
   if(room<=0){ hodToast('Dosegel si dnevni bonus limit (100 🪙).'); return; }
   const give=Math.min(t.reward, room);
   d.taskClaimed[id]=true; d.taskBonus+=give; saveDailyData(d);
-  earnCoins(give, true); // bonus gre mimo kapice
+  earnCoins(give, true);
   playSfx('coins');
-  hodToast(`🎁 <b>+${give} 🪙</b> za nalogo: ${t.label}`);
+  hodToast(`🎁 <b>+${give} 🪙</b> za izziv: ${t.label}`);
   renderCapBox(); renderTasksBox();
-  // osveži rdečo piko stanje
+}
+// prikaz osvojene naključne karte
+function showRandomCardReward(card){
+  const rar=card.rarity||'common';
+  const col=(RARITY_DEFS[rar]&&RARITY_DEFS[rar].col)||'#e8541e';
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-roul-won" style="border-color:${col};max-width:300px;text-align:center;padding:24px">
+    <div style="font-family:'Anton';font-size:16px;color:var(--gold);margin-bottom:10px">🎴 NAKLJUČNA KARTA!</div>
+    <div style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid ${col};margin:0 auto 10px;background:#0d1119">${avatarImg(card.pid,'hod-pcard-img')}</div>
+    <div style="font-family:'Anton';font-size:18px;color:#fff">${escapeHtml(card.name||'')}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${escapeHtml(card.season||card.moment||'')} · OVR ${card.val||card.rating}</div>
+    <div style="font-size:11px;color:${col};margin-bottom:14px">${rar==='legendary'?'🟡 LEGENDARNA':rar==='rare'?'🔵 REDKA':rar==='moment'||rar==='slovenski'||rar==='lowlight'?'⭐ MOMENT':'⚪ NAVADNA'}</div>
+    <button class="hod-btn gold" id="hod-rcard-ok">Super! Dodano med nenalepljene</button>
+  </div>`;
+  document.body.appendChild(ov);
+  playWinChime&&playWinChime();
+  ov.querySelector('#hod-rcard-ok').onclick=()=>ov.remove();
+  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
 }
 function renderWinsProfile(){
   const box=document.getElementById('hod-rew-profile'); if(!box) return;
@@ -3874,6 +3911,7 @@ function endMillionaire(won, wrong){
   document.getElementById('hod-quiz-home').onclick=()=>goHome();
   { const pl=rewardPlay(); const pts=earnCoins(reached*3); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),400); }
   taskProgress('quiz3');
+  if(reached>=5) taskProgress('quizScore');
   autoSubmitScore("kviz", score, reached);
 }
 
@@ -4080,6 +4118,7 @@ function holGuess(dir){
     if(!correct){ endHigherLower(); return; }
     st.streak++;
     if(st.streak>st.best) st.best=st.streak;
+    if(st.streak>=4) taskProgress('hlStreak4');
     // desni postane levi, nov desni
     st.left=st.right;
     st.right=holPickDifferent(st.left);
@@ -4233,15 +4272,43 @@ function dailyData(){
 function saveDailyData(d){ storeSet('hod-daily', JSON.stringify(d)); }
 const DAILY_EARN_CAP=200; // največ zasluženih točk na dan z igranjem
 const DAILY_TASK_CAP=100;  // največ bonusa iz dnevnih nalog (mimo kapice)
-// definicije dnevnih nalog
-const DAILY_TASKS=[
+// celoten nabor izzivov (od tod se vsak dan izbere 5). reward=kovanci, ALI rewardCard:true za random karto.
+const TASK_POOL=[
   {id:'draft3', label:'Odigraj 3 drafte', goal:3, reward:15, icon:'🏀'},
   {id:'climb1', label:'Odigraj Daily Climb', goal:1, reward:15, icon:'🧗'},
   {id:'quiz3', label:'Odigraj 3 kvize', goal:3, reward:15, icon:'❓'},
   {id:'poker2', label:'Odigraj 2 pokra', goal:2, reward:15, icon:'🃏'},
-  {id:'challenge1', label:'Opravi Dnevni izziv', goal:1, reward:20, icon:'🏆'},
   {id:'stick5', label:'Prilepi 5 sličic', goal:5, reward:20, icon:'🏷️'},
+  {id:'challenge1', label:'Opravi Dnevni izziv', goal:1, reward:20, icon:'🏆'},
+  // game-specifični (bolj zanimivi, a doable)
+  {id:'pokerWin1', label:'Premagaj AI v pokru', goal:1, reward:25, icon:'⚔️'},
+  {id:'pokerHand', label:'Sestavi par ali boljše v pokru', goal:1, reward:20, icon:'🎴'},
+  {id:'pokerScore350', label:'Doseži 350+ v pokru', goal:1, reward:20, icon:'💯'},
+  {id:'quizScore', label:'Odgovori 5+ pravilnih v kvizu', goal:1, reward:20, icon:'🧠'},
+  {id:'hlStreak4', label:'Doseži niz 4 v Over/Under', goal:1, reward:20, icon:'📈'},
+  {id:'openPack', label:'Odpri 1 paket', goal:1, reward:15, icon:'📦'},
+  {id:'buyPack', label:'Kupi paket v trgovini', goal:1, reward:15, icon:'🛒'},
+  // težji izziv z nagrado RANDOM KARTA
+  {id:'pokerWin2card', label:'Premagaj 2 AI nasprotnika', goal:2, reward:0, rewardCard:true, icon:'🎁'},
+  {id:'draft5card', label:'Odigraj 5 draftov', goal:5, reward:0, rewardCard:true, icon:'🎁'},
+  {id:'stick10card', label:'Prilepi 10 sličic', goal:10, reward:0, rewardCard:true, icon:'🎁'},
 ];
+// izbere 5 izzivov za dani dan (seed) — 4 navadni + 1 "card" izziv
+function todayTasks(){
+  const seed=todaySeed();
+  const cardTasks=TASK_POOL.filter(t=>t.rewardCard);
+  const normal=TASK_POOL.filter(t=>!t.rewardCard);
+  // deterministično mešanje po seed
+  function pick(arr, n, salt){
+    const a=arr.slice(); const rnd=(i)=>{ const x=Math.sin(seed*9301+salt*49297+i*233)*43758.5; return x-Math.floor(x); };
+    for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd(i)*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a.slice(0,n);
+  }
+  const four=pick(normal,4,1);
+  const one=pick(cardTasks,1,7);
+  return [...four, ...one];
+}
+const DAILY_TASKS=TASK_POOL; // za nazaj-kompatibilnost (taskProgress išče po id)
 // zabeleži napredek naloge
 function taskProgress(id, inc){
   const d=dailyData();
@@ -4511,6 +4578,7 @@ function rollCard(opts){
 // odpri en paket — packCfg: {type, pool, odds, momFilter, n, pity}
 function openOnePack(packCfg){
   packCfg=packCfg||{};
+  taskProgress('openPack');
   const n = packCfg.n || (Math.random()<0.10 ? 4 : 3);
   const cards=[];
   // moment paket: ENA karta ima povišan moment %, ostale navadne
@@ -5143,6 +5211,8 @@ function renderPoker(finished, firstRender){
     document.getElementById('hod-pk-home').onclick=()=>goHome();
     { const pl=rewardPlay(); const bonus=sc.total>360?Math.floor((sc.total-360)/10)*4:0; const pts=earnCoins(bonus); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
     taskProgress('poker2');
+    if(sc.hand && sc.hand.mult>1) taskProgress('pokerHand');
+    if(sc.total>=350) taskProgress('pokerScore350');
     autoSubmitScore(pokerFog?"poker_fog":"poker", sc.total, Math.round(sc.base/5));
     return;
   }
@@ -5629,7 +5699,9 @@ function paintVsResult(youSc, botSc){
   const win = youTotal>botTotal;
   const tie = youTotal===botTotal;
   taskProgress('poker2');
-  if(win){ savePokerProgress(st.aiIdx); const tier=[12,18,26,36,50][st.aiIdx]||12; const pl=rewardPlay(); const pts=earnCoins(tier); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
+  if(youSc.hand && youSc.hand.mult>1) taskProgress('pokerHand');
+  if(youSc.total>=350) taskProgress('pokerScore350');
+  if(win){ taskProgress('pokerWin1'); taskProgress('pokerWin2card'); savePokerProgress(st.aiIdx); const tier=[12,18,26,36,50][st.aiIdx]||12; const pl=rewardPlay(); const pts=earnCoins(tier); if(pl+pts>0) setTimeout(()=>hodToast(`🪙 <b>+${pl+pts} točk</b>`),900); }
   else { const pl=rewardPlay(); if(pl>0) setTimeout(()=>hodToast(`🪙 <b>+${pl} točk</b>`),900); }
   const ai=st.ai;
   const isLast = st.aiIdx===POKER_AI.length-1;
@@ -7064,7 +7136,7 @@ function renderShop(body){
     body.querySelectorAll('[data-team]').forEach(el=>el.onclick=()=>{
       const t=el.dataset.team;
       if(!can(PACK_TYPES.team.price)){ hodToast('Premalo 🪙 kovancev.'); return; }
-      if(spendCoins(PACK_TYPES.team.price)){ queuePack({type:'team',param:t}); hodToast(`👕 <b>${escapeHtml(TEAM_NAME[t])} paket kupljen!</b>`); _shopView='main'; _shopConf=''; openNextQueuedOrAlbum(); }
+      if(spendCoins(PACK_TYPES.team.price)){ taskProgress('buyPack'); queuePack({type:'team',param:t}); hodToast(`👕 <b>${escapeHtml(TEAM_NAME[t])} paket kupljen!</b>`); _shopView='main'; _shopConf=''; openNextQueuedOrAlbum(); }
     });
     return;
   }
@@ -7081,7 +7153,7 @@ function renderShop(body){
     body.querySelectorAll('[data-dec]').forEach(el=>el.onclick=()=>{
       const d=el.dataset.dec;
       if(!can(PACK_TYPES.decade.price)){ hodToast('Premalo 🪙 kovancev.'); return; }
-      if(spendCoins(PACK_TYPES.decade.price)){ const g=DECADE_GROUPS.find(x=>x.id===d); queuePack({type:'decade',param:d}); hodToast(`📅 <b>${g.name} paket kupljen!</b>`); _shopView='main'; openNextQueuedOrAlbum(); }
+      if(spendCoins(PACK_TYPES.decade.price)){ taskProgress('buyPack'); const g=DECADE_GROUPS.find(x=>x.id===d); queuePack({type:'decade',param:d}); hodToast(`📅 <b>${g.name} paket kupljen!</b>`); _shopView='main'; openNextQueuedOrAlbum(); }
     });
     return;
   }
@@ -7127,14 +7199,14 @@ function renderShop(body){
     </div>`;
 
   // osnovni
-  const b1=document.getElementById('hod-buy1'); if(b1) b1.onclick=()=>{ if(spendCoins(50)){ queuePack({type:'basic'}); hodToast('📦 <b>Paket kupljen!</b>'); openNextQueuedOrAlbum(); } };
-  const b5=document.getElementById('hod-buy5'); if(b5) b5.onclick=()=>{ if(spendCoins(200)){ for(let i=0;i<5;i++) queuePack({type:'basic'}); hodToast('📦 <b>5 paketov kupljenih!</b>'); openNextQueuedOrAlbum(); } };
+  const b1=document.getElementById('hod-buy1'); if(b1) b1.onclick=()=>{ if(spendCoins(50)){ taskProgress('buyPack'); queuePack({type:'basic'}); hodToast('📦 <b>Paket kupljen!</b>'); openNextQueuedOrAlbum(); } };
+  const b5=document.getElementById('hod-buy5'); if(b5) b5.onclick=()=>{ if(spendCoins(200)){ taskProgress('buyPack'); for(let i=0;i<5;i++) queuePack({type:'basic'}); hodToast('📦 <b>5 paketov kupljenih!</b>'); openNextQueuedOrAlbum(); } };
   // tematski (izbira)
   const pt=document.getElementById('hod-pick-team'); if(pt) pt.onclick=()=>{ _shopView='team'; _shopConf=''; renderShop(body); };
   const pd=document.getElementById('hod-pick-decade'); if(pd) pd.onclick=()=>{ _shopView='decade'; renderShop(body); };
   // posebni
-  const bm=document.getElementById('hod-buy-moment'); if(bm) bm.onclick=()=>{ if(spendCoins(120)){ queuePack({type:'moment'}); hodToast('⭐ <b>Moment paket kupljen!</b>'); openNextQueuedOrAlbum(); } };
-  const bp=document.getElementById('hod-buy-premium'); if(bp) bp.onclick=()=>{ if(spendCoins(150)){ queuePack({type:'premium'}); hodToast('🏆 <b>Zlati paket kupljen!</b>'); openNextQueuedOrAlbum(); } };
+  const bm=document.getElementById('hod-buy-moment'); if(bm) bm.onclick=()=>{ if(spendCoins(120)){ taskProgress('buyPack'); queuePack({type:'moment'}); hodToast('⭐ <b>Moment paket kupljen!</b>'); openNextQueuedOrAlbum(); } };
+  const bp=document.getElementById('hod-buy-premium'); if(bp) bp.onclick=()=>{ if(spendCoins(150)){ taskProgress('buyPack'); queuePack({type:'premium'}); hodToast('🏆 <b>Zlati paket kupljen!</b>'); openNextQueuedOrAlbum(); } };
   // dnevna ponudba
   const bo=document.getElementById('hod-buy-offer'); if(bo) bo.onclick=()=>{
     const o=getDailyOffer(); if(!o||o.used) return;
