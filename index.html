@@ -652,6 +652,13 @@
 .hod-pkm-card{position:relative;}
 .hod-pkm-card.pk-wild{border-color:#ffd60a!important;box-shadow:0 0 10px rgba(255,214,10,.5)!important;}
 .hod-vs-hand{background:var(--gold);color:#1a1206;font-weight:700;padding:1px 6px;border-radius:8px;font-size:10px;}
+.hod-vs-handlive{text-align:center;font-family:'Oswald';font-size:13px;color:var(--ink);margin:8px 0 4px;}
+.hod-vs-handtable{max-width:340px;margin:0 auto 4px;font-family:'Oswald';}
+.hod-vs-handtable summary{cursor:pointer;font-size:12px;color:var(--gold);text-align:center;list-style:none;padding:4px;}
+.hod-vs-handtable summary::-webkit-details-marker{display:none;}
+.hod-vs-ht-grid{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:6px;}
+.hod-vs-ht-grid span{font-size:10px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 7px;}
+.hod-vs-ht-grid b{color:var(--ink);}
 /* 3-delni momenti v albumu */
 .hod-mom3-unit{margin:4px;border:2px solid #2a3142;border-radius:10px;padding:6px;background:rgba(0,0,0,.25);}
 .hod-mom3-unit.done{border-color:#ff4d6d;box-shadow:0 0 14px rgba(255,77,109,.4);cursor:pointer;}
@@ -5285,51 +5292,79 @@ function usePowerup(key){ const p=getPowerups(); if((p[key]||0)<=0) return false
 
 // slot-machine nagrada po zmagi: zavrti, lahko dobiš power-up ali nič
 function showPowerupSlot(onDone){
-  const keys=["reroll","steal","peek"];
-  // 40% možnost za nič, sicer naključen power-up
-  const win = Math.random()<0.6;
-  const prize = win ? keys[Math.floor(Math.random()*keys.length)] : null;
+  // 12-predelčno kolo bonusov (kot drugje). Vedno nekaj — power-up ali kovanci.
+  const slots=[];
+  for(let i=0;i<3;i++) slots.push({t:'pu',k:'reroll'});
+  for(let i=0;i<3;i++) slots.push({t:'pu',k:'steal'});
+  for(let i=0;i<3;i++) slots.push({t:'pu',k:'peek'});
+  for(let i=0;i<3;i++) slots.push({t:'coins',v:30});
+  for(let i=slots.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [slots[i],slots[j]]=[slots[j],slots[i]]; }
+  const PU_STYLE={reroll:{col:'#3b82f6'},steal:{col:'#ff4d6d'},peek:{col:'#8b5cf6'}};
+  const styleOf=(sl)=> sl.t==='coins' ? {col:'#2ecc71',ic:'🪙'} : {col:PU_STYLE[sl.k].col, ic:PU_DEFS[sl.k].emoji};
+  const N=slots.length, seg=360/N, R=155, cx=170, cy=170;
+  const winIdx=Math.floor(Math.random()*N);
+  const win=slots[winIdx];
+  let segs='';
+  for(let i=0;i<N;i++){
+    const stl=styleOf(slots[i]);
+    const a0=(i*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
+    const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0), x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
+    segs+=`<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0,1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${stl.col}" stroke="#0d1119" stroke-width="2"/>`;
+    const am=((i+0.5)*seg-90)*Math.PI/180, ir=R*0.7;
+    segs+=`<text x="${(cx+ir*Math.cos(am)).toFixed(1)}" y="${(cy+ir*Math.sin(am)).toFixed(1)}" font-size="22" text-anchor="middle" dominant-baseline="central">${stl.ic}</text>`;
+  }
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
-  ov.innerHTML=`<div class="hod-slot-card hod-pop">
-    <div class="hod-slot-h">NAGRADNI VRTLJAJ</div>
-    <div class="hod-slot-reel" id="hod-slot-reel"><div class="hod-slot-sym">🎰</div></div>
-    <div class="hod-slot-msg" id="hod-slot-msg">Vrti se…</div>
-    <button class="hod-btn" id="hod-slot-ok" style="display:none">Naprej</button>
+  ov.innerHTML=`<div class="hod-strk-wrap">
+    <div class="hod-strk-h" style="color:var(--gold)">🎁 NAGRADA ZA ZMAGO</div>
+    <div class="hod-strk-sub">Zavrti kolo za bonus!</div>
+    <div class="hod-strk-stage">
+      <div class="hod-strk-pointer">▼</div>
+      <svg class="hod-roul-wheel" id="hod-pu-wheel" viewBox="0 0 340 340" width="280" height="280">${segs}
+        <circle cx="${cx}" cy="${cy}" r="30" fill="#1a1206" stroke="#ffd166" stroke-width="3"/>
+        <text x="${cx}" y="${cy}" font-size="24" text-anchor="middle" dominant-baseline="central">🎁</text>
+      </svg>
+    </div>
+    <button class="hod-btn gold hod-strk-spinbtn" id="hod-pu-spin">Zavrti 🎰</button>
+    <div id="hod-pu-result"></div>
   </div>`;
   document.body.appendChild(ov);
-  const reel=ov.querySelector('#hod-slot-reel');
-  const msg=ov.querySelector('#hod-slot-msg');
-  const okBtn=ov.querySelector('#hod-slot-ok');
-  const syms=["🎲","🫳","👁️","❌","🎲","🫳","👁️"];
-  let ticks=0;
-  const spin=setInterval(()=>{
-    reel.innerHTML=`<div class="hod-slot-sym">${syms[Math.floor(Math.random()*syms.length)]}</div>`;
-    ticks++;
-    if(ticks>16){
-      clearInterval(spin);
-      if(prize){
-        addPowerup(prize);
-        reel.innerHTML=`<div class="hod-slot-sym win">${PU_DEFS[prize].emoji}</div>`;
-        msg.innerHTML=`<b style="color:var(--gold)">${PU_DEFS[prize].name}!</b><br><span style="font-size:12px;color:var(--muted)">${PU_DEFS[prize].desc}</span>`;
-      } else {
-        reel.innerHTML=`<div class="hod-slot-sym">❌</div>`;
-        msg.innerHTML=`<span style="color:var(--muted)">Tokrat brez sreče. Naslednjič!</span>`;
-      }
-      okBtn.style.display='';
-    }
-  }, 90);
-  okBtn.onclick=()=>{ ov.remove(); if(onDone) onDone(); };
+  const wheel=ov.querySelector('#hod-pu-wheel');
+  const spinBtn=ov.querySelector('#hod-pu-spin');
+  let spun=false;
+  spinBtn.onclick=()=>{
+    if(spun) return; spun=true; spinBtn.disabled=true; spinBtn.textContent='Vrti se…';
+    unlockAudio&&unlockAudio();
+    scheduleRouletteTicks(4200, N);
+    const targetAngle=5*360+(360-(winIdx*seg+seg/2));
+    wheel.style.transition='transform 4.2s cubic-bezier(.17,.67,.12,1)';
+    wheel.style.transform=`rotate(${targetAngle}deg)`;
+    setTimeout(()=>{
+      let label, ic, col;
+      if(win.t==='coins'){ addCoins(win.v); label=`+${win.v} kovancev`; ic='🪙'; col='#2ecc71'; }
+      else { addPowerup(win.k); ic=PU_DEFS[win.k].emoji; col=PU_STYLE[win.k].col; label=`${PU_DEFS[win.k].name} — ${PU_DEFS[win.k].desc}`; }
+      playWinChime();
+      const res=ov.querySelector('#hod-pu-result');
+      res.innerHTML=`<div class="hod-roul-won" style="border-color:${col}">
+        <div class="hod-roul-won-ic">${ic}</div>
+        <div class="hod-roul-won-t">Osvojil si:<br><b style="color:${col}">${escapeHtml(label)}</b></div>
+        <button class="hod-btn gold" id="hod-pu-ok">Naprej</button>
+      </div>`;
+      res.querySelector('#hod-pu-ok').onclick=()=>{ ov.remove(); if(onDone) onDone(); };
+    }, 4400);
+  };
 }
 
 function startPokerVsAI(aiIdx){
   const list=holPlayerList();
   if(list.length<10){ alert("Premalo podatkov. Najprej objavi players.json."); showPokerMenu(); return; }
   const ai=POKER_AI[aiIdx];
+  // oba dobita ISTE začetne karte (pošteno)
+  const startCards=[0,1,2,3,4].map(()=>pokerIdentity(list[Math.floor(Math.random()*list.length)]));
   pkAI={
     list, ai, aiIdx,
-    you:{ cards:[0,1,2,3,4].map(()=>pokerIdentity(list[Math.floor(Math.random()*list.length)])), held:[false,false,false,false,false], spins:5 },
-    bot:{ cards:[0,1,2,3,4].map(()=>pokerIdentity(list[Math.floor(Math.random()*list.length)])), held:[false,false,false,false,false], spins:5 },
+    you:{ cards:startCards.map(c=>({...c})), held:[false,false,false,false,false], spins:5 },
+    bot:{ cards:startCards.map(c=>({...c})), held:[false,false,false,false,false], spins:5 },
     done:false, usedPU:[], pending:null, peekShown:null
   };
   pokerPreloadList(list, 16);
@@ -5379,6 +5414,10 @@ function renderPokerVsAI(){
         <div class="hod-vs-head">Tvoja peterka <span class="hod-vs-total gold">${pokerFog?'?':youTotal}</span></div>
         <div class="hod-pkm-row you-row">${yourCards}</div>
       </div>
+      <div class="hod-vs-handlive">Tvoja roka: <b style="color:${pokerHand(st.you.cards).mult>1.8?'#ffd166':(pokerHand(st.you.cards).mult>1?'#9ec5e8':'#fff')}">${pokerHand(st.you.cards).name}${pokerHand(st.you.cards).mult>1?` ×${pokerHand(st.you.cards).mult}`:''}</b></div>
+      <details class="hod-vs-handtable"><summary>🎴 Kombinacije in množitelji</summary>
+        <div class="hod-vs-ht-grid">${[['Par','×1.5'],['Dva para','×1.8'],['Tris','×2.2'],['Lestvica','×2.8'],['Barva','×3.2'],['Full House','×4'],['Poker 4','×5'],['Poker 5','×6'],['Str. Flush','×7'],['👑 Royal','×10']].map(([n,m])=>`<span><b>${n}</b> ${m}</span>`).join('')}</div>
+      </details>
       <div class="hod-pk-hint">${st.pending==='reroll'?'<b style="color:var(--gold)">Re-roll:</b> tapni zaklenjeno karto za ponovni vrtljaj.':st.pending==='steal'?'<b style="color:var(--gold)">Steal:</b> tapni AI-jevo karto za krajo.':'Zakleni (lock je dokončen!), ostalo zavrti. Premagaj '+escapeHtml(ai.name)+'.'}</div>
       ${pkPowerupBar()}
       ${st.peekShown?pkPeekRow():''}
@@ -5617,7 +5656,8 @@ function paintVsResult(youSc, botSc){
         <div class="hod-pkm-row">${yourCards}</div>
       </div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
-        ${nextUnlocked?`<button class="hod-btn" id="hod-vs-next">Naslednji nasprotnik →</button>`:''}
+        ${win?`<button class="hod-btn gold" id="hod-vs-reward">🎁 Poberi nagrado</button>`:''}
+        ${nextUnlocked?`<button class="hod-btn" id="hod-vs-next">Naslednji →</button>`:''}
         <button class="hod-btn secondary" id="hod-vs-again">Še enkrat</button>
         <button class="hod-btn secondary" id="hod-vs-ladder">Piramida</button>
       </div>
@@ -5625,8 +5665,8 @@ function paintVsResult(youSc, botSc){
   if(nextUnlocked) document.getElementById('hod-vs-next').onclick=()=>startPokerVsAI(st.aiIdx+1);
   document.getElementById('hod-vs-again').onclick=()=>startPokerVsAI(st.aiIdx);
   document.getElementById('hod-vs-ladder').onclick=()=>showPokerLadder();
-  // ob zmagi: nagradni vrtljaj za power-up (po kratkem zamiku, da se vidi rezultat)
-  if(win){ setTimeout(()=>showPowerupSlot(), 700); }
+  // ob zmagi: nagradno kolo, ko igralec klikne (ima čas pregledati rezultat)
+  if(win){ const rb=document.getElementById('hod-vs-reward'); if(rb) rb.onclick=()=>showPowerupSlot(); }
 }
 
 // ===== BIG REVEAL (megla) =====
