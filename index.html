@@ -6694,9 +6694,10 @@ function renderUnstuck(body){
       setTimeout(()=>{ const mt=document.getElementById('hod-mini-team'); if(mt) mt.scrollIntoView({behavior:'smooth',block:'nearest'}); },60);
     }
   });
-  // če je izbrana kartica za lepljenje, pokaži njeno ekipo spodaj
-  if(_miniStickId && col[_miniStickId] && !col[_miniStickId].stuck){
-    renderMiniTeam(document.getElementById('hod-mini-team'), _miniStickId, body);
+  // mini-ekipa OSTANE prikazana, dokler ni izbrana druga karta (tudi po prilepitvi)
+  if(_miniStickId){
+    const cm=buildCatMap();
+    if(cm[_miniStickId]) renderMiniTeam(document.getElementById('hod-mini-team'), _miniStickId, body);
   }
 }
 // mini prikaz ene ekipe (ali momentne skupine) z utripajočim praznim mestom za lepljenje
@@ -6793,15 +6794,8 @@ function renderMiniTeam(host, stickId, unstuckBody){
           setTimeout(()=>{ const base=MOMENTS.find(m=>m.id===baseId); if(base) showMomentDetail(base, true); }, 700);
         }
         setTimeout(()=>{
+          // pogled ostane: renderUnstuck sam ohrani odprto mini-ekipo prek _miniStickId
           renderUnstuck(unstuckBody);
-          const mt=document.getElementById('hod-mini-team');
-          if(mt){
-            let anchor;
-            if(isPart) anchor=stickId;
-            else if(isMoment) anchor=stickId;
-            else anchor=(albumCatalog().find(x=>x.team===target.team)||{uid:stickId}).uid;
-            if(anchor) renderMiniTeam(mt, anchor, unstuckBody);
-          }
         }, 650);
       }
     };
@@ -7155,9 +7149,25 @@ function renderShop(body){
 }
 // odpri naslednji paket iz vrste, sicer nazaj v album
 function openNextQueuedOrAlbum(){
-  const q=getQueuedPacks();
-  if(q.length){ showPackOpening(); }
-  else showAlbum();
+  // po nakupu ne odpre takoj — ponudi izbiro
+  showPackBought();
+}
+// izbira po nakupu: odpri zdaj ali shrani (OK)
+function showPackBought(){
+  const n=totalPacks();
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-roul-won" style="border-color:var(--gold);max-width:320px;text-align:center;padding:24px">
+    <div class="hod-roul-won-ic">📦</div>
+    <div class="hod-roul-won-t" style="margin-bottom:14px">Paket dodan!<br><span style="font-size:13px;color:var(--muted)">Imaš ${n} ${n===1?'neodprt paket':'neodprtih paketov'}. Odpri zdaj ali shrani za kasneje.</span></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="hod-btn gold" id="hod-pb-open">Odpri zdaj 📦</button>
+      <button class="hod-btn secondary" id="hod-pb-ok">OK</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#hod-pb-open').onclick=()=>{ ov.remove(); showPackOpening(); };
+  ov.querySelector('#hod-pb-ok').onclick=()=>{ ov.remove(); showAlbum(); };
 }
 // ===== DNEVNA PONUDBA (one-time offer) =====
 function getDailyOffer(){
