@@ -5773,11 +5773,13 @@ function paintVsResult(youSc, botSc){
         ${nextUnlocked?`<button class="hod-btn" id="hod-vs-next">Naslednji →</button>`:''}
         <button class="hod-btn secondary" id="hod-vs-again">Še enkrat</button>
         <button class="hod-btn secondary" id="hod-vs-ladder">Piramida</button>
+        <button class="hod-btn secondary" id="hod-vs-home">🏠 Domov</button>
       </div>
     </div>`;
   if(nextUnlocked) document.getElementById('hod-vs-next').onclick=()=>startPokerVsAI(st.aiIdx+1);
   document.getElementById('hod-vs-again').onclick=()=>startPokerVsAI(st.aiIdx);
   document.getElementById('hod-vs-ladder').onclick=()=>showPokerLadder();
+  document.getElementById('hod-vs-home').onclick=()=>goHome();
   // ob zmagi: nagradno kolo, ko igralec klikne (ima čas pregledati rezultat)
   if(win){
     const rb=document.getElementById('hod-vs-reward');
