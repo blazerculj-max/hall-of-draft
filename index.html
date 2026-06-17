@@ -8418,6 +8418,7 @@ function userTeamStrength(){
   sorted.forEach((er,i)=>{const wi=w[i]||0.05;str+=er*wi;wsum+=wi;});
   str=str/wsum;
   str += ev.chem.chem*0.5;
+  str += 2.5; // blagi radodarni bonus — tvoja ekipa nekoliko lažje zmaguje (realno, a nagrajujoče)
   return str;
 }
 function winProb(a,b,home){
