@@ -7883,27 +7883,37 @@ function takePlayer(p, assignedPos){
 
 // ---- TEAM EVALUATION ----
 function chemFor(arr){
+  const n=arr.length||1;
   const posC=pos=>arr.filter(p=>effPos(p)===pos).length;
-  // 1) ERA MATCH
+  // ciljna velikost: peterka (quickfire) ali polna ekipa
+  const targetSize = (typeof quickMode!=='undefined' && quickMode) ? 5 : MAX_TEAM;
+  const full = n>=targetSize-1; // ekipa je (skoraj) polna glede na cilj
+  // 1) ERA MATCH — glede na TRENUTNO št. igralcev (ne MAX_TEAM), da ni umetno nizko med gradnjo
   const eras={};
   arr.forEach(p=>{eras[p.era]=(eras[p.era]||0)+1;});
   const vals=Object.values(eras);
   const dominant=vals.length?Math.max(...vals):0;
   const eraSpread=Object.keys(eras).length;
-  const eraScore=(dominant/MAX_TEAM)*6-(eraSpread-1)*1.2;
+  const eraScore=(dominant/n)*6-(eraSpread-1)*1.2;
 
-  // 2) POSITIONAL FIT + SOLO PRITISK
-  const ideal={PG:2,SG:3,SF:2,PF:2,C:2};
+  // 2) POSITIONAL FIT — med gradnjo NE kaznuj praznih pozicij (ekipa še ni cela)
+  const ideal = (typeof quickMode!=='undefined' && quickMode)
+    ? {PG:1,SG:1,SF:1,PF:1,C:1}   // peterka: po 1 na pozicijo
+    : {PG:2,SG:3,SF:2,PF:2,C:2};  // polna ekipa
   let fitPenalty=0, soloPress=0;
   POSITIONS.forEach(pos=>{
     const c=posC(pos);
-    if(c===0){ fitPenalty+=4; }
-    else{
-      fitPenalty+=Math.abs(c-ideal[pos])*1.1;
-      if(c===1) soloPress+=0.9;
+    if(c===0){
+      if(full) fitPenalty+=4;       // prazna pozicija kaznuje šele pri polni ekipi
+      // med gradnjo: prazna pozicija je pričakovana -> brez kazni
+    } else {
+      // odstopanje od ideala šele ko je ekipa polna; med gradnjo samo blag solo-pritisk
+      if(full) fitPenalty+=Math.abs(c-ideal[pos])*1.1;
+      // solo-pritisk samo za POLNO ekipo (pri peterki je 1/pozicijo idealno)
+      if(c===1 && n>=4 && !(typeof quickMode!=='undefined' && quickMode)) soloPress+=0.6;
     }
   });
-  const fitScore=6-fitPenalty;
+  const fitScore = full ? (6-fitPenalty) : Math.max(0, 3 - fitPenalty); // med gradnjo nevtralno-pozitivno
   const soloScore=-soloPress;
 
   // 3) SOIGRALCI + DUOJI + STILSKE VEZI
