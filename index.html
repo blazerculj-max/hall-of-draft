@@ -3511,7 +3511,7 @@ function showRandomCardReward(card){
   ov.className='hod-howto-overlay';
   ov.innerHTML=`<div class="hod-roul-won" style="border-color:${col};max-width:300px;text-align:center;padding:24px">
     <div style="font-family:'Anton';font-size:16px;color:var(--gold);margin-bottom:10px">🎴 NAKLJUČNA KARTA!</div>
-    <div style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid ${col};margin:0 auto 10px;background:#0d1119">${avatarImg(card.pid,'hod-pcard-img')}</div>
+    <div style="position:relative;width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid ${col};margin:0 auto 10px;background:#0d1119">${avatarImg(card.pid,'hod-pcard-img')}</div>
     <div style="font-family:'Anton';font-size:18px;color:#fff">${escapeHtml(card.name||'')}</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${escapeHtml(card.season||card.moment||'')} · OVR ${card.val||card.rating}</div>
     <div style="font-size:11px;color:${col};margin-bottom:14px">${rar==='legendary'?'🟡 LEGENDARNA':rar==='rare'?'🔵 REDKA':rar==='moment'||rar==='slovenski'||rar==='lowlight'?'⭐ MOMENT':'⚪ NAVADNA'}</div>
