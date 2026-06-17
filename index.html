@@ -653,6 +653,12 @@
 .hod-pkm-card{position:relative;}
 .hod-pkm-card.pk-wild{border-color:#ffd60a!important;box-shadow:0 0 10px rgba(255,214,10,.5)!important;}
 .hod-vs-hand{background:var(--gold);color:#1a1206;font-weight:700;padding:1px 6px;border-radius:8px;font-size:10px;}
+.hod-mut-card{background:linear-gradient(180deg,#1a2030,#0d1119);border:2px solid var(--gold);border-radius:18px;padding:26px 28px;text-align:center;max-width:330px;box-shadow:0 12px 40px rgba(0,0,0,.6);}
+.hod-mut-tag{font-family:'Anton';font-size:12px;letter-spacing:3px;color:var(--orange);margin-bottom:10px;}
+.hod-mut-ic{font-size:54px;line-height:1;margin-bottom:8px;}
+.hod-mut-name{font-family:'Anton';font-size:26px;color:var(--gold);margin-bottom:8px;}
+.hod-mut-desc{font-family:'Oswald';font-size:14px;color:var(--ink);line-height:1.5;margin-bottom:18px;}
+.hod-mut-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,209,102,.14);border:1px solid var(--gold-warm);border-radius:20px;padding:3px 12px;font-family:'Oswald';font-size:12px;color:var(--gold);margin-bottom:8px;}
 .hod-task-cardtag{font-size:9px;background:linear-gradient(90deg,#ff4d6d,#ff8c42);color:#fff;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:700;vertical-align:middle;}
 .hod-task-row.card-task{border:1px solid rgba(255,77,109,.35);border-radius:10px;background:rgba(255,77,109,.05);}
 .hod-vs-handlive{text-align:center;font-family:'Oswald';font-size:13px;color:var(--ink);margin:8px 0 4px;}
@@ -2328,6 +2334,25 @@ function dailyGoal(){
     return QUICKFIRE_GOALS[seed%QUICKFIRE_GOALS.length];
   }
   return DAILY_GOALS[seed%DAILY_GOALS.length];
+}
+// ===== DRAFT MUTATORJI (filter bazena) — vsak draft drugačen twist =====
+// filter(p) vrne true, če je igralec v bazenu. Mutator se izbere naključno na začetku drafta.
+const DRAFT_MUTATORS=[
+  {id:'none', name:'Klasični draft', icon:'🏀', desc:'Brez omejitev — grabi kar želiš.', filter:null},
+  {id:'gems', name:'Pozabljeni dragulji', icon:'💎', desc:'Samo igralci z oceno 78–86. Brez superzvezd!', filter:p=>p.rating>=78&&p.rating<=86, minPerPos:2},
+  {id:'allstars', name:'Samo zvezde', icon:'⭐', desc:'Samo igralci z oceno 88+. Dream team!', filter:p=>p.rating>=88, minPerPos:1},
+  {id:'scorers', name:'Strelci', icon:'🎯', desc:'Samo igralci z 18+ točkami na tekmo.', filter:p=>(p.pts||0)>=18, minPerPos:2},
+  {id:'glue', name:'Delavci', icon:'🛠️', desc:'Samo igralci pod 20 točk — ekipni igralci.', filter:p=>(p.pts||0)<20, minPerPos:2},
+  {id:'boards', name:'Skakalci', icon:'🔁', desc:'Vsaj en kandidat z 8+ skoki na vsaki poziciji.', filter:null, biasStat:'reb'},
+  {id:'dimers', name:'Podajalci', icon:'🎻', desc:'Prednost igralcem z visokimi asistencami.', filter:null, biasStat:'ast'},
+];
+let _draftMutator=null;
+function pickDraftMutator(){
+  // 60% možnost za twist, 40% klasični (da ni vedno mutiran)
+  if(Math.random()<0.4){ _draftMutator=DRAFT_MUTATORS[0]; return _draftMutator; }
+  const twists=DRAFT_MUTATORS.filter(m=>m.id!=='none');
+  _draftMutator=twists[Math.floor(Math.random()*twists.length)];
+  return _draftMutator;
 }
 function dailyBudget(){
   const seed=todaySeed();
@@ -7633,8 +7658,31 @@ function showSeasonChoices(){
       <div class="hod-season-choices">${cards}</div>
     </div>`);
   document.querySelectorAll('#hod-action .hod-season-card').forEach(c=>{
-    c.onclick=()=>{chosenSeason=seasonChoices[+c.dataset.i];makeOffer();};
+    c.onclick=()=>{
+      chosenSeason=seasonChoices[+c.dataset.i];
+      // izberi naključni mutator (twist) — ne v quickfire/daily (tam je svoj sistem)
+      if(!dailyMode && !quickMode){ pickDraftMutator(); showMutatorIntro(()=>makeOffer()); }
+      else { _draftMutator=DRAFT_MUTATORS[0]; makeOffer(); }
+    };
   });
+}
+// kratka najava mutatorja pred draftom
+function showMutatorIntro(onDone){
+  const m=_draftMutator;
+  if(!m || m.id==='none'){ onDone&&onDone(); return; } // klasični -> brez najave
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-mut-card hod-pop">
+    <div class="hod-mut-tag">TWIST DRAFTA</div>
+    <div class="hod-mut-ic">${m.icon}</div>
+    <div class="hod-mut-name">${m.name}</div>
+    <div class="hod-mut-desc">${m.desc}</div>
+    <button class="hod-btn gold" id="hod-mut-go">Začni draft</button>
+  </div>`;
+  document.body.appendChild(ov);
+  const go=()=>{ ov.remove(); onDone&&onDone(); };
+  ov.querySelector('#hod-mut-go').onclick=go;
+  setTimeout(()=>{ if(document.body.contains(ov)) {} }, 100);
 }
 
 function makeOffer(){
@@ -7644,12 +7692,23 @@ function makeOffer(){
   currentOffer=[];
   allowed.forEach(pos=>{
     let cands=chosenSeason.players.filter(p=>p.pos===pos && !isDrafted(p));
+    // MUTATOR: filtriraj bazen (z varovalom, da ostane dovolj kandidatov)
+    if(_draftMutator && _draftMutator.filter){
+      const filtered=cands.filter(_draftMutator.filter);
+      const need=_draftMutator.minPerPos||1;
+      if(filtered.length>=need) cands=filtered;
+      // sicer pusti originalne (da ne obtičiš brez kandidatov)
+    }
+    // MUTATOR: bias na statistiko (npr. skoki/asistence) — prednost, ne stroga omejitev
+    if(_draftMutator && _draftMutator.biasStat && cands.length>3){
+      const key=_draftMutator.biasStat;
+      cands=[...cands].sort((a,b)=>(b[key]||0)-(a[key]||0)).slice(0, Math.max(4, Math.ceil(cands.length*0.5)));
+    }
     // budget: ponudi le igralce, ki si jih še lahko privoščiš
     if(budgetMode){
       const afford=cands.filter(p=>playerCost(p)<=left);
       if(afford.length) cands=afford;
       else {
-        // če si na tej poziciji ne moreš nič privoščiti, vzemi najcenejšega (fallback)
         cands=[...cands].sort((a,b)=>playerCost(a)-playerCost(b)).slice(0,1);
       }
     }
@@ -7732,6 +7791,7 @@ function makeOffer(){
       <div class="hod-stage-label" style="text-align:center">
         ${chosenSeason.year} · ${chosenSeason.era}${forced?' · <span style="color:var(--red)">zapolni manjkajoče pozicije</span>':''}
       </div>
+      ${(_draftMutator&&_draftMutator.id!=='none')?`<div style="text-align:center;margin-bottom:8px"><span class="hod-mut-badge">${_draftMutator.icon} ${_draftMutator.name}</span></div>`:''}
       ${budgetBar}
       <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">Izberi enega igralca</div>
       <div class="hod-offer-grid">${cards}${wildCard}</div>
