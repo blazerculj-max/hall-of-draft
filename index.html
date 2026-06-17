@@ -1062,13 +1062,14 @@
 .hod-pko-fan.show{opacity:1;pointer-events:auto;position:relative;inset:auto;width:100%;padding:10px 0;}
 .hod-pko-stage:has(.hod-pko-fan.show){min-height:0;height:auto;}
 .hod-pko-stage.opened{min-height:0;height:auto;display:block;}
-.hod-flip{width:96px;height:138px;perspective:800px;cursor:pointer;flex:none;}
+.hod-flip{width:128px;height:184px;perspective:900px;cursor:pointer;flex:none;}
 @media(max-width:430px){
-  .hod-flip{width:72px;height:104px;}
-  .hod-pko-fan.show{gap:5px;}
-  .hod-flip-photo{width:36px;height:36px;}
-  .hod-flip-rt{font-size:17px;}
-  .hod-flip-nm{font-size:9px;}
+  .hod-flip{width:104px;height:150px;}
+  .hod-pko-fan.show{gap:6px;}
+  .hod-flip-photo{width:48px;height:48px;}
+  .hod-flip-ovr{font-size:22px;}
+  .hod-flip-nm{font-size:11px;}
+  .hod-flip-stats{font-size:8px;}
 }
 .hod-flip.pop{animation:pkoCardPop .5s cubic-bezier(.2,1.3,.4,1) backwards;}
 @keyframes pkoCardPop{0%{transform:translateY(50px) scale(.4);opacity:0;}100%{transform:translateY(0) scale(1);opacity:1;}}
@@ -1088,6 +1089,22 @@
 .hod-flip-rar{font-family:'Bebas Neue';font-size:9px;letter-spacing:.5px;position:relative;z-index:1;}
 .hod-flip-new{position:absolute;top:10px;right:4px;z-index:3;font-family:'Anton';font-size:8px;background:var(--orange);color:#fff;border-radius:4px;padding:0 4px;}
 .hod-flip-dup{position:absolute;top:10px;right:4px;z-index:3;font-family:'Anton';font-size:8px;background:var(--gold-d);color:#fff;border-radius:4px;padding:0 4px;}
+/* POLNA NALEPKA v paketu */
+.hod-flip-full{justify-content:flex-start;padding:8px 6px;}
+.hod-flip-pos{position:absolute;top:8px;left:6px;z-index:3;font-family:'Anton';font-size:9px;color:#fff;border-radius:4px;padding:1px 5px;letter-spacing:.3px;}
+.hod-flip-ovr{position:absolute;top:6px;right:7px;z-index:3;font-family:'Anton';font-size:24px;line-height:.8;text-shadow:0 1px 0 rgba(255,255,255,.4);}
+.hod-flip-full .hod-flip-photo{width:58px;height:58px;border-radius:50%;border:2px solid var(--orange);margin:18px auto 5px;overflow:hidden;position:relative;z-index:1;}
+.hod-flip-full .hod-flip-nm{font-family:'Anton';font-size:12px;color:var(--navy);line-height:1.05;padding:0 2px;}
+.hod-flip-szn{font-family:'Oswald';font-size:9px;color:#5a6472;margin-top:1px;z-index:1;position:relative;}
+.hod-flip-stats{display:flex;gap:5px;justify-content:center;margin-top:5px;z-index:1;position:relative;font-family:'Oswald';font-size:8.5px;color:#5a6472;}
+.hod-flip-stats b{font-family:'Anton';font-size:11px;color:var(--navy);display:block;}
+.hod-flip-full .hod-flip-rar{position:absolute;bottom:5px;left:0;right:0;}
+.hod-flip-full.elite .hod-flip-photo{border-color:var(--gold);box-shadow:0 0 10px rgba(255,209,102,.7);}
+/* MOMENT nalepka */
+.hod-flip-moment{justify-content:flex-start;padding:8px 6px;}
+.hod-flip-mom-badge{position:absolute;top:6px;left:6px;z-index:3;font-size:16px;}
+.hod-flip-photo.big{width:74px;height:74px;border-radius:10px;border:2px solid #ff4d6d;margin:20px auto 6px;overflow:hidden;position:relative;z-index:1;}
+.hod-flip-mom-txt{font-family:'Oswald';font-size:9px;color:#5a6472;margin-top:2px;line-height:1.1;padding:0 4px;z-index:1;position:relative;}
 /* redka */
 .hod-flip.rar-rare .hod-flip-front{border-color:#9ec5e8;box-shadow:0 0 16px rgba(158,197,232,.7);}
 .hod-flip.rar-rare.flipped{animation:pkoRareGlow 1s ease;}
@@ -7424,18 +7441,35 @@ function showPackOpening(){
       const stageEl=document.getElementById('hod-pko-stage'); if(stageEl) stageEl.classList.add('opened');
       fan.innerHTML=results.map((r,i)=>{
         const c=r.card;
+        const isMoment = c.moment || ['moment','slovenski','lowlight'].includes(c.rarity);
+        const allPos = (typeof playerPositions==='function' && !isMoment) ? playerPositions(c) : null;
+        const posStr = allPos ? allPos.join('/') : (c.pos||'');
+        const eliteCls = (c.rating>=92||c.val>=92)?'elite':(c.rating>=85?'good':'');
+        const front = isMoment
+          ? `<div class="hod-flip-face hod-flip-front hod-flip-moment rar-${c.rarity}">
+               <div class="hod-leg-burst"></div><div class="hod-leg-rays"></div>
+               ${r.isNew?'<div class="hod-flip-new">NOVO</div>':'<div class="hod-flip-dup">×2</div>'}
+               <div class="hod-flip-mom-badge">${c.slovenski?'🇸🇮':(c.lowlight?'💀':'⭐')}</div>
+               <div class="hod-flip-photo big">${hasMomentImg&&hasMomentImg(c.id)?`<img src="assets/moments/${c.id}.png" style="width:100%;height:100%;object-fit:cover;object-position:center 20%" onerror="this.style.display='none'">`:avatarImg(c.pid,'')}</div>
+               <div class="hod-flip-nm">${escapeHtml(c.name||'')}</div>
+               <div class="hod-flip-mom-txt">${escapeHtml(c.moment||'')}</div>
+               <div class="hod-flip-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}</div>
+             </div>`
+          : `<div class="hod-flip-face hod-flip-front hod-flip-full ${eliteCls} rar-${c.rarity}">
+               <div class="hod-leg-burst"></div><div class="hod-leg-rays"></div>
+               ${r.isNew?'<div class="hod-flip-new">NOVO</div>':'<div class="hod-flip-dup">×2</div>'}
+               <div class="hod-flip-pos hod-pos-${c.pos}">${posStr}</div>
+               <div class="hod-flip-ovr" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
+               <div class="hod-flip-photo">${avatarImg(c.pid,'')}</div>
+               <div class="hod-flip-nm">${escapeHtml(c.name||'')}</div>
+               <div class="hod-flip-szn">${escapeHtml(c.team||'')} · ${escapeHtml(c.season||'')}</div>
+               <div class="hod-flip-stats"><span><b>${(c.pts||0).toFixed(1)}</b>PTS</span><span><b>${(c.reb||0).toFixed(1)}</b>REB</span><span><b>${(c.ast||0).toFixed(1)}</b>AST</span></div>
+               <div class="hod-flip-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}</div>
+             </div>`;
         return `<div class="hod-flip rar-${c.rarity}" data-i="${i}" style="animation-delay:${i*0.12}s">
           <div class="hod-flip-inner">
             <div class="hod-flip-face hod-flip-back"><div class="hod-flip-wreath"></div></div>
-            <div class="hod-flip-face hod-flip-front">
-              <div class="hod-leg-burst"></div><div class="hod-leg-rays"></div>
-              <div class="hod-flip-rays-top"></div>
-              ${r.isNew?'<div class="hod-flip-new">NOVO</div>':'<div class="hod-flip-dup">×2</div>'}
-              <div class="hod-flip-photo">${avatarImg(c.pid,'')}</div>
-              <div class="hod-flip-nm">${escapeHtml((c.name||'').split(' ').slice(-1)[0])}</div>
-              <div class="hod-flip-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
-              <div class="hod-flip-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}</div>
-            </div>
+            ${front}
           </div>
         </div>`;
       }).join('');
