@@ -6070,10 +6070,9 @@ function showAlbum(){
       ${gotDaily?'<div class="hod-alb-daily">🎁 Dnevni brezplačni paket dodan!</div>':''}
       ${packs>0?`<button class="hod-btn gold" id="hod-alb-open" style="margin:4px auto 8px">📦 Odpri paket (${packs})</button>`:''}
       <div class="hod-alb-tabsmain">
-        <button class="hod-alb-tabm big ${_albumTab==='album'?'on':''}" data-t="album">📒 Album</button>
-        <button class="hod-alb-tabm ${_albumTab==='nove'?'on':''}" data-t="nove">Nenalepljene${unstuckTotal>0?` (${unstuckTotal})`:''}</button>
-        <button class="hod-alb-tabm big ${_albumTab==='market'?'on':''}" data-t="market">🔁 Market</button>
+        <button class="hod-alb-tabm big ${_albumTab==='album'?'on':''}" data-t="album">📒 Zbirka</button>
         <button class="hod-alb-tabm big ${_albumTab==='trgovina'?'on':''}" data-t="trgovina">🛒 Trgovina</button>
+        <button class="hod-alb-tabm big ${_albumTab==='market'?'on':''}" data-t="market">🔁 Menjava</button>
       </div>
       <div id="hod-alb-body"></div>
       <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:10px">
@@ -6734,7 +6733,8 @@ function renderUnstuck(body){
   const decs=DECADE_ORDER.filter(d=>items.some(c=>c.era===d));
   let shown=items.filter(c=>(!_unstuckTeam||c.team===_unstuckTeam)&&(!_unstuckDec||c.era===_unstuckDec));
   shown.sort((a,b)=>(b.rating||0)-(a.rating||0));
-  body.innerHTML=`<div class="hod-alb-hint">Tapni kartico → spodaj se pokaže njena ekipa → tapni utripajoče mesto in jo prilepiš. 🔴 = kam paše.</div>
+  body.innerHTML=`<div style="text-align:center;margin-bottom:8px"><button class="hod-btn secondary" id="hod-unst-back">← Zbirka</button></div>
+    <div class="hod-alb-hint">Tapni kartico → spodaj se pokaže njena ekipa → tapni utripajoče mesto in jo prilepiš. 🔴 = kam paše.</div>
     <div class="hod-unst-filters">
       <select class="hod-unst-sel" id="hod-unst-team"><option value="">Vse ekipe</option>${teams.map(t=>`<option value="${escapeHtml(t)}" ${t===_unstuckTeam?'selected':''}>${escapeHtml(t)}</option>`).join('')}</select>
       <select class="hod-unst-sel" id="hod-unst-dec"><option value="">Vse dekade</option>${decs.map(d=>`<option value="${d}" ${d===_unstuckDec?'selected':''}>${d}</option>`).join('')}</select>
@@ -6755,6 +6755,7 @@ function renderUnstuck(body){
     </div>`;
   }).join('')+`</div>
     <div id="hod-mini-team"></div>`;
+  const ub=document.getElementById('hod-unst-back'); if(ub) ub.onclick=()=>{ _albumTab='album'; _miniStickId=null; renderAlbumTabsMain(); renderAlbumBody(); window.scrollTo({top:0,behavior:'smooth'}); };
   const ts=document.getElementById('hod-unst-team'); if(ts) ts.onchange=()=>{ _unstuckTeam=ts.value; _miniStickId=null; renderUnstuck(body); };
   const ds=document.getElementById('hod-unst-dec'); if(ds) ds.onchange=()=>{ _unstuckDec=ds.value; _miniStickId=null; renderUnstuck(body); };
   body.querySelectorAll('.stickable').forEach(el=>el.onclick=()=>{
