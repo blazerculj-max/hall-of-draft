@@ -2333,6 +2333,11 @@ function dailyGoal(){
   if(typeof quickMode!=='undefined' && quickMode){
     return QUICKFIRE_GOALS[seed%QUICKFIRE_GOALS.length];
   }
+  // navadni daily: cilj iz dnevnega paketa (povezan z modifierjem)
+  if(typeof dailyMode!=='undefined' && dailyMode){
+    const dp=dailyPack();
+    return {id:dp.id, type:'build', label:dp.goal.label, test:dp.goal.test, fmt:dp.goal.fmt};
+  }
   return DAILY_GOALS[seed%DAILY_GOALS.length];
 }
 // ===== DRAFT MUTATORJI (filter bazena) — vsak draft drugačen twist =====
@@ -2348,14 +2353,36 @@ const DRAFT_MUTATORS=[
 ];
 let _draftMutator=null;
 function pickDraftMutator(){
-  // 60% možnost za twist, 40% klasični (da ni vedno mutiran)
-  if(Math.random()<0.4){ _draftMutator=DRAFT_MUTATORS[0]; return _draftMutator; }
-  const twists=DRAFT_MUTATORS.filter(m=>m.id!=='none');
-  _draftMutator=twists[Math.floor(Math.random()*twists.length)];
+  // SOLO draft: brez naključnih twistov (zaenkrat). Modifierji so del Daily.
+  _draftMutator=DRAFT_MUTATORS[0];
   return _draftMutator;
 }
+// ===== DNEVNI PAKET: modifier (filter bazena) + povezan, doable cilj =====
+// ekipni statistični cilji: povprečje na igralca ali skupna vsota
+function teamAvg(ev, key){ const r=ev.roster||[]; if(!r.length) return 0; return r.reduce((a,p)=>a+(p[key]||0),0)/r.length; }
+function teamSum(ev, key){ const r=ev.roster||[]; return r.reduce((a,p)=>a+(p[key]||0),0); }
+const DAILY_PACKS=[
+  { id:'dp_gems', mut:'gems',     budget:'srednja',
+    goal:{label:'Sestavi ekipo draguljev z OVERALL 84+', fmt:ev=>`OVERALL ${ev.overall}`, test:ev=>ev.overall>=84} },
+  { id:'dp_stars', mut:'allstars', budget:null,
+    goal:{label:'Dream team: kemija +6 kljub samim zvezdam', fmt:ev=>`kemija +${ev.chem.chem}`, test:ev=>ev.chem.chem>=6} },
+  { id:'dp_scorers', mut:'scorers', budget:'srednja',
+    goal:{label:'Napadalna mašina: skupaj 100+ točk', fmt:ev=>`${Math.round(teamSum(ev,'pts'))} točk skupaj`, test:ev=>teamSum(ev,'pts')>=100} },
+  { id:'dp_dimers', mut:'dimers',  budget:'srednja',
+    goal:{label:'Nesebična ekipa: povprečje 5+ asistenc/igralca', fmt:ev=>`${teamAvg(ev,'ast').toFixed(1)} ast/igralca`, test:ev=>teamAvg(ev,'ast')>=5} },
+  { id:'dp_boards', mut:'boards',  budget:'srednja',
+    goal:{label:'Tabla je naša: povprečje 7+ skokov/igralca', fmt:ev=>`${teamAvg(ev,'reb').toFixed(1)} skok/igralca`, test:ev=>teamAvg(ev,'reb')>=7} },
+  { id:'dp_glue', mut:'glue',     budget:'srednja',
+    goal:{label:'Delavska ekipa: kemija +7 (brez zvezdnikov)', fmt:ev=>`kemija +${ev.chem.chem}`, test:ev=>ev.chem.chem>=7} },
+];
+function dailyPack(){ return DAILY_PACKS[todaySeed()%DAILY_PACKS.length]; }
+function dailyMutatorObj(){ const dp=dailyPack(); return DRAFT_MUTATORS.find(m=>m.id===dp.mut)||DRAFT_MUTATORS[0]; }
 function dailyBudget(){
   const seed=todaySeed();
+  // navadni daily: budget iz dnevnega paketa (fiksno, usklajeno s ciljem)
+  if(typeof dailyMode!=='undefined' && dailyMode && !(typeof quickMode!=='undefined' && quickMode)){
+    return dailyPack().budget;
+  }
   const g=dailyGoal();
   let pool;
   if(g.minBudget==="težka")        pool=["težka","srednja","lahka",null,null];
@@ -6094,6 +6121,7 @@ function dailyStatusLine(){
 
 function startDaily(){
   dailyMode=true; quickMode=false;
+  _draftMutator=dailyMutatorObj(); // dnevni modifier (isti za vse, povezan s ciljem)
   setSeed(todaySeed());
   numPlayers=1; mp=null;
   const db=dailyBudget();
@@ -6106,6 +6134,7 @@ function startDaily(){
 }
 function startQuickfire(){
   dailyMode=true; quickMode=true;
+  _draftMutator=DRAFT_MUTATORS[0]; // quickfire brez modifierja (peterka)
   setSeed(todaySeed()+777);
   numPlayers=1; mp=null;
   const db=dailyBudget();
@@ -7660,9 +7689,12 @@ function showSeasonChoices(){
   document.querySelectorAll('#hod-action .hod-season-card').forEach(c=>{
     c.onclick=()=>{
       chosenSeason=seasonChoices[+c.dataset.i];
-      // izberi naključni mutator (twist) — ne v quickfire/daily (tam je svoj sistem)
-      if(!dailyMode && !quickMode){ pickDraftMutator(); showMutatorIntro(()=>makeOffer()); }
-      else { _draftMutator=DRAFT_MUTATORS[0]; makeOffer(); }
+      // SOLO: brez twista. DAILY: pokaži najavo dnevnega modifierja
+      if(dailyMode && !quickMode && _draftMutator && _draftMutator.id!=='none'){
+        showMutatorIntro(()=>makeOffer());
+      } else {
+        makeOffer();
+      }
     };
   });
 }
@@ -8124,7 +8156,7 @@ function evaluateTeam(){
     let overall=u1Avg*0.78 + 60*0.15 + starBonus + chemObj.chem*0.9;
     overall=Math.max(40,Math.min(99,Math.round(overall)));
     return {overall, starterAvg:Math.round(u1Avg*10)/10, fullAvg:Math.round(u1Avg*10)/10,
-            depth:0, benchHoles:[], stars, posSpread, top5:u1, chem:chemObj};
+            depth:0, benchHoles:[], stars, posSpread, top5:u1, chem:chemObj, roster:roster.slice()};
   }
   const u1=roster.filter(p=>p.role==="U1");
   const bench=roster.filter(p=>p.role==="B");
@@ -8142,7 +8174,7 @@ function evaluateTeam(){
   const fullAvg=Math.round((u1Avg*0.78+benchAvg*0.22)*10)/10;
   return {overall, starterAvg:Math.round(u1Avg*10)/10, fullAvg,
           depth:Math.round(depth*10)/10, benchHoles:cov.holes,
-          stars, posSpread, top5:u1.length?u1:roster.slice(0,5), chem:chemObj};
+          stars, posSpread, top5:u1.length?u1:roster.slice(0,5), chem:chemObj, roster:roster.slice()};
 }
 function _oldEvaluateTeam(){
   let overall = starterAvg*0.52 + fullAvg*0.28 + 60*0.15
@@ -8150,7 +8182,7 @@ function _oldEvaluateTeam(){
   overall=Math.max(40,Math.min(99,Math.round(overall)));
   return {overall,starterAvg:Math.round(starterAvg*10)/10,
           fullAvg:Math.round(fullAvg*10)/10,stars,posSpread,
-          top5:starters.length?starters:eff.slice(0,5).map(x=>x.p),chem:chemObj};
+          top5:starters.length?starters:eff.slice(0,5).map(x=>x.p),chem:chemObj, roster:roster.slice()};
 }
 
 function gradeFor(o){
