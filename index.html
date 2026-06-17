@@ -3445,14 +3445,11 @@ function renderCapBox(){
   const d=dailyData();
   const pct=Math.min(100, Math.round((d.earned/DAILY_EARN_CAP)*100));
   const left=Math.max(0, DAILY_EARN_CAP-d.earned);
-  const taskPct=Math.min(100, Math.round((d.taskBonus/DAILY_TASK_CAP)*100));
   box.innerHTML=`<div class="hod-cap-card">
     <div class="hod-cap-h">🪙 Dnevni zaslužek</div>
     <div class="hod-cap-lbl">Z igranjem: <b>${d.earned}</b> / ${DAILY_EARN_CAP}${left>0?` · še ${left} na voljo`:` · 🔒 kapica dosežena`}</div>
     <div class="hod-cap-bar"><div class="hod-cap-fill" style="width:${pct}%"></div></div>
-    <div class="hod-cap-lbl" style="margin-top:8px">Bonus iz nalog: <b>${d.taskBonus}</b> / ${DAILY_TASK_CAP} <span style="color:var(--muted)">(mimo kapice)</span></div>
-    <div class="hod-cap-bar"><div class="hod-cap-fill alt" style="width:${taskPct}%"></div></div>
-    <div class="hod-cap-hint">Kapico polniš z igranjem (draft, kviz, poker). Bonus iz nalog je dodaten — največ ${DAILY_TASK_CAP} 🪙/dan.</div>
+    <div class="hod-cap-hint">Kapico polniš z igranjem (draft, kviz, poker). Nagrade za dnevne izzive so dodatne in niso omejene.</div>
   </div>`;
 }
 function renderTasksBox(){
@@ -3464,11 +3461,10 @@ function renderTasksBox(){
       const prog=Math.min(t.goal, d.tasks[t.id]||0);
       const done=prog>=t.goal;
       const claimed=!!d.taskClaimed[t.id];
-      const capFull=(d.taskBonus>=DAILY_TASK_CAP) && !t.rewardCard;
       let btn;
       const rewardLbl = t.rewardCard ? '🎴 karta' : `🪙${t.reward}`;
       if(claimed) btn=`<span class="hod-task-done">✓ pobrano</span>`;
-      else if(done) btn=`<button class="hod-btn gold hod-task-claim" data-id="${t.id}" ${capFull?'disabled title="Dosegel si dnevni bonus limit"':''}>Poberi ${rewardLbl}</button>`;
+      else if(done) btn=`<button class="hod-btn gold hod-task-claim" data-id="${t.id}">Poberi ${rewardLbl}</button>`;
       else btn=`<span class="hod-task-prog">${prog}/${t.goal}</span>`;
       return `<div class="hod-task-row ${done?'done':''} ${t.rewardCard?'card-task':''}">
         <div class="hod-task-ico">${done?'✅':t.icon}</div>
@@ -3500,13 +3496,10 @@ function claimTask(id){
     renderTasksBox();
     return;
   }
-  const room=Math.max(0, DAILY_TASK_CAP - d.taskBonus);
-  if(room<=0){ hodToast('Dosegel si dnevni bonus limit (100 🪙).'); return; }
-  const give=Math.min(t.reward, room);
-  d.taskClaimed[id]=true; d.taskBonus+=give; saveDailyData(d);
-  earnCoins(give, true);
+  d.taskClaimed[id]=true; d.taskBonus=(d.taskBonus||0)+t.reward; saveDailyData(d);
+  earnCoins(t.reward, true);
   playSfx('coins');
-  hodToast(`🎁 <b>+${give} 🪙</b> za izziv: ${t.label}`);
+  hodToast(`🎁 <b>+${t.reward} 🪙</b> za izziv: ${t.label}`);
   renderCapBox(); renderTasksBox();
 }
 // prikaz osvojene naključne karte
