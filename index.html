@@ -4386,7 +4386,13 @@ async function restoreSession(){
 
 // ===================== TOČKE / EKONOMIJA =====================
 function getCoins(){ return parseInt(storeGet('hod-coins')||'0',10)||0; }
-function setCoins(n){ storeSet('hod-coins', String(Math.max(0,Math.round(n)))); if(typeof syncProgress==='function') syncProgress(); }
+function setCoins(n){ storeSet('hod-coins', String(Math.max(0,Math.round(n)))); refreshCoinDisplays(); if(typeof syncProgress==='function') syncProgress(); }
+// osveži vse prikaze stanja kovancev v živo (album glava, trgovina ipd.)
+function refreshCoinDisplays(){
+  const v=getCoins();
+  document.querySelectorAll('.hod-alb-coins b').forEach(el=>{ el.textContent=v; });
+  document.querySelectorAll('[data-coin-display]').forEach(el=>{ el.textContent=v; });
+}
 function addCoins(n){ setCoins(getCoins()+n); return n; }
 function spendCoins(n){ if(getCoins()<n) return false; setCoins(getCoins()-n); return true; }
 
