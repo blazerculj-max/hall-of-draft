@@ -782,6 +782,11 @@
 .hod-mkt-meta{font-family:'Oswald';font-size:10px;color:var(--gold-d);}
 .hod-mkt-seller{font-size:9px;color:#888;}
 .hod-mkt-want{font-size:9px;color:#4a7fa5;font-style:italic;line-height:1.1;}
+.hod-sell-hints{background:rgba(255,209,102,.08);border:1px solid var(--gold-warm);border-radius:10px;padding:8px 10px;margin-top:4px;}
+.hod-sell-hint-title{font-family:'Oswald';font-size:12px;color:var(--amber);margin-bottom:5px;}
+.hod-sell-hint-row{display:flex;justify-content:space-between;align-items:center;font-family:'Oswald';font-size:12px;color:var(--ink);padding:2px 0;}
+.hod-sell-hint-row b{color:var(--gold);}
+.hod-sell-hint-row.muted,.hod-sell-hint-row.muted b{color:var(--muted);font-style:italic;}
 .hod-mkt-price{font-family:'Anton';font-size:15px;color:var(--gold-deep);margin:2px 0;}
 /* album header z gumbom nazaj */
 .hod-alb-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
@@ -7135,19 +7140,19 @@ async function renderMarketSell(mb){
     }).join('')+`</div>`;
   mb.querySelectorAll('.hod-mkt-sell').forEach(btn=>btn.onclick=()=>openSellDialog(btn.dataset.uid, mb));
 }
-function openSellDialog(uid, mb){
+async function openSellDialog(uid, mb){
   const catMap=buildCatMap();
   const c=catMap[uid]; if(!c) return;
+  const myRating=c.rating||c.val||0;
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
   ov.innerHTML=`<div class="hod-nick-card hod-pop">
     <div class="hod-nick-title">Na market: ${escapeHtml(c.name)}</div>
-    <div class="hod-nick-sub">Določi ceno v kovancih in/ali kaj želiš v zameno.</div>
+    <div class="hod-nick-sub">Določi ceno v kovancih, za katero prodajaš kartico.</div>
     <div style="margin:12px 0;text-align:left">
       <label style="font-size:13px;color:var(--amber)">Cena (🪙 kovanci):</label>
-      <input type="number" id="hod-sell-price" min="0" value="20" style="width:100%;box-sizing:border-box;background:#fff;border:2px solid var(--gold-warm);border-radius:8px;padding:8px;font-size:15px;margin:4px 0 10px">
-      <label style="font-size:13px;color:var(--amber)">Želim v zameno (neobvezno, prosto besedilo):</label>
-      <input type="text" id="hod-sell-want" placeholder="npr. katero koli legendo iz 90s" maxlength="60" style="width:100%;box-sizing:border-box;background:#fff;border:2px solid var(--gold-warm);border-radius:8px;padding:8px;font-size:14px;margin:4px 0">
+      <input type="number" id="hod-sell-price" min="0" placeholder="vpiši ceno…" style="width:100%;box-sizing:border-box;background:#fff;border:2px solid var(--gold-warm);border-radius:8px;padding:8px;font-size:15px;margin:4px 0 8px">
+      <div id="hod-sell-hints" class="hod-sell-hints">Nalagam cenovne namige…</div>
     </div>
     <div class="hod-nick-btns">
       <button class="hod-btn gold" id="hod-sell-ok">Objavi na market</button>
@@ -7156,25 +7161,50 @@ function openSellDialog(uid, mb){
   </div>`;
   document.body.appendChild(ov);
   document.getElementById('hod-sell-cancel').onclick=()=>ov.remove();
+  // naloži cenovne namige iz aktivnih ponudb na trgu
+  (async()=>{
+    const hintEl=document.getElementById('hod-sell-hints');
+    try{
+      const rows=await marketList();
+      const priced=rows.filter(r=>r.price>0 && r.status==='open');
+      const avg=arr=>arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):null;
+      const sameCard=avg(priced.filter(r=>r.card_uid===uid).map(r=>r.price));
+      const sameOvr =avg(priced.filter(r=>Math.abs((r.card_rating||0)-myRating)<=1).map(r=>r.price));
+      const sameRar =avg(priced.filter(r=>r.card_rarity===c.rarity).map(r=>r.price));
+      const line=(lbl,v,extra)=> v!=null
+        ? `<div class="hod-sell-hint-row"><span>${lbl}</span><b>🪙 ${v}</b></div>`
+        : `<div class="hod-sell-hint-row muted"><span>${lbl}</span><b>${extra||'ni podatka'}</b></div>`;
+      hintEl.innerHTML=`
+        <div class="hod-sell-hint-title">💡 Povprečne cene na trgu (ballpark):</div>
+        ${line('Ta kartica', sameCard, 'še ni na trgu')}
+        ${line('Overall ~'+myRating, sameOvr)}
+        ${line('Redkost: '+(RARITY_DEFS[c.rarity]?RARITY_DEFS[c.rarity].name:c.rarity), sameRar)}`;
+      // predlagaj ceno v okence (če prazno): ta kartica > overall > redkost
+      const suggest=sameCard||sameOvr||sameRar;
+      const pin=document.getElementById('hod-sell-price');
+      if(suggest && pin && !pin.value) pin.placeholder=`npr. ${suggest} 🪙`;
+    }catch(e){
+      hintEl.innerHTML=`<div class="hod-sell-hint-row muted"><span>Cenovni namigi trenutno niso dosegljivi.</span></div>`;
+    }
+  })();
   document.getElementById('hod-sell-ok').onclick=async()=>{
     const price=parseInt(document.getElementById('hod-sell-price').value||'0',10)||0;
-    const want=(document.getElementById('hod-sell-want').value||'').trim().slice(0,60);
-    // preveri, da imaš nenalepljeno kopijo
+    if(price<=0){ hodToast('Vpiši ceno (v kovancih) za prodajo.'); return; }
     const col=getCollected(); const rec=col[uid];
     if(!rec || (rec.count||0)<1){ hodToast('Nimaš proste kopije te kartice.'); ov.remove(); return; }
     const okBtn=document.getElementById('hod-sell-ok'); okBtn.disabled=true; okBtn.textContent='Objavljam…';
     try{
       await marketCreate({
         seller:currentUser(), card_uid:uid, card_name:c.name, card_team:c.team||'',
-        card_rating:c.rating||c.val||0, card_rarity:c.rarity, card_pid:c.pid,
-        price:price>0?price:null, want_text:want||null, status:'open'
+        card_rating:myRating, card_rarity:c.rarity, card_pid:c.pid,
+        price:price, want_text:null, status:'open'
       });
-      // odštej kopijo (rezervirana na marketu)
       rec.count=(rec.count||1)-1; setCollected(col);
       ov.remove();
       hodToast('✅ <b>Objavljeno na market!</b>');
       updateUnstuckBadge();
-      _marketView='mine'; renderMarket(document.getElementById('hod-alb-body'));
+      // OSTANI na zavihku "prodaj dvojnik"
+      _marketView='sell'; renderMarket(document.getElementById('hod-alb-body'));
     }catch(e){
       okBtn.disabled=false; okBtn.textContent='Objavi na market';
       alert('Objava ni uspela: '+e.message);
