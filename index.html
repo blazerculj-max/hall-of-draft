@@ -1062,14 +1062,13 @@
 .hod-pko-fan.show{opacity:1;pointer-events:auto;position:relative;inset:auto;width:100%;padding:10px 0;}
 .hod-pko-stage:has(.hod-pko-fan.show){min-height:0;height:auto;}
 .hod-pko-stage.opened{min-height:0;height:auto;display:block;}
-.hod-flip{width:128px;height:184px;perspective:900px;cursor:pointer;flex:none;}
+.hod-flip{width:158px;height:226px;perspective:1000px;cursor:pointer;flex:none;}
 @media(max-width:430px){
-  .hod-flip{width:104px;height:150px;}
-  .hod-pko-fan.show{gap:6px;}
-  .hod-flip-photo{width:48px;height:48px;}
-  .hod-flip-ovr{font-size:22px;}
-  .hod-flip-nm{font-size:11px;}
-  .hod-flip-stats{font-size:8px;}
+  .hod-flip{width:140px;height:200px;}
+  .hod-pko-fan.show{gap:8px;}
+  .hod-stk-photo{height:108px;}
+  .hod-stk-ovr{font-size:26px;}
+  .hod-stk-nm{font-size:13px;}
 }
 .hod-flip.pop{animation:pkoCardPop .5s cubic-bezier(.2,1.3,.4,1) backwards;}
 @keyframes pkoCardPop{0%{transform:translateY(50px) scale(.4);opacity:0;}100%{transform:translateY(0) scale(1);opacity:1;}}
@@ -1089,20 +1088,30 @@
 .hod-flip-rar{font-family:'Bebas Neue';font-size:9px;letter-spacing:.5px;position:relative;z-index:1;}
 .hod-flip-new{position:absolute;top:10px;right:4px;z-index:3;font-family:'Anton';font-size:8px;background:var(--orange);color:#fff;border-radius:4px;padding:0 4px;}
 .hod-flip-dup{position:absolute;top:10px;right:4px;z-index:3;font-family:'Anton';font-size:8px;background:var(--gold-d);color:#fff;border-radius:4px;padding:0 4px;}
-/* POLNA NALEPKA v paketu */
-.hod-flip-full{justify-content:flex-start;padding:8px 6px;}
-.hod-flip-pos{position:absolute;top:8px;left:6px;z-index:3;font-family:'Anton';font-size:9px;color:#fff;border-radius:4px;padding:1px 5px;letter-spacing:.3px;}
-.hod-flip-ovr{position:absolute;top:6px;right:7px;z-index:3;font-family:'Anton';font-size:24px;line-height:.8;text-shadow:0 1px 0 rgba(255,255,255,.4);}
-.hod-flip-full .hod-flip-photo{width:58px;height:58px;border-radius:50%;border:2px solid var(--orange);margin:18px auto 5px;overflow:hidden;position:relative;z-index:1;}
-.hod-flip-full .hod-flip-nm{font-family:'Anton';font-size:12px;color:var(--navy);line-height:1.05;padding:0 2px;}
-.hod-flip-szn{font-family:'Oswald';font-size:9px;color:#5a6472;margin-top:1px;z-index:1;position:relative;}
-.hod-flip-stats{display:flex;gap:5px;justify-content:center;margin-top:5px;z-index:1;position:relative;font-family:'Oswald';font-size:8.5px;color:#5a6472;}
-.hod-flip-stats b{font-family:'Anton';font-size:11px;color:var(--navy);display:block;}
-.hod-flip-full .hod-flip-rar{position:absolute;bottom:5px;left:0;right:0;}
-.hod-flip-full.elite .hod-flip-photo{border-color:var(--gold);box-shadow:0 0 10px rgba(255,209,102,.7);}
-/* MOMENT nalepka */
-.hod-flip-moment{justify-content:flex-start;padding:8px 6px;}
-.hod-flip-mom-badge{position:absolute;top:6px;left:6px;z-index:3;font-size:16px;}
+/* === PANINI NALEPKA (paket) === */
+.hod-sticker{padding:0;display:flex;flex-direction:column;justify-content:flex-start;background:#f4ead2;overflow:hidden;}
+.hod-stk-pos{position:absolute;top:7px;left:7px;z-index:4;font-family:'Anton';font-size:11px;color:#fff;background:rgba(0,0,0,.4);border-radius:5px;padding:1px 7px;letter-spacing:.4px;backdrop-filter:blur(2px);}
+.hod-stk-ovr{position:absolute;top:5px;right:8px;z-index:4;font-family:'Anton';font-size:30px;line-height:.8;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.5);}
+/* fotografija dominira, na ekipnem barvnem gradientu */
+.hod-stk-photo{position:relative;width:100%;height:128px;background:linear-gradient(160deg,var(--tc1,#b89a78),var(--tc2,#8a6d3b));overflow:hidden;z-index:1;}
+.hod-stk-photo img{position:absolute;bottom:0;left:50%;transform:translateX(-50%);height:118%;width:auto;max-width:none;object-fit:contain;object-position:bottom;filter:drop-shadow(0 3px 5px rgba(0,0,0,.3));}
+.hod-stk-photo::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,transparent 40%,rgba(0,0,0,.15) 100%);}
+/* informacijski pas */
+.hod-stk-info{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 5px 5px;position:relative;z-index:2;background:#f7f0df;border-top:3px solid var(--tc1,#b89a78);}
+.hod-stk-nm{font-family:'Anton';font-size:14px;color:#1a2030;line-height:1;text-align:center;padding:0 3px;}
+.hod-stk-team{font-family:'Oswald';font-weight:600;font-size:10px;color:var(--tc1,#8a6d3b);text-transform:uppercase;letter-spacing:.3px;margin-top:2px;text-align:center;line-height:1.05;}
+.hod-stk-szn{font-family:'Oswald';font-size:9px;color:#7a838f;margin-top:1px;}
+.hod-stk-stats{display:flex;gap:7px;justify-content:center;margin-top:4px;font-family:'Oswald';font-size:8px;color:#7a838f;}
+.hod-stk-stats b{font-family:'Anton';font-size:12px;color:#1a2030;display:block;line-height:1;}
+.hod-sticker.elite{box-shadow:inset 0 0 0 3px var(--gold);}
+.hod-sticker.elite .hod-stk-ovr{color:var(--gold);text-shadow:0 0 8px rgba(255,209,102,.8),0 2px 4px rgba(0,0,0,.5);}
+.hod-sticker.good{box-shadow:inset 0 0 0 2px #8fb3d9;}
+/* MOMENT sticker */
+.hod-sticker-moment .hod-stk-photo{height:140px;}
+.hod-sticker-moment .hod-stk-photo img{height:100%;object-fit:cover;object-position:center 20%;}
+.hod-stk-badge{position:absolute;top:6px;left:7px;z-index:4;font-size:18px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));}
+.hod-stk-mom{font-family:'Oswald';font-size:9px;color:#5a6472;line-height:1.1;text-align:center;padding:0 4px;margin-top:2px;}
+.hod-stk-rar{font-family:'Bebas Neue';font-size:10px;letter-spacing:.5px;margin-top:3px;}
 .hod-flip-photo.big{width:74px;height:74px;border-radius:10px;border:2px solid #ff4d6d;margin:20px auto 6px;overflow:hidden;position:relative;z-index:1;}
 .hod-flip-mom-txt{font-family:'Oswald';font-size:9px;color:#5a6472;margin-top:2px;line-height:1.1;padding:0 4px;z-index:1;position:relative;}
 /* redka */
@@ -7469,26 +7478,30 @@ function showPackOpening(){
         const allPos = (typeof playerPositions==='function' && !isMoment) ? playerPositions(c) : null;
         const posStr = allPos ? allPos.join('/') : (c.pos||'');
         const eliteCls = (c.rating>=92||c.val>=92)?'elite':(c.rating>=85?'good':'');
+        const tc1 = !isMoment ? teamColor(c.team) : '#ff4d6d';
+        const tc2 = !isMoment ? teamColor2(c.team) : '#b3324a';
         const front = isMoment
-          ? `<div class="hod-flip-face hod-flip-front hod-flip-moment rar-${c.rarity}">
-               <div class="hod-leg-burst"></div><div class="hod-leg-rays"></div>
+          ? `<div class="hod-flip-face hod-flip-front hod-sticker hod-sticker-moment rar-${c.rarity}" style="--tc1:${tc1};--tc2:${tc2}">
                ${r.isNew?'<div class="hod-flip-new">NOVO</div>':'<div class="hod-flip-dup">×2</div>'}
-               <div class="hod-flip-mom-badge">${c.slovenski?'🇸🇮':(c.lowlight?'💀':'⭐')}</div>
-               <div class="hod-flip-photo big">${hasMomentImg&&hasMomentImg(c.id)?`<img src="assets/moments/${c.id}.png" style="width:100%;height:100%;object-fit:cover;object-position:center 20%" onerror="this.style.display='none'">`:avatarImg(c.pid,'')}</div>
-               <div class="hod-flip-nm">${escapeHtml(c.name||'')}</div>
-               <div class="hod-flip-mom-txt">${escapeHtml(c.moment||'')}</div>
-               <div class="hod-flip-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}</div>
+               <div class="hod-stk-badge">${c.slovenski?'🇸🇮':(c.lowlight?'💀':'⭐')}</div>
+               <div class="hod-stk-photo">${hasMomentImg&&hasMomentImg(c.id)?`<img src="assets/moments/${c.id}.png" onerror="this.style.display='none'">`:avatarImg(c.pid,'')}</div>
+               <div class="hod-stk-info">
+                 <div class="hod-stk-nm">${escapeHtml(c.name||'')}</div>
+                 <div class="hod-stk-mom">${escapeHtml(c.moment||'')}</div>
+                 <div class="hod-stk-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}</div>
+               </div>
              </div>`
-          : `<div class="hod-flip-face hod-flip-front hod-flip-full ${eliteCls} rar-${c.rarity}">
-               <div class="hod-leg-burst"></div><div class="hod-leg-rays"></div>
+          : `<div class="hod-flip-face hod-flip-front hod-sticker ${eliteCls} rar-${c.rarity}" style="--tc1:${tc1};--tc2:${tc2}">
                ${r.isNew?'<div class="hod-flip-new">NOVO</div>':'<div class="hod-flip-dup">×2</div>'}
-               <div class="hod-flip-pos hod-pos-${c.pos}">${posStr}</div>
-               <div class="hod-flip-ovr" style="color:${RARITY_DEFS[c.rarity].col}">${c.val||c.rating}</div>
-               <div class="hod-flip-photo">${avatarImg(c.pid,'')}</div>
-               <div class="hod-flip-nm">${escapeHtml(c.name||'')}</div>
-               <div class="hod-flip-szn">${escapeHtml(c.team||'')} · ${escapeHtml(c.season||'')}</div>
-               <div class="hod-flip-stats"><span><b>${(c.pts||0).toFixed(1)}</b>PTS</span><span><b>${(c.reb||0).toFixed(1)}</b>REB</span><span><b>${(c.ast||0).toFixed(1)}</b>AST</span></div>
-               <div class="hod-flip-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}</div>
+               <div class="hod-stk-pos">${posStr}</div>
+               <div class="hod-stk-ovr">${c.val||c.rating}</div>
+               <div class="hod-stk-photo">${avatarImg(c.pid,'')}</div>
+               <div class="hod-stk-info">
+                 <div class="hod-stk-nm">${escapeHtml(c.name||'')}</div>
+                 <div class="hod-stk-team">${escapeHtml(TEAM_NAME[c.team]||c.team||'')}</div>
+                 <div class="hod-stk-szn">${escapeHtml(c.season||'')}</div>
+                 <div class="hod-stk-stats"><span><b>${(c.pts||0).toFixed(1)}</b>PTS</span><span><b>${(c.reb||0).toFixed(1)}</b>REB</span><span><b>${(c.ast||0).toFixed(1)}</b>AST</span></div>
+               </div>
              </div>`;
         return `<div class="hod-flip rar-${c.rarity}" data-i="${i}" style="animation-delay:${i*0.12}s">
           <div class="hod-flip-inner">
