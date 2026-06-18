@@ -5160,18 +5160,18 @@ function pokerHand(cards){
   const topGroup=(counts[0]||0)+wilds;
   const secondGroup=(counts[1]||0);
   const isRoyal=isStraight && isFlush && uniqVals.includes(rankVal('A')) && uniqVals.includes(rankVal('10'));
-  if(isRoyal) return {name:'👑 ROYAL FLUSH', mult:10, key:'royal'};
-  if(isStraight && isFlush) return {name:'🌈 STRAIGHT FLUSH', mult:7, key:'sflush'};
-  if(topGroup>=5) return {name:'💥 POKER (5)', mult:6, key:'five'};
-  if(topGroup>=4) return {name:'🃏 POKER (4)', mult:5, key:'four'};
-  if(topGroup>=3 && secondGroup>=2) return {name:'🏠 FULL HOUSE', mult:4, key:'full'};
-  if(isFlush) return {name:'♦ BARVA (Flush)', mult:3.2, key:'flush'};
-  if(isStraight) return {name:'➡ LESTVICA (Straight)', mult:2.8, key:'straight'};
-  if(topGroup>=3) return {name:'🔼 TRIS', mult:2.2, key:'trips'};
+  if(isRoyal) return {name:'👑 ROYAL FLUSH', mult:2.4, key:'royal'};
+  if(isStraight && isFlush) return {name:'🌈 STRAIGHT FLUSH', mult:2.1, key:'sflush'};
+  if(topGroup>=5) return {name:'💥 POKER (5)', mult:2.0, key:'five'};
+  if(topGroup>=4) return {name:'🃏 POKER (4)', mult:1.9, key:'four'};
+  if(topGroup>=3 && secondGroup>=2) return {name:'🏠 FULL HOUSE', mult:1.7, key:'full'};
+  if(isFlush) return {name:'♦ BARVA (Flush)', mult:1.55, key:'flush'};
+  if(isStraight) return {name:'➡ LESTVICA (Straight)', mult:1.45, key:'straight'};
+  if(topGroup>=3) return {name:'🔼 TRIS', mult:1.4, key:'trips'};
   // dva para
   const pairs=counts.filter(c=>c>=2).length;
-  if(pairs>=2) return {name:'✌ DVA PARA', mult:1.8, key:'twopair'};
-  if(topGroup>=2) return {name:'👫 PAR', mult:1.5, key:'pair'};
+  if(pairs>=2) return {name:'✌ DVA PARA', mult:1.25, key:'twopair'};
+  if(topGroup>=2) return {name:'👫 PAR', mult:1.15, key:'pair'};
   return {name:'Visoka karta', mult:1, key:'high'};
 }
 // vnaprej naloži nekaj naključnih slik v predpomnilnik (manj zamika pri vrtenju)
@@ -5303,7 +5303,7 @@ function renderPoker(finished, firstRender){
   // tabela poker rok (multiplierji) — ob strani
   const handTable=`<div class="hod-pk-handtable">
     <div class="hod-pk-ht-title">🎴 Poker roke</div>
-    ${[['Par','×1.5'],['Dva para','×1.8'],['Tris','×2.2'],['Lestvica','×2.8'],['Barva','×3.2'],['Full House','×4'],['Poker (4)','×5'],['Poker (5)','×6'],['Straight Flush','×7'],['👑 Royal Flush','×10']].map(([n,m])=>{
+    ${[['Par','×1.15'],['Dva para','×1.25'],['Tris','×1.4'],['Lestvica','×1.45'],['Barva','×1.55'],['Full House','×1.7'],['Poker (4)','×1.9'],['Poker (5)','×2.0'],['Straight Flush','×2.1'],['👑 Royal Flush','×2.4']].map(([n,m])=>{
       const active=liveHand.name.toLowerCase().includes(n.toLowerCase().split(' ')[0]) || (n==='Par'&&liveHand.key==='pair') || (n==='Dva para'&&liveHand.key==='twopair') || (n==='Tris'&&liveHand.key==='trips') || (n==='Lestvica'&&liveHand.key==='straight') || (n==='Barva'&&liveHand.key==='flush') || (n==='Full House'&&liveHand.key==='full') || (n==='Poker (4)'&&liveHand.key==='four') || (n==='Poker (5)'&&liveHand.key==='five') || (n==='Straight Flush'&&liveHand.key==='sflush') || (liveHand.key==='royal'&&n.includes('Royal'));
       return `<div class="hod-pk-ht-row ${active?'on':''}"><span>${n}</span><b>${m}</b></div>`;
     }).join('')}
@@ -5629,7 +5629,7 @@ function renderPokerVsAI(){
       </div>
       <div class="hod-vs-handlive">Tvoja roka: <b style="color:${pokerHand(st.you.cards).mult>1.8?'#ffd166':(pokerHand(st.you.cards).mult>1?'#9ec5e8':'#fff')}">${pokerHand(st.you.cards).name}${pokerHand(st.you.cards).mult>1?` ×${pokerHand(st.you.cards).mult}`:''}</b></div>
       <details class="hod-vs-handtable"><summary>🎴 Kombinacije in množitelji</summary>
-        <div class="hod-vs-ht-grid">${[['Par','×1.5'],['Dva para','×1.8'],['Tris','×2.2'],['Lestvica','×2.8'],['Barva','×3.2'],['Full House','×4'],['Poker 4','×5'],['Poker 5','×6'],['Str. Flush','×7'],['👑 Royal','×10']].map(([n,m])=>`<span><b>${n}</b> ${m}</span>`).join('')}</div>
+        <div class="hod-vs-ht-grid">${[['Par','×1.15'],['Dva para','×1.25'],['Tris','×1.4'],['Lestvica','×1.45'],['Barva','×1.55'],['Full House','×1.7'],['Poker 4','×1.9'],['Poker 5','×2.0'],['Str. Flush','×2.1'],['👑 Royal','×2.4']].map(([n,m])=>`<span><b>${n}</b> ${m}</span>`).join('')}</div>
       </details>
       <div class="hod-pk-hint">${st.pending==='reroll'?'<b style="color:var(--gold)">Re-roll:</b> tapni zaklenjeno karto za ponovni vrtljaj.':st.pending==='steal'?'<b style="color:var(--gold)">Steal:</b> tapni AI-jevo karto za krajo.':'Zakleni (lock je dokončen!), ostalo zavrti. Premagaj '+escapeHtml(ai.name)+'.'}</div>
       ${pkPowerupBar()}
