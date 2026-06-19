@@ -605,6 +605,11 @@
 .hod-stkmini.elite .hod-stkmini-rt{color:#c8920a;}
 .hod-stkmini.good{box-shadow:inset 0 0 0 2px #8fb3d9!important;}
 .hod-stkmini .hod-alb-num{background:rgba(0,0,0,.35);color:#fff;}
+.hod-stkmini-tap{position:absolute;bottom:0;left:0;right:0;z-index:5;font-family:'Oswald';font-size:8px;
+  text-align:center;padding:2px;background:rgba(232,84,30,.92);color:#fff;letter-spacing:.5px;}
+.hod-stkmini.mini-active{box-shadow:0 0 0 3px var(--gold),0 0 16px rgba(255,209,102,.7)!important;transform:translateY(-3px);}
+.hod-stkmini.mini-active .hod-stkmini-tap{background:var(--gold);color:#1a1206;font-weight:bold;}
+.hod-stkmini .hod-alb-dup{z-index:5;}
 /* povečana kartica z obračanjem */
 .hod-cd-overlay{align-items:center;}
 /* NAGRADE */
@@ -6922,7 +6927,19 @@ function renderUnstuck(body){
   const teams=[...new Set(items.map(c=>c.team).filter(Boolean))].sort();
   const decs=DECADE_ORDER.filter(d=>items.some(c=>c.era===d));
   let shown=items.filter(c=>(!_unstuckTeam||c.team===_unstuckTeam)&&(!_unstuckDec||c.era===_unstuckDec));
-  shown.sort((a,b)=>(b.rating||0)-(a.rating||0));
+  // grupiraj: iste EKIPE skupaj, znotraj iste SEZONE skupaj → lepljenje v nizu (ne skačeš gor-dol)
+  shown.sort((a,b)=>{
+    const ta=a.team||'zzz', tb=b.team||'zzz';
+    if(ta!==tb){
+      // ekipe z več nenalepljenimi spredaj (več za polepiti = bolj rewarding)
+      const cntA=items.filter(x=>x.team===ta).length, cntB=items.filter(x=>x.team===tb).length;
+      if(cntA!==cntB) return cntB-cntA;
+      return ta.localeCompare(tb);
+    }
+    const sa=a.season||'', sb=b.season||'';
+    if(sa!==sb) return sa.localeCompare(sb);
+    return (b.rating||0)-(a.rating||0);
+  });
   body.innerHTML=`<div style="text-align:center;margin-bottom:8px"><button class="hod-btn secondary" id="hod-unst-back">← Zbirka</button></div>
     <div class="hod-alb-hint">Tapni kartico → spodaj se pokaže njena ekipa → tapni utripajoče mesto in jo prilepiš. 🔴 = kam paše.</div>
     <div class="hod-unst-filters">
@@ -6933,15 +6950,31 @@ function renderUnstuck(body){
     const id=c.id||c.uid||(''+c.pid); const cnt=(col[id]&&col[id].count)||1;
     const sel=(_miniStickId===id)?' mini-active':'';
     const isPartCell=c.part&&c.baseId;
-    const photoHtml = isPartCell ? momentPartImgTag(c.baseId, c.part, 'hod-alb-photo-img') : avatarImg(c.pid,'');
-    return `<div class="hod-alb-cell rar-${c.rarity} stickable${sel}" data-id="${id}" data-era="${c.era||'moments'}">
-      ${c.num?`<div class="hod-alb-num">${c.num}</div>`:''}
+    if(isPartCell){
+      // moment del — ostane preprost
+      return `<div class="hod-alb-cell rar-${c.rarity} stickable${sel}" data-id="${id}" data-era="${c.era||'moments'}">
+        ${cnt>1?`<div class="hod-alb-dup">×${cnt}</div>`:''}
+        <div class="hod-alb-photo">${momentPartImgTag(c.baseId, c.part, 'hod-alb-photo-img')}</div>
+        <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
+        <div class="hod-alb-szn">🧩 ${c.part}/3</div>
+        <div class="hod-alb-stick">${sel?'↓ prilepi spodaj':'tapni'}</div>
+      </div>`;
+    }
+    const isMomentCard=(!!c.moment || ['moment','lowlight','slovenski'].includes(c.rarity));
+    const tc1=isMomentCard?'#ff4d6d':teamColor(c.team), tc2=isMomentCard?'#b3324a':(typeof teamColor2==='function'?teamColor2(c.team):tc1);
+    const elite=(!isMomentCard&&(c.rating>=92))?'elite':(!isMomentCard&&c.rating>=85?'good':'');
+    const allPos=(typeof playerPositions==='function'&&!isMomentCard)?playerPositions(c):null;
+    const posStr=allPos?allPos.join('/'):(c.pos||'');
+    const photoHtml = isMomentCard&&hasMomentImg&&hasMomentImg(c.id)?`<img src="assets/moments/${c.id}.png" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);height:116%;width:auto;object-fit:contain" onerror="this.style.display='none'">`:avatarImg(c.pid,'');
+    return `<div class="hod-alb-cell rar-${c.rarity} stickable hod-stkmini ${elite}${sel}" data-id="${id}" data-era="${c.era||'moments'}" style="--tc1:${tc1};--tc2:${tc2}">
       ${cnt>1?`<div class="hod-alb-dup">×${cnt}</div>`:''}
-      <div class="hod-alb-photo">${photoHtml}</div>
-      <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
-      <div class="hod-alb-szn">${isPartCell?'🧩 '+c.part+'/3':(c.season||c.moment||'')}</div>
-      <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${isPartCell?c.part+'/3':(c.val||c.rating)}</div>
-      <div class="hod-alb-stick">${sel?'↓ prilepi spodaj':'tapni za lepljenje'}</div>
+      <div class="hod-stkmini-pos">${isMomentCard?(c.slovenski?'🇸🇮':c.lowlight?'💀':'⭐'):posStr}</div>
+      <div class="hod-stkmini-photo">${photoHtml}</div>
+      <div class="hod-stkmini-info">
+        <div class="hod-stkmini-nm">${escapeHtml(c.name||'')}</div>
+        <div class="hod-stkmini-rt">${c.val||c.rating}</div>
+      </div>
+      <div class="hod-stkmini-tap">${sel?'↓ prilepi':'tapni'}</div>
     </div>`;
   }).join('')+`</div>
     <div id="hod-mini-team"></div>`;
