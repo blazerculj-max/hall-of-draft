@@ -222,7 +222,8 @@
 .hod-pk-ai-title{font-family:'Oswald';font-size:11px;color:var(--muted);}
 .hod-pk-ai-card.beaten .hod-pk-ai-title{color:var(--green);}
 /* Vs AI dvoboj */
-.hod-vs-side{max-width:520px;margin:0 auto;padding:10px 12px;border-radius:14px;background:#161b2a;border:1px solid var(--gold-warm);box-shadow:0 8px 22px rgba(0,0,0,.55);}
+.hod-vs-side{max-width:680px;margin:0 auto;padding:10px 12px;border-radius:14px;background:#161b2a;border:1px solid var(--gold-warm);box-shadow:0 8px 22px rgba(0,0,0,.55);}
+@media(max-width:560px){ .hod-vs-side{max-width:520px;} }
 .hod-vs-side.you{border-color:var(--gold);}
 .hod-vs-head{font-family:'Bebas Neue';font-size:16px;letter-spacing:.5px;color:var(--ink);display:flex;align-items:center;gap:8px;margin-bottom:8px;}
 .hod-vs-emoji{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;}
@@ -230,27 +231,30 @@
 .hod-vs-total.gold{color:var(--gold);}
 .hod-vs-mid{font-family:'Bebas Neue';letter-spacing:2px;color:var(--muted);font-size:13px;margin:8px 0;}
 .hod-pkm-row{display:flex;gap:5px;justify-content:center;}
-.hod-pkm-card-wrap{position:relative;flex:1 1 0;max-width:96px;cursor:pointer;}
+.hod-pkm-card-wrap{position:relative;flex:1 1 0;max-width:124px;cursor:pointer;}
 .hod-pkm-card-wrap.held{cursor:default;}
 .hod-pkm-card-wrap.spinning .hod-pkm-card{animation:pkspin .34s ease;}
-.hod-pkm-tap{font-family:'Bebas Neue';font-size:9px;letter-spacing:1px;color:var(--muted);margin-top:2px;}
-.hod-pkm-card{position:relative;background:#1a1a28;border:1.5px solid var(--line);border-radius:9px;padding:7px 3px 6px;}
+.hod-pkm-card{position:relative;background:#1a1a28;border:1.5px solid var(--line);border-radius:9px;padding:10px 4px 8px;}
 .hod-pkm-card.held{border-color:var(--gold);background:rgba(255,182,39,.1);}
 .hod-pkm-lock{position:absolute;top:2px;right:3px;font-size:9px;}
-.hod-pkm-av{position:relative;width:34px;height:34px;border-radius:50%;margin:0 auto 3px;display:flex;align-items:center;
-  justify-content:center;font-family:'Anton';font-size:12px;color:#fff;overflow:hidden;border:1.5px solid rgba(255,255,255,.2);}
+.hod-pkm-av{position:relative;width:46px;height:46px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;
+  justify-content:center;font-family:'Anton';font-size:15px;color:#fff;overflow:hidden;border:1.5px solid rgba(255,255,255,.2);}
 .hod-pkm-av span{position:absolute;z-index:1;}
 .hod-pkm-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 8%;z-index:2;}
-.hod-pkm-name{font-family:'Oswald';font-size:9px;color:var(--ink);line-height:1.15;min-height:22px;display:flex;align-items:center;justify-content:center;text-align:center;}
-.hod-pkm-pos{font-family:'Bebas Neue';font-size:10px;letter-spacing:.5px;color:#c4a8ff;line-height:1;margin:1px 0;}
+.hod-pkm-name{font-family:'Oswald';font-size:11px;color:var(--ink);line-height:1.15;min-height:26px;display:flex;align-items:center;justify-content:center;text-align:center;}
+.hod-pkm-pos{font-family:'Bebas Neue';font-size:12px;letter-spacing:.5px;color:#c4a8ff;line-height:1;margin:1px 0;}
 .hod-pkm-card.ai-lock{animation:ailock .48s ease;border-color:var(--gold)!important;}
 @keyframes ailock{0%{transform:scale(1);box-shadow:0 0 0 rgba(255,182,39,0);}40%{transform:scale(1.12);box-shadow:0 0 18px rgba(255,182,39,.7);}100%{transform:scale(1);box-shadow:0 0 8px rgba(255,182,39,.3);}}
-.hod-pkm-rating{font-family:'Anton';font-size:17px;color:var(--gold);line-height:1;}
+.hod-pkm-rating{font-family:'Anton';font-size:21px;color:var(--gold);line-height:1;}
+.hod-pkm-tap{font-family:'Bebas Neue';font-size:11px;letter-spacing:1px;color:var(--muted);margin-top:3px;}
 @media(max-width:560px){
+  .hod-pkm-card-wrap{max-width:96px;}
+  .hod-pkm-card{padding:7px 3px 6px;}
   .hod-pkm-rating{font-size:14px;}
   .hod-pkm-av{width:28px;height:28px;font-size:10px;}
-  .hod-pkm-name{font-size:8px;}
+  .hod-pkm-name{font-size:8px;min-height:22px;}
   .hod-pkm-pos{font-size:9px;}
+  .hod-pkm-tap{font-size:9px;}
 }
 /* power-up bar */
 .hod-pu-bar{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
