@@ -2407,6 +2407,7 @@ const DRAFT_MUTATORS=[
   {id:'dimers', name:'Podajalci', icon:'🎻', desc:'Prednost igralcem z visokimi asistencami.', filter:null, biasStat:'ast'},
 ];
 let _draftMutator=null;
+let _mutatorShown=false;
 function pickDraftMutator(){
   // SOLO draft: brez naključnih twistov (zaenkrat). Modifierji so del Daily.
   _draftMutator=DRAFT_MUTATORS[0];
@@ -6182,7 +6183,7 @@ function dailyStatusLine(){
 
 function startDaily(){
   dailyMode=true; quickMode=false;
-  _draftMutator=dailyMutatorObj(); // dnevni modifier (isti za vse, povezan s ciljem)
+  _draftMutator=dailyMutatorObj(); _mutatorShown=false; // dnevni modifier (isti za vse, povezan s ciljem)
   setSeed(todaySeed());
   numPlayers=1; mp=null;
   const db=dailyBudget();
@@ -7157,7 +7158,7 @@ async function openSellDialog(uid, mb){
     <div class="hod-nick-sub">Določi ceno v kovancih, za katero prodajaš kartico.</div>
     <div style="margin:12px 0;text-align:left">
       <label style="font-size:13px;color:var(--amber)">Cena (🪙 kovanci):</label>
-      <input type="number" id="hod-sell-price" min="0" placeholder="vpiši ceno…" style="width:100%;box-sizing:border-box;background:#fff;border:2px solid var(--gold-warm);border-radius:8px;padding:8px;font-size:15px;margin:4px 0 8px">
+      <input type="number" id="hod-sell-price" min="0" placeholder="vpiši ceno…" style="width:100%;box-sizing:border-box;background:#fff;color:#15171d;border:2px solid var(--gold-warm);border-radius:8px;padding:8px;font-size:15px;margin:4px 0 8px">
       <div id="hod-sell-hints" class="hod-sell-hints">Nalagam cenovne namige…</div>
     </div>
     <div class="hod-nick-btns">
@@ -7796,8 +7797,9 @@ function showSeasonChoices(){
   document.querySelectorAll('#hod-action .hod-season-card').forEach(c=>{
     c.onclick=()=>{
       chosenSeason=seasonChoices[+c.dataset.i];
-      // SOLO: brez twista. DAILY: pokaži najavo dnevnega modifierja
-      if(dailyMode && !quickMode && _draftMutator && _draftMutator.id!=='none'){
+      // SOLO: brez twista. DAILY: pokaži najavo dnevnega modifierja SAMO PRVIČ na draft
+      if(dailyMode && !quickMode && _draftMutator && _draftMutator.id!=='none' && !_mutatorShown){
+        _mutatorShown=true;
         showMutatorIntro(()=>makeOffer());
       } else {
         makeOffer();
