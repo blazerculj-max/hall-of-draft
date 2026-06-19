@@ -591,6 +591,20 @@
 .hod-alb-team-h{padding-left:8px;}
 .hod-alb-team-nm{font-family:'Bebas Neue';letter-spacing:1px;}
 .hod-alb-cell.filled{cursor:pointer;}
+/* === PANINI MINI-NALEPKA v albumu (kot paket, kompaktno) === */
+.hod-stkmini{padding:0!important;background:#f4ead2!important;overflow:hidden;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;}
+.hod-stkmini::after{display:none!important;}
+.hod-stkmini-pos{position:absolute;top:3px;right:4px;z-index:4;font-family:'Anton';font-size:8px;color:#fff;background:rgba(0,0,0,.42);border-radius:4px;padding:0 5px;letter-spacing:.3px;}
+.hod-stkmini-photo{position:relative;width:100%;flex:1;min-height:0;background:linear-gradient(160deg,var(--tc1,#b89a78),var(--tc2,#8a6d3b));overflow:hidden;}
+.hod-stkmini-photo img{position:absolute;bottom:0;left:50%;transform:translateX(-50%);height:116%;width:auto;max-width:none;object-fit:contain;object-position:bottom;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));}
+.hod-stkmini-photo::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,transparent 45%,rgba(0,0,0,.18) 100%);}
+.hod-stkmini-info{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:2px 4px 3px;background:#f7f0df;border-top:2px solid var(--tc1,#b89a78);position:relative;z-index:2;}
+.hod-stkmini-nm{font-family:'Anton';font-size:8px;color:#1a2030;line-height:.95;text-align:left;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hod-stkmini-rt{font-family:'Anton';font-size:13px;color:#1a2030;line-height:1;flex:none;}
+.hod-stkmini.elite{box-shadow:inset 0 0 0 2px var(--gold),0 0 10px rgba(255,209,102,.4)!important;}
+.hod-stkmini.elite .hod-stkmini-rt{color:#c8920a;}
+.hod-stkmini.good{box-shadow:inset 0 0 0 2px #8fb3d9!important;}
+.hod-stkmini .hod-alb-num{background:rgba(0,0,0,.35);color:#fff;}
 /* povečana kartica z obračanjem */
 .hod-cd-overlay{align-items:center;}
 /* NAGRADE */
@@ -6428,12 +6442,18 @@ function renderAlbumGrid(byDec){
         ${isTarget?'<div class="hod-alb-here">tukaj!</div>':waiting?'<div class="hod-alb-waitmark">●</div>':''}
       </div>`;
     }
-    return `<div class="hod-alb-cell rar-${c.rarity} filled" data-card="${c.uid}">
-      ${ribbon}
+    const tc1=teamColor(c.team), tc2=(typeof teamColor2==='function'?teamColor2(c.team):tc1);
+    const elite=(c.rating>=92)?'elite':(c.rating>=85?'good':'');
+    const allPos=(typeof playerPositions==='function')?playerPositions(c):null;
+    const posStr=allPos?allPos.join('/'):(c.pos||'');
+    return `<div class="hod-alb-cell rar-${c.rarity} filled hod-stkmini ${elite}" data-card="${c.uid}" style="--tc1:${tc1};--tc2:${tc2}">
       <div class="hod-alb-num">${c.num}</div>
-      <div class="hod-alb-photo">${avatarImg(c.pid,'')}</div>
-      <div class="hod-alb-fullnm">${escapeHtml(c.name)}</div>
-      <div class="hod-alb-rt">${c.rating}</div>
+      <div class="hod-stkmini-pos">${posStr}</div>
+      <div class="hod-stkmini-photo">${avatarImg(c.pid,'')}</div>
+      <div class="hod-stkmini-info">
+        <div class="hod-stkmini-nm">${escapeHtml(c.name)}</div>
+        <div class="hod-stkmini-rt">${c.rating}</div>
+      </div>
     </div>`;
   };
   // grupiraj po EKIPI; znotraj ekipe po ratingu
