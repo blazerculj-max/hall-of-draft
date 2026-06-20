@@ -248,13 +248,14 @@
 .hod-pkm-rating{font-family:'Anton';font-size:21px;color:var(--gold);line-height:1;}
 .hod-pkm-tap{font-family:'Bebas Neue';font-size:11px;letter-spacing:1px;color:var(--muted);margin-top:3px;}
 @media(max-width:560px){
-  .hod-pkm-card-wrap{max-width:96px;}
-  .hod-pkm-card{padding:7px 3px 6px;}
-  .hod-pkm-rating{font-size:14px;}
-  .hod-pkm-av{width:28px;height:28px;font-size:10px;}
-  .hod-pkm-name{font-size:8px;min-height:22px;}
-  .hod-pkm-pos{font-size:9px;}
-  .hod-pkm-tap{font-size:9px;}
+  .hod-pkm-card-wrap{max-width:108px;}
+  .hod-pkm-card{padding:8px 3px 7px;}
+  .hod-pkm-rating{font-size:17px;}
+  .hod-pkm-av{width:36px;height:36px;font-size:12px;}
+  .hod-pkm-name{font-size:9px;min-height:24px;}
+  .hod-pkm-pos{font-size:10px;}
+  .hod-pkm-tap{font-size:10px;}
+  .hod-pkm-row{gap:4px;}
 }
 /* power-up bar */
 .hod-pu-bar{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
@@ -596,10 +597,10 @@
 .hod-alb-team-nm{font-family:'Bebas Neue';letter-spacing:1px;}
 .hod-alb-cell.filled{cursor:pointer;}
 /* === PANINI MINI-NALEPKA v albumu (kot paket, kompaktno) === */
-.hod-stkmini{padding:0!important;background:#f4ead2!important;overflow:hidden;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;}
+.hod-stkmini{padding:0!important;background:#f4ead2!important;overflow:hidden;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;min-height:96px;}
 .hod-stkmini::after{display:none!important;}
 .hod-stkmini-pos{position:absolute;top:3px;right:4px;z-index:4;font-family:'Anton';font-size:8px;color:#fff;background:rgba(0,0,0,.42);border-radius:4px;padding:0 5px;letter-spacing:.3px;}
-.hod-stkmini-photo{position:relative;width:100%;flex:1;min-height:0;background:linear-gradient(160deg,var(--tc1,#b89a78),var(--tc2,#8a6d3b));overflow:hidden;}
+.hod-stkmini-photo{position:relative;width:100%;height:68px;flex:none;background:linear-gradient(160deg,var(--tc1,#b89a78),var(--tc2,#8a6d3b));overflow:hidden;}
 .hod-stkmini-photo img{position:absolute;bottom:0;left:50%;transform:translateX(-50%);height:116%;width:auto;max-width:none;object-fit:contain;object-position:bottom;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));}
 .hod-stkmini-photo::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,transparent 45%,rgba(0,0,0,.18) 100%);}
 .hod-stkmini-info{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:2px 4px 3px;background:#f7f0df;border-top:2px solid var(--tc1,#b89a78);position:relative;z-index:2;}
@@ -7041,10 +7042,27 @@ function renderMiniTeam(host, stickId, unstuckBody){
       return {label:sz, cards:arr, isTarget:sz===targetSeason};
     });
   }
+  const paniniStuck=(c)=>{
+    const isMomentCard=(!!c.moment || ['moment','lowlight','slovenski'].includes(c.rarity));
+    const tc1=isMomentCard?'#ff4d6d':teamColor(c.team), tc2=isMomentCard?'#b3324a':(typeof teamColor2==='function'?teamColor2(c.team):tc1);
+    const elite=(!isMomentCard&&c.rating>=92)?'elite':(!isMomentCard&&c.rating>=85?'good':'');
+    const allPos=(typeof playerPositions==='function'&&!isMomentCard)?playerPositions(c):null;
+    const posStr=allPos?allPos.join('/'):(c.pos||'');
+    const ph=isMomentCard&&hasMomentImg&&hasMomentImg(c.id)?`<img src="assets/moments/${c.id}.png" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);height:116%;width:auto;object-fit:contain" onerror="this.style.display='none'">`:avatarImg(c.pid,'');
+    return {tc1,tc2,elite,posStr,ph,isMomentCard};
+  };
   const cellOf=(c)=>{
     const id=c.id||c.uid;
     const stuck=col[id]&&col[id].stuck;
     const isPartCell=c.part&&c.baseId;
+    if(stuck && !isPartCell){
+      const p=paniniStuck(c);
+      return `<div class="hod-alb-cell rar-${c.rarity} mini-cell hod-stkmini ${p.elite}" style="--tc1:${p.tc1};--tc2:${p.tc2}">
+        <div class="hod-stkmini-pos">${p.isMomentCard?(c.slovenski?'🇸🇮':c.lowlight?'💀':'⭐'):p.posStr}</div>
+        <div class="hod-stkmini-photo">${p.ph}</div>
+        <div class="hod-stkmini-info"><div class="hod-stkmini-nm">${escapeHtml(c.name||'')}</div><div class="hod-stkmini-rt">${c.val||c.rating}</div></div>
+      </div>`;
+    }
     const photoHtml = isPartCell ? momentPartImgTag(c.baseId, c.part, 'hod-alb-photo-img') : avatarImg(c.pid,'');
     if(stuck){
       return `<div class="hod-alb-cell rar-${c.rarity} mini-cell">
@@ -7079,13 +7097,23 @@ function renderMiniTeam(host, stickId, unstuckBody){
         taskProgress('stick5');
         const c=catMap[id];
         const isPartCell=c.part&&c.baseId;
-        const photoHtml=isPartCell?momentPartImgTag(c.baseId,c.part,'hod-alb-photo-img'):avatarImg(c.pid,'');
         tgt.classList.remove('empty','target','mini-target');
         tgt.classList.add('rar-'+c.rarity,'mini-peel');
-        tgt.innerHTML=`<div class="hod-alb-photo">${photoHtml}</div>
-          <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
-          <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${isPartCell?c.part+'/3':(c.val||c.rating)}</div>
-          <div class="hod-stick-stamp">✓</div>`;
+        if(!isPartCell){
+          const p=paniniStuck(c);
+          tgt.classList.add('hod-stkmini'); if(p.elite)tgt.classList.add(p.elite);
+          tgt.style.setProperty('--tc1',p.tc1); tgt.style.setProperty('--tc2',p.tc2);
+          tgt.innerHTML=`<div class="hod-stkmini-pos">${p.isMomentCard?(c.slovenski?'🇸🇮':c.lowlight?'💀':'⭐'):p.posStr}</div>
+            <div class="hod-stkmini-photo">${p.ph}</div>
+            <div class="hod-stkmini-info"><div class="hod-stkmini-nm">${escapeHtml(c.name||'')}</div><div class="hod-stkmini-rt">${c.val||c.rating}</div></div>
+            <div class="hod-stick-stamp">✓</div>`;
+        } else {
+          const photoHtml=momentPartImgTag(c.baseId,c.part,'hod-alb-photo-img');
+          tgt.innerHTML=`<div class="hod-alb-photo">${photoHtml}</div>
+            <div class="hod-alb-fullnm">${escapeHtml(c.name||'')}</div>
+            <div class="hod-alb-rt" style="color:${RARITY_DEFS[c.rarity].col}">${c.part+'/3'}</div>
+            <div class="hod-stick-stamp">✓</div>`;
+        }
         hodToast('✅ <b>Prilepljeno!</b>');
         if(typeof syncProgress==='function') syncProgress();
         // če se je s tem sestavil cel 3-delni moment -> poseben efekt
