@@ -530,6 +530,8 @@
   border-radius:8px;min-width:30px;height:30px;display:flex;align-items:center;justify-content:center;padding:0 6px;}
 .hod-xp-track{flex:1;height:10px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;position:relative;}
 .hod-xp-fill{height:100%;background:linear-gradient(90deg,#7d3c98,#b388d9,var(--gold));border-radius:6px;transition:width .5s;}
+.hod-chal-link{font-family:monospace;font-size:11px;color:var(--gold);background:rgba(0,0,0,.35);
+  border:1px solid var(--gold-warm);border-radius:8px;padding:8px 10px;word-break:break-all;line-height:1.4;}
 .hod-howto-overlay,.hod-mut-card,.hod-strk-wrap,.hod-slot-card,.hod-season-card,.hod-season-choices,.hod-roul-won{color:#f4f4f8;}
 .hod-season-card .hod-season-yr{color:#f4f4f8;}
 .hod-season-card .hod-season-meta{color:#b89a78;}
@@ -1736,10 +1738,19 @@ const POSITIONS=["PG","SG","SF","PF","C"];
 // ===== SEEDED RNG (za dnevni izziv) =====
 // mulberry32 — deterministični generator. Ko je dailyMode aktiven, rng() = seeded.
 let _seed=0, dailyMode=false, quickMode=false;
-function setSeed(s){ _seed=s>>>0; }
-// Sezone in igralci so zdaj VEDNO naključni (element sreče, roguelike občutek).
-// Cilj dneva in budget ostaneta fiksna za vse (dailyGoal/dailyBudget uporabljata todaySeed neposredno).
-function rng(){ return Math.random(); }
+let _seededMode=false;          // ko je true, rng() je determinističen (za izzive prijateljev)
+let _rngState=0;
+function setSeed(s){ _seed=s>>>0; _rngState=_seed||1; }
+// Mulberry32 — determinističen RNG; isti seed = isto zaporedje (za "isti draft")
+function rng(){
+  if(!_seededMode) return Math.random();
+  _rngState|=0; _rngState=(_rngState+0x6D2B79F5)|0;
+  let t=Math.imul(_rngState^(_rngState>>>15), 1|_rngState);
+  t=(t+Math.imul(t^(t>>>7), 61|t))^t;
+  return ((t^(t>>>14))>>>0)/4294967296;
+}
+function startSeededMode(seed){ _seededMode=true; setSeed(seed); }
+function endSeededMode(){ _seededMode=false; }
 function todaySeed(){
   const d=new Date();
   return parseInt(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`);
@@ -9358,6 +9369,12 @@ function showResult(){
   phase="result";
   const ev=evaluateTeam();
   const gr=gradeFor(ev.overall);
+  // če je bil to IZZIV prijatelja: izklopi seeded način in zapomni za primerjavo
+  let challengeResult=null;
+  if(_activeChallenge){
+    endSeededMode();
+    challengeResult={...{}, ...(_activeChallenge), myScore:ev.overall};
+  }
   // XP za dokončan draft: osnova + bonus po overall (boljša ekipa = več XP)
   if(!_xpAwardedThisDraft){
     _xpAwardedThisDraft=true;
@@ -9409,9 +9426,11 @@ function showResult(){
         porabljeno $${budgetSpent} / $${budgetTotal} (ostalo $${budgetLeft()})
       </div>`:''}
       ${dailyMode?dailyResultBanner(ev, res):''}
+      ${challengeResult?challengeBanner(challengeResult):''}
       <div class="hod-final-roster">${cards}</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn" id="hod-post" style="background:linear-gradient(180deg,#2ec4b6,#23998d);box-shadow:0 5px 0 #1a7268">📊 Objavi rezultat</button>
+        <button class="hod-btn" id="hod-challenge" style="background:linear-gradient(180deg,#ff8c42,#e0662a);box-shadow:0 5px 0 #b04d1a">⚔️ Izzovi prijatelja</button>
         ${dailyMode?'<button class="hod-btn" id="hod-share" style="background:linear-gradient(180deg,#4cc9f0,#3a9fc4);box-shadow:0 5px 0 #2a7a99">Deli</button>':''}
         <button class="hod-btn secondary" id="hod-edit">Uredi postavitev</button>
         <button class="hod-btn secondary" id="hod-replay">${dailyMode?'Znova':'Nova ekipa'}</button>
@@ -9438,6 +9457,13 @@ function showResult(){
   }
   const sh=document.getElementById('hod-share');
   if(sh) sh.onclick=()=>shareDaily(ev, res);
+  const chal=document.getElementById('hod-challenge');
+  if(chal){
+    if(challengeResult){ chal.innerHTML='⚔️ Vrni izziv'; }
+    chal.onclick=()=>createChallenge(ev.overall);
+  }
+  // po prikazu rezultata izziva počisti stanje (da naslednja igra ni izziv)
+  if(challengeResult){ _activeChallenge=null; history.replaceState(null,'',location.pathname); }
   const po=document.getElementById('hod-post');
   if(isLoggedIn && isLoggedIn() && currentUser()){
     // prijavljen: objavi SAMODEJNO, skrij gumb
@@ -9454,6 +9480,23 @@ function showResult(){
 }
 
 // dnevni cilj banner v rezultatu
+// banner primerjave izziva
+function challengeBanner(cr){
+  const won=cr.myScore>cr.fromScore;
+  const tie=cr.myScore===cr.fromScore;
+  const verdict=won?'🏆 ZMAGAL SI!':tie?'🤝 IZENAČENO!':'😤 Izgubil si';
+  const col=won?'var(--green)':tie?'var(--gold)':'var(--red)';
+  return `<div class="hod-daily-banner ${won?'done':'pending'}" style="border-color:${col}">
+    <div style="font-family:'Bebas Neue';font-size:16px;letter-spacing:1px">⚔️ IZZIV PROTI ${escapeHtml(cr.fromName).toUpperCase()}</div>
+    <div style="display:flex;justify-content:center;gap:24px;margin:8px 0;font-family:'Anton'">
+      <div><div style="font-size:11px;color:var(--muted)">TI</div><div style="font-size:28px;color:${won||tie?'var(--gold)':'var(--ink)'}">${cr.myScore}</div></div>
+      <div style="align-self:center;font-size:18px;color:var(--muted)">vs</div>
+      <div><div style="font-size:11px;color:var(--muted)">${escapeHtml(cr.fromName)}</div><div style="font-size:28px;color:${!won&&!tie?'var(--gold)':'var(--ink)'}">${cr.fromScore}</div></div>
+    </div>
+    <div style="font-size:20px;font-weight:700;color:${col}">${verdict}</div>
+  </div>`;
+}
+function challengeBanner_unused(){}
 function dailyResultBanner(ev, sim){
   const g=dailyGoal();
   const done=g.test(ev, sim);
@@ -9491,6 +9534,97 @@ function saveDailyResult(ev, sim){
   return {done, firstWinToday, firstPlayToday};
 }
 
+// ===== IZZIV PRIJATELJA (1v1 na isti seed) =====
+let _activeChallenge=null; // {seed, kind, fromName, fromScore}
+// kodiraj izziv v kratko kodo (base36): seed|kind|score|ime
+function encodeChallenge(seed, kind, score, name){
+  const kindN={long:0, short:1, daily:2}[kind]||0;
+  const safeName=(name||'Igralec').slice(0,12).replace(/[|]/g,'');
+  const raw=`${seed}|${kindN}|${Math.round(score)}|${safeName}`;
+  return btoa(unescape(encodeURIComponent(raw))).replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_');
+}
+function decodeChallenge(code){
+  try{
+    const b64=code.replace(/-/g,'+').replace(/_/g,'/');
+    const raw=decodeURIComponent(escape(atob(b64)));
+    const [seed,kindN,score,name]=raw.split('|');
+    const kind=['long','short','daily'][+kindN]||'long';
+    return {seed:parseInt(seed)>>>0, kind, fromScore:parseInt(score)||0, fromName:name||'Igralec'};
+  }catch(e){ return null; }
+}
+function createChallenge(myOverall){
+  // ustvari seed za prijatelja (nov, naključen) — on igra isti seeded draft
+  const seed=(Math.floor(Math.random()*0xFFFFFFF))>>>0;
+  const me=currentUser()||getNick()||'Igralec';
+  const code=encodeChallenge(seed, draftKind, myOverall, me);
+  const link=`${location.origin}${location.pathname}?izziv=${code}`;
+  const txt=`🏀 Hall of Draft — IZZIV!\n${me} je sestavil ekipo z OVERALL ${myOverall}.\nA jo lahko premagaš? Isti draft, iste karte:\n${link}`;
+  // pokaži dialog
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-mut-card hod-pop" style="max-width:360px">
+    <div style="font-size:40px;margin-bottom:4px">⚔️</div>
+    <div class="hod-mut-name" style="font-size:22px">Izzovi prijatelja</div>
+    <div style="font-family:'Oswald';font-size:14px;color:var(--ink);line-height:1.5;margin-bottom:14px">
+      Tvoj cilj: <b style="color:var(--gold)">OVERALL ${myOverall}</b><br>
+      Prijatelj dobi <b>isti draft</b> (iste sezone, iste karte). Zmaga, kdor bolje izbere!
+    </div>
+    <div class="hod-chal-link">${link}</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px">
+      <button class="hod-btn gold" id="hod-chal-copy">📋 Kopiraj povezavo</button>
+      <button class="hod-btn secondary" id="hod-chal-close">Zapri</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#hod-chal-close').onclick=()=>ov.remove();
+  ov.querySelector('#hod-chal-copy').onclick=()=>{
+    if(navigator.share){ navigator.share({text:txt}).catch(()=>copyShare(txt)); }
+    else copyShare(txt);
+  };
+}
+// ob zagonu: zaznaj ?izziv= v URL
+function checkChallengeURL(){
+  try{
+    const params=new URLSearchParams(location.search);
+    const code=params.get('izziv');
+    if(!code) return false;
+    const ch=decodeChallenge(code);
+    if(!ch) return false;
+    _activeChallenge=ch;
+    showChallengeIntro(ch);
+    return true;
+  }catch(e){ return false; }
+}
+function showChallengeIntro(ch){
+  const kindLbl={long:'Dolgi draft (10)', short:'Kratki draft (5+1)', daily:'Dnevni izziv'}[ch.kind]||'Draft';
+  screen.innerHTML=`<div class="hod-slot-stage hod-fade" style="text-align:center;padding-top:30px">
+    <div style="font-size:54px;margin-bottom:8px">⚔️</div>
+    <div class="hod-stage-label">Izziv prijatelja</div>
+    <div class="hod-grade hod-pop" style="color:var(--gold);font-size:30px;margin:10px 0">${escapeHtml(ch.fromName)}</div>
+    <div style="font-family:'Oswald';font-size:16px;color:var(--ink);line-height:1.6;max-width:400px;margin:0 auto 8px">
+      te izziva v <b>${kindLbl}</b>!<br>
+      Njegov rezultat: <b style="color:var(--gold-deep);font-size:22px">OVERALL ${ch.fromScore}</b>
+    </div>
+    <div style="font-size:13px;color:var(--muted);max-width:400px;margin:0 auto 22px;line-height:1.5">
+      Dobiš <b>popolnoma isti draft</b> — iste sezone, iste karte na voljo. Zmaga, kdor bolje izbere. Srečno!
+    </div>
+    <button class="hod-btn gold" id="hod-chal-start" style="font-size:17px;padding:14px 30px">▶ Sprejmi izziv</button>
+    <div style="margin-top:12px"><button class="hod-btn secondary" id="hod-chal-skip">Ne, hvala — domov</button></div>
+  </div>`;
+  document.getElementById('hod-chal-start').onclick=()=>startChallengeDraft(ch);
+  document.getElementById('hod-chal-skip').onclick=()=>{ _activeChallenge=null; history.replaceState(null,'',location.pathname); goHome(); };
+}
+function startChallengeDraft(ch){
+  dailyMode=false; quickMode=(ch.kind==='short'); draftKind=ch.kind;
+  numPlayers=1; mp=null;
+  budgetMode=false; budgetTotal=0; budgetSpent=0;
+  selectedEras=new Set();
+  roster=[]; chosenSeason=null; currentOffer=[];
+  _draftMutator=DRAFT_MUTATORS[0]; _mutatorShown=true;
+  startSeededMode(ch.seed); // ISTI seed = isti draft
+  renderProgress();
+  startSpin();
+}
 function shareDaily(ev, sim){
   const g=dailyGoal();
   const done=g.test(ev, sim);
@@ -9815,7 +9949,8 @@ function showLoading(){
   showLoading();
   await loadDataset();
   await restoreSession();
-  showLanding();
+  // če je v URL izziv prijatelja, pokaži izziv namesto landing
+  if(!checkChallengeURL()) showLanding();
   updateSfxBtn();
   updateMusicBtn();
   // ob obisku strani: preveri, če je kdo kupil mojo kartico (prejemek) ali sem kaj kupil
