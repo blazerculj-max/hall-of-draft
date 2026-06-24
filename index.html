@@ -2896,6 +2896,38 @@ async function marketCancel(id){
 }
 // prevzem kupljenih kartic: poišči ponudbe, kjer sem kupec, in jih dodaj v zbirko
 // prevzem ZASLUŽKA: poišči moje ponudbe, ki so prodane (seller=me, status=sold), in pripiši kovance
+// ob zagonu strani: prevzemi zaslužek od prodaj + kupljene kartice in OBVESTI uporabnika
+async function checkMarketActivity(){
+  const me=currentUser(); if(!me) return;
+  let earned=0, bought=0;
+  try{ earned=await marketCollectSales(); }catch(e){}
+  try{ bought=await marketCollectPurchases(); }catch(e){}
+  if(earned>0 || bought>0){
+    if(typeof refreshCoinDisplays==='function') refreshCoinDisplays();
+    if(typeof updateUnstuckBadge==='function') updateUnstuckBadge();
+    // sestavi obvestilo
+    let msg='';
+    if(earned>0 && bought>0) msg=`🛒 <b>Novo na menjavi!</b> Prodal si kartice (🪙 +${earned}) in prejel ${bought} kupljenih.`;
+    else if(earned>0)        msg=`🪙 <b>Nekdo je kupil tvojo kartico!</b> +${earned} kovancev od prodaje.`;
+    else                     msg=`📦 <b>${bought} novih kartic</b> s tvojih nakupov — dodanih med nenalepljene.`;
+    setTimeout(()=>showMarketNotice(msg), 900);
+  }
+}
+function showMarketNotice(msg){
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-mut-card hod-pop" style="max-width:340px">
+    <div style="font-size:42px;margin-bottom:6px">🔔</div>
+    <div style="font-family:'Oswald';font-size:15px;color:var(--ink);line-height:1.5;margin-bottom:18px">${msg}</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="hod-btn gold" id="hod-mn-market">🛒 V menjavo</button>
+      <button class="hod-btn secondary" id="hod-mn-ok">V redu</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#hod-mn-ok').onclick=()=>ov.remove();
+  ov.querySelector('#hod-mn-market').onclick=()=>{ ov.remove(); _albumTab='market'; showAlbum(); };
+}
 async function marketCollectSales(){
   const me=currentUser(); if(!me) return 0;
   const url=`${SUPA_URL}/rest/v1/market?seller=eq.${encodeURIComponent(me)}&status=eq.sold&order=created_at.desc&limit=100`;
@@ -9736,6 +9768,8 @@ function showLoading(){
   showLanding();
   updateSfxBtn();
   updateMusicBtn();
+  // ob obisku strani: preveri, če je kdo kupil mojo kartico (prejemek) ali sem kaj kupil
+  checkMarketActivity();
   document.addEventListener('touchstart', unlockAudio, {once:false, passive:true, capture:true});
   // klik zvok na vse gumbe (delegacija)
   document.addEventListener('click', (e)=>{
