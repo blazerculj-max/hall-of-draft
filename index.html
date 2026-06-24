@@ -555,6 +555,22 @@
   opacity:0;transition:.3s;max-width:90vw;text-align:center;pointer-events:none;}
 .hod-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .hod-toast b{color:var(--amber);}
+.hod-toast-ok{border-color:#2ecc71;background:linear-gradient(180deg,#1e3a2a,#16241c);}
+.hod-toast-ok b{color:#6ee7a0;}
+.hod-toast-err{border-color:#ff5470;background:linear-gradient(180deg,#3a1e26,#241619);}
+.hod-toast-err b{color:#ff97a8;}
+/* univerzalni spinner */
+.hod-spin{width:34px;height:34px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--gold);
+  border-radius:50%;animation:hodspin .8s linear infinite;margin:0 auto;}
+@keyframes hodspin{to{transform:rotate(360deg);}}
+.hod-loadbox{display:flex;flex-direction:column;align-items:center;gap:12px;padding:34px 16px;color:var(--muted);font-family:'Oswald';font-size:13px;}
+/* prazno stanje */
+.hod-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:34px 20px;text-align:center;}
+.hod-empty-ic{font-size:44px;opacity:.5;}
+.hod-empty-txt{font-family:'Oswald';font-size:14px;color:var(--muted);line-height:1.5;max-width:300px;}
+/* retry blok */
+.hod-retry{display:flex;flex-direction:column;align-items:center;gap:12px;padding:30px 16px;text-align:center;}
+.hod-retry-txt{font-family:'Oswald';font-size:13px;color:#ff97a8;}
 /* ===== ALBUM ===== */
 .hod-pack-badge{background:var(--orange);color:#fff;border-radius:20px;padding:0 7px;font-size:13px;margin-left:4px;}
 .hod-alb-summary{font-family:'Oswald';font-size:15px;color:#fff;margin:4px 0 8px;background:rgba(13,17,25,.82);border:1px solid var(--gold-warm);border-radius:8px;padding:5px 12px;display:inline-block;}
@@ -4091,10 +4107,15 @@ async function showLeadersPage(mode){
   screen.querySelectorAll('.hod-ltab').forEach(t=>{ t.onclick=()=>showLeadersPage(t.dataset.m); });
   document.getElementById('hod-leaders-back').onclick=()=>goHome();
   const listBox=document.getElementById('hod-leaders-list');
+  listBox.innerHTML=spinnerHTML('Nalagam lestvico…');
   let rows;
   try{ rows=await supaLeaderboard(mode, todayKey()); }
-  catch(e){ listBox.innerHTML=`<div style="color:var(--red);font-size:12px">lestvice ni bilo mogoče naložiti</div>`; return; }
-  if(!rows.length){ listBox.innerHTML=`<div style="color:var(--muted);font-size:12px">še ni rezultatov — bodi prvi!</div>`; return; }
+  catch(e){
+    listBox.innerHTML=retryHTML('Lestvice ni bilo mogoče naložiti.','hod-ldr-retry');
+    const rb=listBox.querySelector('#hod-ldr-retry'); if(rb) rb.onclick=()=>showLeadersPage(mode);
+    return;
+  }
+  if(!rows.length){ listBox.innerHTML=emptyHTML('🏅','Še ni rezultatov — bodi prvi!'); return; }
   _leadersRows=rows;
   const medals=["🥇","🥈","🥉"];
   const ranks2=[];
@@ -4464,7 +4485,7 @@ function holPickStat(a, b){
 let holState=null;
 function startHigherLower(){
   const list=holPlayerList();
-  if(list.length<10){ alert("Premalo podatkov. Najprej objavi players.json."); showQuizMenu(); return; }
+  if(list.length<10){ toastErr("⚠️ Premalo podatkov. Najprej objavi players.json."); showQuizMenu(); return; }
   holState={ list, stat:null, streak:0, best:0, left:null, right:null };
   holState.left=holPick();
   holState.right=holPickDifferentForStat(holState.left);
@@ -5511,7 +5532,7 @@ function showPokerLadder(){
 
 function startPoker(){
   const list=holPlayerList(); // ista baza igralcev (vse dekade)
-  if(list.length<10){ alert("Premalo podatkov. Najprej objavi players.json."); showQuizMenu(); return; }
+  if(list.length<10){ toastErr("⚠️ Premalo podatkov. Najprej objavi players.json."); showQuizMenu(); return; }
   pokerState={ list, cards:[], held:[false,false,false,false,false], spinsLeft:3, started:false, hotStreak:0, hotMult:1 };
   // prvi delež: 5 naključnih kart
   pokerState.cards=[0,1,2,3,4].map(()=>pokerPick());
@@ -6055,7 +6076,7 @@ function showPowerupSlot(onDone){
 
 function startPokerVsAI(aiIdx){
   const list=holPlayerList();
-  if(list.length<10){ alert("Premalo podatkov. Najprej objavi players.json."); showPokerMenu(); return; }
+  if(list.length<10){ toastErr("⚠️ Premalo podatkov. Najprej objavi players.json."); showPokerMenu(); return; }
   const ai=POKER_AI[aiIdx];
   // oba dobita ISTE začetne karte (pošteno)
   const startCards=[0,1,2,3,4].map(()=>pokerIdentity(list[Math.floor(Math.random()*list.length)]));
@@ -6200,17 +6221,28 @@ function pkPeekRow(){
   return `<div class="hod-peek-wrap"><div class="hod-peek-label">👁️ Vpogled — naslednje možne karte (izginejo ob naslednjem vrtljaju):</div><div class="hod-pkm-row">${cards}</div></div>`;
 }
 // kratko obvestilo (toast), ostane dovolj dolgo da se prebere
-function hodToast(html, ms){
+function hodToast(html, ms, type){
   ms=ms||2600;
   let t=document.getElementById('hod-toast');
   if(t) t.remove();
   t=document.createElement('div');
   t.id='hod-toast';
-  t.className='hod-toast';
+  t.className='hod-toast'+(type?' hod-toast-'+type:'');
   t.innerHTML=html;
   document.body.appendChild(t);
   requestAnimationFrame(()=>t.classList.add('show'));
   setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),300); }, ms);
+}
+// priročni zavoji
+function toastOk(html, ms){ hodToast(html, ms, 'ok'); }
+function toastErr(html, ms){ hodToast(html, ms||3200, 'err'); }
+// UX helperji: spinner / prazno stanje / retry (vrnejo HTML niz)
+function spinnerHTML(label){ return `<div class="hod-loadbox"><div class="hod-spin"></div><div>${label||'Nalagam…'}</div></div>`; }
+function emptyHTML(icon, text, btnLabel, btnId){
+  return `<div class="hod-empty"><div class="hod-empty-ic">${icon||'📭'}</div><div class="hod-empty-txt">${text||''}</div>${btnLabel?`<button class="hod-btn gold" id="${btnId}" style="margin-top:4px">${btnLabel}</button>`:''}</div>`;
+}
+function retryHTML(text, btnId){
+  return `<div class="hod-retry"><div class="hod-empty-ic">⚠️</div><div class="hod-retry-txt">${text||'Nekaj je šlo narobe.'}</div><button class="hod-btn gold" id="${btnId||'hod-retry-btn'}">↻ Poskusi znova</button></div>`;
 }
 function activatePowerup(key){
   const st=pkAI;
@@ -6544,7 +6576,7 @@ async function postQuizScore(mode, score, correct, btn){
   const row={ mode, challenge_day:todayKey(), nickname:nick, overall:Math.min(99,Math.round(score/20)),
     goal_id:null, goal_done:correct>=10, chem:correct, sim_wins:score, sim_title:null, roster:[] };
   try{ await supaSubmit(row); if(btn) btn.textContent="✓ Objavljeno"; _myLastPost={nick,overall:row.overall,mode}; showQuizLeaderboard(mode); }
-  catch(e){ if(btn){ btn.disabled=false; btn.textContent="📊 Objavi rezultat"; } alert("Objava ni uspela. "+e.message); }
+  catch(e){ if(btn){ btn.disabled=false; btn.textContent="📊 Objavi rezultat"; } toastErr("⚠️ Objava ni uspela. "+e.message); }
 }
 async function showQuizLeaderboard(mode, highlight){
   const box=document.getElementById('hod-leaderboard'); if(!box) return;
@@ -6734,7 +6766,7 @@ function showAlbum(){
   if(devb) devb.onclick=()=>{
     const pass=(prompt('Dev geslo:')||'').trim();
     if(pass==='TEST'){ showDevGallery(); }
-    else if(pass) alert('Napačno geslo.');
+    else if(pass) toastErr('⚠️ Napačno geslo.');
   };
   const bt=document.getElementById('hod-alb-backtop'); if(bt) bt.onclick=()=>goHome();
   const ob=document.getElementById('hod-alb-open'); if(ob) ob.onclick=()=>showPackOpening();
@@ -7364,7 +7396,11 @@ function renderUnstuck(body){
   const col=getCollected();
   const catMap=buildCatMap();
   let items=Object.keys(col).filter(k=>!col[k].stuck && (col[k].count||0)>0).map(k=>catMap[k]).filter(Boolean);
-  if(!items.length){ body.innerHTML=`<div class="hod-alb-hint">Nimaš nenalepljenih kartic. Odpri paket ali zaslužiš v igrah!</div>`; return; }
+  if(!items.length){
+    body.innerHTML=emptyHTML('📦','Nimaš nenalepljenih kartic.<br>Odpri paket ali jih prisluži v igrah!','🎁 Odpri paket','hod-unst-open');
+    const ob=body.querySelector('#hod-unst-open'); if(ob) ob.onclick=()=>{ if(getPendingPacks()>0){ _albumTab='packs'; showAlbum(); } else { goHome(); } };
+    return;
+  }
   const teams=[...new Set(items.map(c=>c.team).filter(Boolean))].sort();
   const decs=DECADE_ORDER.filter(d=>items.some(c=>c.era===d));
   let shown=items.filter(c=>(!_unstuckTeam||c.team===_unstuckTeam)&&(!_unstuckDec||c.era===_unstuckDec));
@@ -7588,10 +7624,16 @@ async function renderMarket(body){
   if(_marketView==='mine') return renderMarketMine(mb);
 }
 async function renderMarketBrowse(mb){
-  let rows; try{ rows=await marketList(); }catch(e){ mb.innerHTML=`<div style="color:var(--red);font-size:13px">Marketa ni bilo mogoče naložiti. ${e.message}</div>`; return; }
+  mb.innerHTML=spinnerHTML('Nalagam ponudbe…');
+  let rows;
+  try{ rows=await marketList(); }
+  catch(e){
+    mb.innerHTML=retryHTML('Marketa ni bilo mogoče naložiti.', 'hod-mkt-retry');
+    const rb=mb.querySelector('#hod-mkt-retry'); if(rb) rb.onclick=()=>renderMarketBrowse(mb);
+    return;
+  }
   const me=currentUser();
   let others=rows.filter(r=>r.seller!==me);
-  // filter: vse / samo tiste, ki jih še nimam prilepljene
   const col=getCollected();
   const haveStuck=(uid)=>col[uid]&&col[uid].stuck;
   const filtered = _marketFilter==='missing' ? others.filter(r=>!haveStuck(r.card_uid)) : others;
@@ -7599,11 +7641,13 @@ async function renderMarketBrowse(mb){
     <button class="hod-mkt-fbtn ${_marketFilter==='all'?'on':''}" data-f="all">Vse nalepke</button>
     <button class="hod-mkt-fbtn ${_marketFilter==='missing'?'on':''}" data-f="missing">Samo ki jih nimam</button>
   </div>`;
-  if(!others.length){ mb.innerHTML=filterBar+`<div class="hod-alb-hint">Trenutno ni ponudb drugih igralcev. Bodi prvi — daj dvojnik naprodaj!</div>`; }
-  else if(!filtered.length){ mb.innerHTML=filterBar+`<div class="hod-alb-hint">Vse ponujene nalepke že imaš prilepljene. 🎉 Preklopi na "Vse nalepke".</div>`; }
+  if(!others.length){ mb.innerHTML=filterBar+emptyHTML('🏪','Trenutno ni ponudb drugih igralcev. Bodi prvi — daj dvojnik naprodaj!','💰 Prodaj dvojnik','hod-mkt-tosell'); }
+  else if(!filtered.length){ mb.innerHTML=filterBar+emptyHTML('🎉','Vse ponujene nalepke že imaš prilepljene!','Pokaži vse nalepke','hod-mkt-showall'); }
   else mb.innerHTML=filterBar+`<div class="hod-mkt-grid">`+filtered.map(r=>marketCardHtml(r,'buy')).join('')+`</div>`;
   mb.querySelectorAll('.hod-mkt-fbtn').forEach(b=>b.onclick=()=>{ _marketFilter=b.dataset.f; renderMarketBrowse(mb); });
   mb.querySelectorAll('.hod-mkt-buy').forEach(btn=>btn.onclick=()=>buyFromMarket(btn.dataset.id, mb));
+  const ts=mb.querySelector('#hod-mkt-tosell'); if(ts) ts.onclick=()=>{ _marketView='sell'; renderMarket(document.getElementById('hod-mkt-body')?.closest('[id]')||mb.parentElement); };
+  const sa=mb.querySelector('#hod-mkt-showall'); if(sa) sa.onclick=()=>{ _marketFilter='all'; renderMarketBrowse(mb); };
 }
 function marketCardHtml(r, mode){
   const rar=r.card_rarity||'common';
@@ -7624,7 +7668,7 @@ function marketCardHtml(r, mode){
 }
 async function buyFromMarket(id, mb){
   const me=currentUser(); if(!me){ showAlbumLocked(); return; }
-  let rows; try{ rows=await marketList(); }catch(e){ alert('Napaka pri marketu.'); return; }
+  let rows; try{ rows=await marketList(); }catch(e){ toastErr('⚠️ Marketa ni bilo mogoče naložiti.'); return; }
   const offer=rows.find(r=>r.id===id);
   if(!offer){ hodToast('Ponudba ni več na voljo.'); renderMarketBrowse(mb); return; }
   const price=offer.price||0;
@@ -7737,7 +7781,7 @@ async function openSellDialog(uid, mb){
       _marketView='sell'; renderMarket(document.getElementById('hod-alb-body'));
     }catch(e){
       okBtn.disabled=false; okBtn.textContent='Objavi na market';
-      alert('Objava ni uspela: '+e.message);
+      toastErr('⚠️ Objava ni uspela: '+e.message);
     }
   };
 }
@@ -9806,8 +9850,8 @@ function shareDaily(ev, sim){
   } else copyShare(txt);
 }
 function copyShare(txt){
-  try{ navigator.clipboard.writeText(txt); alert("Rezultat kopiran! Prilepi ga kamorkoli."); }
-  catch(e){ alert(txt); }
+  try{ navigator.clipboard.writeText(txt); toastOk("✓ Rezultat kopiran! Prilepi ga kamorkoli."); }
+  catch(e){ toastErr("Kopiranje ni uspelo — povezavo prekopiraj ročno."); }
 }
 
 // ===== LESTVICA: objava + prikaz =====
@@ -9853,7 +9897,7 @@ async function postToLeaderboard(ev, sim, btn, silent){
   }catch(e){
     if(btn){ btn.disabled=false; btn.textContent="📊 Objavi rezultat"; }
     console.error('OBJAVA PADLA:', e.message);
-    if(!silent) alert("Objava ni uspela.\n\nRazlog: "+e.message);
+    if(!silent) toastErr("⚠️ Objava ni uspela: "+e.message);
   }
 }
 let _myLastPost=null;
@@ -9864,11 +9908,15 @@ async function showLeaderboard(){
   const mode=currentMode();
   const modeName={daily:`Dnevna lestvica · ${todayKey()}`, long:'Lestvica · Dolgi draft (10)', short:'Lestvica · Kratki draft (5+1)'};
   const title=modeName[mode]||'Lestvica';
-  box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
+  box.innerHTML=`<div class="hod-lb-title">${title}</div>`+spinnerHTML('Nalagam lestvico…');
   let rows;
   try{ rows=await supaLeaderboard(mode, todayKey()); }
-  catch(e){ box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--red);font-size:12px">lestvice ni bilo mogoče naložiti</div>`; return; }
-  if(!rows.length){ box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">še ni rezultatov — bodi prvi!</div>`; return; }
+  catch(e){
+    box.innerHTML=`<div class="hod-lb-title">${title}</div>`+retryHTML('Lestvice ni bilo mogoče naložiti.','hod-lb-retry');
+    const rb=box.querySelector('#hod-lb-retry'); if(rb) rb.onclick=()=>showLeaderboard();
+    return;
+  }
+  if(!rows.length){ box.innerHTML=`<div class="hod-lb-title">${title}</div>`+emptyHTML('🏅','Še ni rezultatov v tej lestvici — bodi prvi!'); return; }
   _lbRows=rows;
   const medals=["🥇","🥈","🥉"];
 
