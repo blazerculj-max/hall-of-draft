@@ -5374,13 +5374,23 @@ const TEAM_DIV={
   GSW:'PAC', LAC:'PAC', LAL:'PAC', PHO:'PAC', PHX:'PAC', SAC:'PAC',
   // Southwest
   Mavericks:'SW', Rockets:'SW', Grizzlies:'SW', Pelicans:'SW', Spurs:'SW',
-  DAL:'SW', HOU:'SW', MEM:'SW', NOP:'SW', NOH:'SW', SAS:'SW',
+  DAL:'SW', HOU:'SW', MEM:'SW', NOP:'SW', NOH:'SW', SAS:'SW', VAN:'SW',
+  // zgodovinske / relocirane / alternativne kratice
+  NOK:'SE', SDC:'PAC', SD:'PAC', BUF:'ATL', KCK:'NW', KC:'NW', CIN:'CEN',
+  SYR:'ATL', FTW:'CEN', MNL:'NW', ROC:'ATL', STL:'CEN', BAL:'SE', PHW:'ATL',
+  CHP:'SE', CHS:'CEN', NOJ:'NW', NOJZ:'NW',
 };
+const _seenUnknownDiv=new Set();
 function teamDivision(team){
   if(!team) return null;
   if(TEAM_DIV[team]) return TEAM_DIV[team];
-  // Atlanta Hawks kratica ATL se prekriva z Atlantic — Hawks je Southeast (rešeno z imenom zgoraj)
-  return null;
+  // poskusi case-insensitive / brez presledkov
+  const t2=String(team).trim();
+  if(TEAM_DIV[t2]) return TEAM_DIV[t2];
+  const up=t2.toUpperCase();
+  for(const k in TEAM_DIV){ if(k.toUpperCase()===up) return TEAM_DIV[k]; }
+  if(t2 && !_seenUnknownDiv.has(t2)){ _seenUnknownDiv.add(t2); console.log('[poker] ekipa brez divizije →', t2); }
+  return null; // neznana → postane WILD (glej pokerIdentity)
 }
 function divisionOf(p){
   const t=p.playedFor||p.team||'';
@@ -5410,10 +5420,11 @@ function pokerPick(){
 }
 // poker identiteta: VREDNOST=ekipa, SUIT=divizija, WILD=univerzalec (3+ pozicije)
 function pokerIdentity(base){
-  const isWild=(playerPositions(base).length>=3);
   const team=base.playedFor||base.team||'?';
   const div=divisionOf(base);
-  const divInfo=div?DIVISIONS[div]:{sym:'⬜',col:'#888',name:'—'};
+  // WILD = univerzalec (3+ pozicije) ALI ekipa brez prepoznane divizije (relocirane/zgodovinske)
+  const isWild=(playerPositions(base).length>=3) || !div;
+  const divInfo=div?DIVISIONS[div]:{sym:'★',col:'#ffd60a',name:'Wild'};
   return {...base,
     pkWild:isWild,
     pkTeam:team,            // VREDNOST karte = ekipa (par = ista ekipa)
