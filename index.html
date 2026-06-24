@@ -2481,20 +2481,7 @@ const DAILY_PACKS=[
 ];
 function dailyPack(){ return DAILY_PACKS[todaySeed()%DAILY_PACKS.length]; }
 function dailyMutatorObj(){ const dp=dailyPack(); return DRAFT_MUTATORS.find(m=>m.id===dp.mut)||DRAFT_MUTATORS[0]; }
-function dailyBudget(){
-  const seed=todaySeed();
-  // navadni daily: budget iz dnevnega paketa (fiksno, usklajeno s ciljem)
-  if(typeof dailyMode!=='undefined' && dailyMode && !(typeof quickMode!=='undefined' && quickMode)){
-    return dailyPack().budget;
-  }
-  const g=dailyGoal();
-  let pool;
-  if(g.minBudget==="težka")        pool=["težka","srednja","lahka",null,null];
-  else if(g.minBudget==="srednja") pool=["srednja","lahka",null,null];
-  else                             pool=["lahka",null,null];
-  let h=seed; h=(h^61)^(h>>>16); h=h+(h<<3); h=h^(h>>>4); h=h*0x27d4eb2d; h=h^(h>>>15);
-  return pool[Math.abs(h)%pool.length];
-}
+function dailyBudget(){ return null; } // budget odpravljen iz igre
 // trajni shramba (localStorage z fallbackom na pomnilnik)
 const _memStore={};
 function storeGet(k){ try{const v=localStorage.getItem(k);return v;}catch(e){return _memStore[k]||null;} }
@@ -2743,7 +2730,7 @@ async function supaSubmit(row){
 // preberi lestvico. mode="daily" -> dnevni izziv za določen dan; sicer budget način (all-time)
 async function supaLeaderboard(mode, day){
   let url;
-  if(mode==="daily" || mode==="quickfire"){
+  if(mode==="daily"){
     url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${mode}&challenge_day=eq.${encodeURIComponent(day)}&order=overall.desc,created_at.asc&limit=300`;
   } else {
     url=`${SUPA_URL}/rest/v1/daily_scores?mode=eq.${encodeURIComponent(mode)}&order=overall.desc,created_at.asc&limit=300`;
@@ -2786,10 +2773,8 @@ const DAILY_REWARD={1:150,2:100,3:50};
 const MONTHLY_REWARD={1:{coins:200,packs:5},2:{coins:0,packs:5},3:{coins:0,packs:3}};
 // mesečne lestvice (mode-i)
 const MONTHLY_MODES=[
-  {mode:'neomejeno', label:'Draft Neomejeno'},
-  {mode:'lahka', label:'Draft Lahko'},
-  {mode:'srednja', label:'Draft Srednje'},
-  {mode:'težka', label:'Draft Težko'},
+  {mode:'long', label:'Dolgi draft'},
+  {mode:'short', label:'Kratki draft'},
   {mode:'hol', label:'Higher-Lower'},
 ];
 // dnevne lestvice za nagrade
@@ -3846,7 +3831,7 @@ function showMultiplayerSetup(){
 let _leadersRows=[];
 async function showLeadersPage(mode){
   phase="leaders";
-  const modes=[["daily","Dnevni"],["quickfire","Quickfire"],["lahka","Lahka"],["srednja","Srednja"],["težka","Težka"],["neomejeno","Neomejeno"]];
+  const modes=[["daily","Dnevni"],["long","Dolgi draft"],["short","Kratki draft"]];
   const tabs=modes.map(([m,lbl])=>`<button class="hod-ltab ${m===mode?'on':''}" data-m="${m}">${lbl}</button>`).join('');
   screen.innerHTML=`
     <div class="hod-result hod-fade">
@@ -3873,7 +3858,7 @@ async function showLeadersPage(mode){
       <span class="hod-lb-ovr">${r.overall}</span>
     </div>`).join('');
   listBox.innerHTML=`<div class="hod-lb-list">${list}</div>
-    <div style="font-size:10px;color:var(--muted);margin-top:6px">klikni igralca za njegovo ekipo${(mode==="daily"||mode==="quickfire")?` · ${todayKey()}`:''}</div>`;
+    <div style="font-size:10px;color:var(--muted);margin-top:6px">klikni igralca za njegovo ekipo${(mode==="daily")?` · ${todayKey()}`:''}</div>`;
   listBox.querySelectorAll('.hod-lb-row').forEach(el=>{ el.onclick=()=>showUserTeam(_leadersRows[+el.dataset.i]); });
 }
 
@@ -9070,9 +9055,9 @@ function renderQuickCourt(){
     : `<div class="hod-live-ovr" style="color:var(--muted)">Postavi peterko za oceno (${u1f}/5)</div>`;
   screen.innerHTML=`
     <div class="hod-result hod-fade">
-      <div class="hod-stage-label">Sestavi peterko (quickfire)</div>
+      <div class="hod-stage-label">Sestavi peterko + 6. moža</div>
       ${dailyMode?`<div class="hod-daily-goalbar" style="max-width:340px;margin:0 auto 10px">🏆 ${dailyGoal().label}</div>`:''}
-      <div style="font-size:12px;color:var(--muted);max-width:440px;margin:0 auto 8px">Iz ${QUICK_PICKS} izborov sestavi najboljšo peterko. Ostali ostanejo odveč.</div>
+      <div style="font-size:12px;color:var(--muted);max-width:440px;margin:0 auto 8px">Iz izbranih sestavi najboljšo peterko (1 na pozicijo). 6. mož je dodaten in ne šteje v overall.</div>
       ${liveBar}
       ${_courtSel?`<div style="font-size:12px;color:var(--gold);margin-bottom:6px">Izbran: ${lastNameCap(_courtSel)} — izberi mesto</div>`:''}
       <div class="hod-units-wrap" style="justify-content:center">${renderUnitCourt("U1")}</div>
@@ -9311,11 +9296,9 @@ function rosterForSave(){
 
 // trenutni način igre za lestvico: dnevni -> "daily", sicer budget level ali "neomejeno"
 function currentMode(){
-  if(quickMode) return "quickfire";
   if(dailyMode) return "daily";
-  if(!budgetMode) return "neomejeno";
-  for(const k in BUDGET_LEVELS){ if(BUDGET_LEVELS[k]===budgetTotal) return k; }
-  return "neomejeno";
+  if(draftKind==='short') return "short";   // kratki draft (peterka + 6. mož)
+  return "long";                            // dolgi draft (10 igralcev)
 }
 
 async function postToLeaderboard(ev, sim, btn){
@@ -9332,7 +9315,7 @@ async function postToLeaderboard(ev, sim, btn){
     goal_id:g?g.id:null, goal_done:goalDone,
     overall:lbScore, chem:ev.chem.chem,
     sim_wins: sim?sim.avgWins:null, sim_title: sim?sim.titlePct:null,
-    daily_budget: dailyMode?(dailyBudget()||"neomejen"):null,
+    draft_kind: draftKind, picks: teamSize(),
     roster: rosterForSave()||[]
   };
   try{
@@ -9352,8 +9335,8 @@ async function showLeaderboard(){
   const box=document.getElementById('hod-leaderboard');
   if(!box) return;
   const mode=currentMode();
-  const title=mode==="daily"?`Dnevna lestvica · ${todayKey()}`
-    :`Lestvica · ${mode==="neomejeno"?"neomejen budget":"budget "+mode}`;
+  const modeName={daily:`Dnevna lestvica · ${todayKey()}`, long:'Lestvica · Dolgi draft (10)', short:'Lestvica · Kratki draft (5+1)'};
+  const title=modeName[mode]||'Lestvica';
   box.innerHTML=`<div class="hod-lb-title">${title}</div><div style="color:var(--muted);font-size:12px">nalagam…</div>`;
   let rows;
   try{ rows=await supaLeaderboard(mode, todayKey()); }
@@ -9377,7 +9360,7 @@ async function showLeaderboard(){
     myIdx=rows.findIndex(r=>r.nickname===_myLastPost.nick && r.overall===_myLastPost.overall);
   }
 
-  const isDaily=(mode==="daily"||mode==="quickfire");
+  const isDaily=(mode==="daily");
   const rowHtml=(r,i)=>`
     <div class="hod-lb-row ${i===myIdx?'me':''}" data-i="${i}">
       <span class="hod-lb-rank">${rankDisplay(i)}</span>
