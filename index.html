@@ -2895,7 +2895,25 @@ async function marketCollectPurchases(){
 }
 const MAX_TEAM=12, MAX_PER_POS=3;
 const QUICK_PICKS=8;
-function teamSize(){ return quickMode?QUICK_PICKS:MAX_TEAM; }
+// === NOVI DRAFT NAČINI ===
+// dolgi: 10 igralcev (2 na pozicijo, starter+backup) | kratki: 6 (peterka + 6th man) | dnevni: 5-10 (cilj)
+let draftKind='long'; // 'long' | 'short' | 'daily'
+let dailyPicks=8;     // dnevni izziv: koliko pickov ta dan (5-10)
+function teamSize(){
+  if(draftKind==='short') return 6;          // 5 + 6th man
+  if(draftKind==='daily') return dailyPicks;  // 5-10
+  return 10;                                  // dolgi
+}
+function maxPerPos(){
+  if(draftKind==='short') return 2;  // peterka + 1 dodaten (6th man kjerkoli)
+  if(draftKind==='daily') return 4;  // dnevni: bolj svobodno
+  return 2;                          // dolgi: 2 na pozicijo
+}
+// koliko igralcev šteje v overall/kemijo (6th man pri kratkem ne šteje)
+function scoringSize(){
+  if(draftKind==='short') return 5;     // samo peterka šteje
+  return teamSize();
+}
 
 // ---- LOAD EXTERNAL DATASET (players.json) IF PRESENT ----
 // Fetcha z absolutnega raw GitHub URL-ja -> deluje od koderkoli (Pages, lokalno prek serverja, vgneteno).
@@ -3197,7 +3215,15 @@ function isDrafted(p){
 function teamFull(){return roster.length>=teamSize();}
 function missingPositions(){return POSITIONS.filter(p=>posCount(p)<1);}
 // positions we can still add to (under max per pos)
-function openPositions(){return POSITIONS.filter(p=>posCount(p)<MAX_PER_POS);}
+function openPositions(){
+  // kratki draft: peterka mora biti polna (1 na pozicijo), 6th man je prosta izbira
+  if(draftKind==='short'){
+    const miss=POSITIONS.filter(p=>posCount(p)<1);
+    if(roster.length<5) return miss.length?miss:POSITIONS; // najprej peterka
+    return POSITIONS; // 6th man: katerakoli pozicija
+  }
+  return POSITIONS.filter(p=>posCount(p)<maxPerPos());
+}
 // when remaining slots == missing positions count, force only missing positions
 function forcedPositions(){
   const slotsLeft=teamSize()-roster.length;
@@ -3718,29 +3744,29 @@ function showIntro(){
     <div class="hod-slot-stage hod-fade">
       <div class="hod-stage-label">Draft</div>
       <div class="hod-verdict" style="margin:0 auto 18px;max-width:460px">
-        Zavrti kolut, izberi sezono in draftaj igralce. Sestavi <b style="color:var(--gold)">12 igralcev</b>: največ 3 na pozicijo, vsaj 1 na vsako.
+        Zavrti kolut, izberi sezono in draftaj. <b style="color:var(--gold)">Dolgi</b> (10 igralcev), <b style="color:var(--gold)">kratki</b> (peterka + 6. mož) ali <b style="color:var(--gold)">dnevni izziv</b>.
       </div>
-      <div class="hod-earn-info">💰 <b>Kako služiš:</b> draft polni dnevno kapico kovancev. <b>Mesečne lestvice</b> (Neomejeno, Lahko, Srednje, Težko) — top 3 meseca dobijo 📦 5/5/3 pakete + 🪙 200 (1. mesto). <b>Dnevni izziv</b> — top 3 dneva 🪙 150/100/50.</div>
+      <div class="hod-earn-info">💰 <b>Kako služiš:</b> draft polni dnevno kapico kovancev. <b>Mesečne lestvice</b> — top 3 meseca dobijo 📦 5/5/3 pakete + 🪙 200 (1. mesto). <b>Dnevni izziv</b> — top 3 dneva 🪙 150/100/50.</div>
       <div class="hod-landing-row hod-draft-modes">
-        <button class="hod-landing-card" id="hod-m-solo">
+        <button class="hod-landing-card" id="hod-m-long">
           <span class="hod-landing-emoji">🏀</span>
-          <span class="hod-landing-name">Solo igra</span>
-          <span class="hod-landing-sub">sam sestaviš ekipo</span>
+          <span class="hod-landing-name">Dolgi draft</span>
+          <span class="hod-landing-sub">10 igralcev · 2 na pozicijo</span>
         </button>
-        <button class="hod-landing-card hod-landing-mp" id="hod-m-mp">
-          <span class="hod-landing-emoji">👥</span>
-          <span class="hod-landing-name">Multiplayer</span>
-          <span class="hod-landing-sub">2–4 · snake draft</span>
+        <button class="hod-landing-card hod-landing-quick" id="hod-m-short">
+          <span class="hod-landing-emoji">⚡</span>
+          <span class="hod-landing-name">Kratki draft</span>
+          <span class="hod-landing-sub">peterka + 6. mož</span>
         </button>
         <button class="hod-landing-card hod-landing-daily" id="hod-m-daily">
           <span class="hod-landing-emoji">🏆</span>
           <span class="hod-landing-name">Dnevni izziv</span>
           <span class="hod-landing-sub">isti cilj za vse</span>
         </button>
-        <button class="hod-landing-card hod-landing-quick" id="hod-m-quick">
-          <span class="hod-landing-emoji">⚡</span>
-          <span class="hod-landing-name">Quickfire</span>
-          <span class="hod-landing-sub">8 izborov · peterka</span>
+        <button class="hod-landing-card hod-landing-mp" id="hod-m-mp">
+          <span class="hod-landing-emoji">👥</span>
+          <span class="hod-landing-name">Multiplayer</span>
+          <span class="hod-landing-sub">2–4 · snake draft</span>
         </button>
       </div>
       <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
@@ -3756,10 +3782,10 @@ function showIntro(){
         players.json še ni na GitHubu — igra teče na vgrajenih 10 sezonah. Ko objaviš poln dataset, se naloži samodejno.
       </div>`:''}
     </div>`;
-  document.getElementById('hod-m-solo').onclick=()=>{ dailyMode=false; quickMode=false; numPlayers=1; showDecadePicker(); };
-  document.getElementById('hod-m-mp').onclick=()=>{ showMultiplayerSetup(); };
+  document.getElementById('hod-m-long').onclick=()=>{ dailyMode=false; quickMode=false; draftKind='long'; numPlayers=1; showDecadePicker(); };
+  document.getElementById('hod-m-short').onclick=()=>{ dailyMode=false; quickMode=true; draftKind='short'; numPlayers=1; showDecadePicker(); };
+  document.getElementById('hod-m-mp').onclick=()=>{ draftKind='long'; showMultiplayerSetup(); };
   document.getElementById('hod-m-daily').onclick=()=>{ startDaily(); };
-  document.getElementById('hod-m-quick').onclick=()=>{ startQuickfire(); };
   document.getElementById('hod-leaders').onclick=()=>{ showLeadersPage("daily"); };
   document.getElementById('hod-howto').onclick=()=>{ showHowTo(); };
   document.getElementById('hod-back-landing').onclick=()=>{ showLanding(); };
@@ -6202,9 +6228,9 @@ function dailyStatusLine(){
   const today=rec[todayKey()];
   const streak=rec._streak||0;
   const g=dailyGoal();
+  const picks=5+(todaySeed()%6);
   let line=`<div style="font-size:12px;color:#4cc9f0;margin-top:10px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.5">Današnji cilj: ${g.label}`;
-  const db=dailyBudget();
-  line+=`<br><span style="color:var(--gold-deep)">Budget: ${db?`${db} ($${BUDGET_LEVELS[db]})`:'neomejen'}</span>`;
+  line+=`<br><span style="color:var(--gold-deep)">Pickov danes: ${picks}</span>`;
   if(today) line+=`<br><span style="color:var(--muted)">danes že igrano · najboljši: ${today.score} ${today.done?'✓':''}</span>`;
   if(streak>0) line+=`<br><span style="color:var(--gold)">🔥 niz: ${streak} dni</span>`;
   line+=`</div>`;
@@ -6212,26 +6238,12 @@ function dailyStatusLine(){
 }
 
 function startDaily(){
-  dailyMode=true; quickMode=false;
+  dailyMode=true; quickMode=false; draftKind='daily';
   _draftMutator=dailyMutatorObj(); _mutatorShown=false; // dnevni modifier (isti za vse, povezan s ciljem)
   setSeed(todaySeed());
+  dailyPicks=5+(todaySeed()%6); // 5-10 pickov, isto za vse igralce ta dan
   numPlayers=1; mp=null;
-  const db=dailyBudget();
-  if(db){ budgetMode=true; budgetTotal=BUDGET_LEVELS[db]; budgetSpent=0; }
-  else { budgetMode=false; budgetTotal=0; budgetSpent=0; }
-  selectedEras=new Set();
-  roster=[]; chosenSeason=null; currentOffer=[];
-  renderProgress();
-  startSpin();
-}
-function startQuickfire(){
-  dailyMode=true; quickMode=true;
-  _draftMutator=DRAFT_MUTATORS[0]; // quickfire brez modifierja (peterka)
-  setSeed(todaySeed()+777);
-  numPlayers=1; mp=null;
-  const db=dailyBudget();
-  if(db){ budgetMode=true; budgetTotal=BUDGET_LEVELS[db]; budgetSpent=0; }
-  else { budgetMode=false; budgetTotal=0; budgetSpent=0; }
+  budgetMode=false; budgetTotal=0; budgetSpent=0; // budget proč
   selectedEras=new Set();
   roster=[]; chosenSeason=null; currentOffer=[];
   renderProgress();
@@ -7766,21 +7778,13 @@ function showDecadePicker(){
       <span class="hod-era-count">${n} sezon</span>
     </div>`;
   }).join('');
-  const budgetChips=`
-    <div class="hod-mode-row">
-      <div class="hod-mode-chip ${!budgetMode?'on':''}" data-mode="unlimited">
-        <span class="hod-mode-name">Neomejeno</span><span class="hod-mode-sub">grabi kar hočeš</span>
-      </div>
-      <div class="hod-mode-chip ${budgetMode&&budgetTotal===650?'on':''}" data-mode="lahka">
-        <span class="hod-mode-name">Budget 650</span><span class="hod-mode-sub">lahka</span>
-      </div>
-      <div class="hod-mode-chip ${budgetMode&&budgetTotal===500?'on':''}" data-mode="srednja">
-        <span class="hod-mode-name">Budget 500</span><span class="hod-mode-sub">srednja</span>
-      </div>
-      <div class="hod-mode-chip ${budgetMode&&budgetTotal===380?'on':''}" data-mode="težka">
-        <span class="hod-mode-name">Budget 380</span><span class="hod-mode-sub">težka</span>
-      </div>
-    </div>`;
+  const kindInfo = draftKind==='short'
+    ? `<div class="hod-mode-row"><div class="hod-mode-chip on" style="cursor:default"><span class="hod-mode-name">⚡ Kratki draft</span><span class="hod-mode-sub">peterka + 6. mož (ne šteje)</span></div></div>`
+    : `<div class="hod-mode-row"><div class="hod-mode-chip on" style="cursor:default"><span class="hod-mode-name">🏀 Dolgi draft</span><span class="hod-mode-sub">10 igralcev · 2 na pozicijo</span></div></div>`;
+  const budgetChips=kindInfo;
+  const kindHint = draftKind==='short'
+    ? 'Sestaviš peterko (5 igralcev, 1 na pozicijo) + 6. moža po izbiri. Šesti mož NE šteje v skupni overall ne v kemijo — je le dodatna izbira.'
+    : 'Sestaviš 10 igralcev — po 2 na vsako pozicijo (starter + backup). Vsi štejejo v overall in kemijo.';
   screen.innerHTML=`
     <div class="hod-slot-stage hod-fade">
       <div class="hod-stage-label">Nastavitve igre</div>
@@ -7793,7 +7797,7 @@ function showDecadePicker(){
       <div style="font-size:12px;color:var(--muted);margin:16px 0 8px;letter-spacing:1px;text-transform:uppercase">Način</div>
       ${budgetChips}
       <div style="font-size:11px;color:var(--muted);margin-top:6px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.5">
-        Z budgetom dražji igralci (višji rating) stanejo več — casino ti ponudi le tiste, ki si jih še lahko privoščiš.
+        ${kindHint}
       </div>
       <div style="margin-top:18px">
         <button class="hod-btn" id="hod-era-go">Začni draft</button>
@@ -8328,6 +8332,8 @@ function autoAssignRoles(arr){
   if(quickMode){
     arr.forEach(p=>{p.role="X"; p.spot=null; p.assignedPos=playerPositions(p)[0];});
     const u1=pickFive(); u1.forEach(p=>{p.role="U1"; p.spot=playerPositions(p)[0]; p.assignedPos=p.spot;});
+    // kratki draft: preostali (6. mož) = bench, NE šteje v overall/kemijo
+    arr.filter(p=>p.role==="X").forEach(p=>{p.role="6M"; p.assignedPos=playerPositions(p)[0];});
     fixUnitSpots("U1");
     return arr;
   }
@@ -9178,7 +9184,7 @@ function showResult(){
   if(po) po.onclick=()=>postToLeaderboard(ev, res, po);
   showLeaderboard();
   document.getElementById('hod-replay').onclick=()=>{
-    if(dailyMode){ quickMode?startQuickfire():startDaily(); return; }
+    if(dailyMode){ startDaily(); return; }
     roster=[];chosenSeason=null;currentOffer=[];_cachedLeague=null;budgetSpent=0;renderProgress();showIntro();
   };
 }
