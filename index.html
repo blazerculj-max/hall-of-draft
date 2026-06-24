@@ -5335,15 +5335,57 @@ function showPokerLadder(){
 function startPoker(){
   const list=holPlayerList(); // ista baza igralcev (vse dekade)
   if(list.length<10){ alert("Premalo podatkov. Najprej objavi players.json."); showQuizMenu(); return; }
-  pokerState={ list, cards:[], held:[false,false,false,false,false], spinsLeft:5, started:false, hotStreak:0, hotMult:1 };
+  pokerState={ list, cards:[], held:[false,false,false,false,false], spinsLeft:3, started:false, hotStreak:0, hotMult:1 };
   // prvi delež: 5 naključnih kart
   pokerState.cards=[0,1,2,3,4].map(()=>pokerPick());
-  pokerState.spinsLeft=5;
+  pokerState.spinsLeft=3;
   renderPoker(false, true);
   pokerPreload(16);
 }
 const POKER_RANKS=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const POKER_SUITS=[{s:'♠',c:'#1a1a1a'},{s:'♥',c:'#d8334a'},{s:'♦',c:'#d8334a'},{s:'♣',c:'#1a1a1a'}];
+// === 6 DIVIZIJ = "suiti", 30 EKIP = "vrednosti" ===
+// vsaka divizija ima svoj simbol+barvo (flush = 5 kart iste divizije)
+const DIVISIONS={
+  ATL:{name:'Atlantic',  sym:'🟢', col:'#2ecc71'},
+  CEN:{name:'Central',   sym:'🔴', col:'#e74c3c'},
+  SE: {name:'Southeast', sym:'🟡', col:'#f1c40f'},
+  NW: {name:'Northwest', sym:'🔵', col:'#3498db'},
+  PAC:{name:'Pacific',   sym:'🟣', col:'#9b59b6'},
+  SW: {name:'Southwest', sym:'🟠', col:'#e67e22'},
+};
+const DIV_ORDER=['ATL','CEN','SE','NW','PAC','SW'];
+// ekipa (polno ime ALI kratica) -> divizija
+const TEAM_DIV={
+  // Atlantic
+  Celtics:'ATL', Nets:'ATL', Knicks:'ATL', '76ers':'ATL', Raptors:'ATL',
+  BOS:'ATL', BKN:'ATL', NJN:'ATL', NYK:'ATL', PHI:'ATL', TOR:'ATL',
+  // Central
+  Bulls:'CEN', Cavaliers:'CEN', Pistons:'CEN', Pacers:'CEN', Bucks:'CEN',
+  CHI:'CEN', CLE:'CEN', DET:'CEN', IND:'CEN', MIL:'CEN',
+  // Southeast
+  Hawks:'SE', Hornets:'SE', Heat:'SE', Magic:'SE', Wizards:'SE', Bullets:'SE',
+  ATL:'SE', CHA:'SE', CHH:'SE', MIA:'SE', ORL:'SE', WAS:'SE', WSB:'SE',
+  // Northwest
+  Nuggets:'NW', Wolves:'NW', Thunder:'NW', Blazers:'NW', Jazz:'NW', Sonics:'NW', Timberwolves:'NW',
+  DEN:'NW', MIN:'NW', OKC:'NW', POR:'NW', UTA:'NW', SEA:'NW',
+  // Pacific
+  Warriors:'PAC', Clippers:'PAC', Lakers:'PAC', Suns:'PAC', Kings:'PAC',
+  GSW:'PAC', LAC:'PAC', LAL:'PAC', PHO:'PAC', PHX:'PAC', SAC:'PAC',
+  // Southwest
+  Mavericks:'SW', Rockets:'SW', Grizzlies:'SW', Pelicans:'SW', Spurs:'SW',
+  DAL:'SW', HOU:'SW', MEM:'SW', NOP:'SW', NOH:'SW', SAS:'SW',
+};
+function teamDivision(team){
+  if(!team) return null;
+  if(TEAM_DIV[team]) return TEAM_DIV[team];
+  // Atlanta Hawks kratica ATL se prekriva z Atlantic — Hawks je Southeast (rešeno z imenom zgoraj)
+  return null;
+}
+function divisionOf(p){
+  const t=p.playedFor||p.team||'';
+  return teamDivision(t);
+}
 // ERA -> SUIT (barva = obdobje). Flush = igralci iste dobe.
 function eraSuit(season){
   const y=parseInt(season)||0;
@@ -5366,12 +5408,19 @@ function posRank(p){
 function pokerPick(){
   return pokerIdentity(pokerState.list[Math.floor(Math.random()*pokerState.list.length)]);
 }
-// doda poker identiteto: suit=era, rang=pozicija, wild=univerzalec (igra 3+ pozicije)
+// poker identiteta: VREDNOST=ekipa, SUIT=divizija, WILD=univerzalec (3+ pozicije)
 function pokerIdentity(base){
-  const isWild=(playerPositions(base).length>=3); // univerzalec = joker
-  const rank=posRank(base);
-  const suit=eraSuit(base.season);
-  return {...base, pkWild:isWild, pkRank:rank, pkSuit:suit.s, pkSuitCol:suit.c};
+  const isWild=(playerPositions(base).length>=3);
+  const team=base.playedFor||base.team||'?';
+  const div=divisionOf(base);
+  const divInfo=div?DIVISIONS[div]:{sym:'⬜',col:'#888',name:'—'};
+  return {...base,
+    pkWild:isWild,
+    pkTeam:team,            // VREDNOST karte = ekipa (par = ista ekipa)
+    pkDiv:div,              // SUIT = divizija (flush = ista divizija)
+    pkSuit:divInfo.sym, pkSuitCol:divInfo.col,
+    pkRank:team             // prikaz: kratica ekipe kot "rank"
+  };
 }
 // vrednost ranga za lestvico
 function rankVal(r){ return POKER_RANKS.indexOf(r); }
@@ -5380,44 +5429,33 @@ function pokerHand(cards){
   if(cards.length<5) return {name:'—', mult:1, key:'none'};
   const wilds=cards.filter(c=>c.pkWild).length;
   const real=cards.filter(c=>!c.pkWild);
-  // štetje vrednosti in barv (brez wildov)
-  const rankCount={}, suitCount={};
-  real.forEach(c=>{ rankCount[c.pkRank]=(rankCount[c.pkRank]||0)+1; suitCount[c.pkSuit]=(suitCount[c.pkSuit]||0)+1; });
-  const counts=Object.values(rankCount).sort((a,b)=>b-a);
-  // flush: 5 iste barve (wild dopolni)
-  const maxSuit=Math.max(0,...Object.values(suitCount));
-  const isFlush=(maxSuit+wilds)>=5;
-  // straight: 5 zaporednih (poenostavljeno, wild dopolni vrzeli)
-  const uniqVals=[...new Set(real.map(c=>rankVal(c.pkRank)))].sort((a,b)=>a-b);
-  let isStraight=false;
-  if(uniqVals.length){
-    for(let start=0;start<=POKER_RANKS.length-5;start++){
-      let need=0;
-      for(let v=start;v<start+5;v++){ if(!uniqVals.includes(v)) need++; }
-      if(need<=wilds && (uniqVals.every(v=>v>=start&&v<start+5)||uniqVals.filter(v=>v>=start&&v<start+5).length+wilds>=5)){
-        // preveri, da imamo dovolj kart v tem oknu
-        const inWin=real.filter(c=>{const v=rankVal(c.pkRank);return v>=start&&v<start+5;}).length;
-        if(inWin+wilds>=5 && need<=wilds){ isStraight=true; break; }
-      }
-    }
-  }
-  // najvišja skupina z wildi
+  // štetje po EKIPI (vrednost) in DIVIZIJI (suit)
+  const teamCount={}, divCount={};
+  real.forEach(c=>{ teamCount[c.pkTeam]=(teamCount[c.pkTeam]||0)+1; if(c.pkDiv) divCount[c.pkDiv]=(divCount[c.pkDiv]||0)+1; });
+  const counts=Object.values(teamCount).sort((a,b)=>b-a);
+  // flush: 5 iste divizije (wild dopolni)
+  const maxDiv=Math.max(0,...Object.values(divCount));
+  const isFlush=(maxDiv+wilds)>=5;
+  // lestvica: po ena ekipa iz 5 RAZLIČNIH divizij (pokriješ ligo) + wild dopolni
+  const distinctDivs=Object.keys(divCount).length;
+  const isStraight=(distinctDivs+wilds)>=5;
+  // najvišja skupina (ista ekipa) z wildi
   const topGroup=(counts[0]||0)+wilds;
   const secondGroup=(counts[1]||0);
-  const isRoyal=isStraight && isFlush && uniqVals.includes(rankVal('A')) && uniqVals.includes(rankVal('10'));
-  if(isRoyal) return {name:'👑 ROYAL FLUSH', mult:2.4, key:'royal'};
-  if(isStraight && isFlush) return {name:'🌈 STRAIGHT FLUSH', mult:2.1, key:'sflush'};
-  if(topGroup>=5) return {name:'💥 POKER (5)', mult:2.0, key:'five'};
-  if(topGroup>=4) return {name:'🃏 POKER (4)', mult:1.9, key:'four'};
-  if(topGroup>=3 && secondGroup>=2) return {name:'🏠 FULL HOUSE', mult:1.7, key:'full'};
-  if(isFlush) return {name:'♦ BARVA (Flush)', mult:1.55, key:'flush'};
-  if(isStraight) return {name:'➡ LESTVICA (Straight)', mult:1.45, key:'straight'};
-  if(topGroup>=3) return {name:'🔼 TRIS', mult:1.4, key:'trips'};
-  // dva para
+  // straight flush = 5 iste divizije je nemogoče hkrati z 5 različnih → namesto royal:
+  // "popoln flush" (vseh 5 iste divizije + ena je wild) ostane najvišji flush
+  const isRoyal=isFlush && wilds>=1 && maxDiv>=4; // ista divizija + wild = "kralj divizije"
+  if(topGroup>=5) return {name:'💥 PETERKA EKIPE', mult:2.4, key:'five'};
+  if(isFlush && topGroup>=2) return {name:'🌈 DIVIZIJA + PAR', mult:2.1, key:'sflush'};
+  if(topGroup>=4) return {name:'🃏 ŠTIRJE IZ EKIPE', mult:1.95, key:'four'};
+  if(topGroup>=3 && secondGroup>=2) return {name:'🏠 FULL HOUSE', mult:1.75, key:'full'};
+  if(isFlush) return {name:'♦ DIVIZIJA (Flush)', mult:1.6, key:'flush'};
+  if(isStraight) return {name:'➡ LIGA (5 divizij)', mult:1.45, key:'straight'};
+  if(topGroup>=3) return {name:'🔼 TRIJE IZ EKIPE', mult:1.4, key:'trips'};
   const pairs=counts.filter(c=>c>=2).length;
-  if(pairs>=2) return {name:'✌ DVA PARA', mult:1.25, key:'twopair'};
-  if(topGroup>=2) return {name:'👫 PAR', mult:1.15, key:'pair'};
-  return {name:'Visoka karta', mult:1, key:'high'};
+  if(pairs>=2) return {name:'✌ DVA PARA EKIP', mult:1.25, key:'twopair'};
+  if(topGroup>=2) return {name:'👫 PAR (ista ekipa)', mult:1.15, key:'pair'};
+  return {name:'Mešanica', mult:1, key:'high'};
 }
 // vnaprej naloži nekaj naključnih slik v predpomnilnik (manj zamika pri vrtenju)
 let _pkPreloaded=new Set();
@@ -5548,15 +5586,15 @@ function renderPoker(finished, firstRender){
   // tabela poker rok (multiplierji) — ob strani
   const handTable=`<div class="hod-pk-handtable">
     <div class="hod-pk-ht-title">🎴 Poker roke</div>
-    ${[['Par','×1.15'],['Dva para','×1.25'],['Tris','×1.4'],['Lestvica','×1.45'],['Barva','×1.55'],['Full House','×1.7'],['Poker (4)','×1.9'],['Poker (5)','×2.0'],['Straight Flush','×2.1'],['👑 Royal Flush','×2.4']].map(([n,m])=>{
-      const active=liveHand.name.toLowerCase().includes(n.toLowerCase().split(' ')[0]) || (n==='Par'&&liveHand.key==='pair') || (n==='Dva para'&&liveHand.key==='twopair') || (n==='Tris'&&liveHand.key==='trips') || (n==='Lestvica'&&liveHand.key==='straight') || (n==='Barva'&&liveHand.key==='flush') || (n==='Full House'&&liveHand.key==='full') || (n==='Poker (4)'&&liveHand.key==='four') || (n==='Poker (5)'&&liveHand.key==='five') || (n==='Straight Flush'&&liveHand.key==='sflush') || (liveHand.key==='royal'&&n.includes('Royal'));
+    ${[['Par','×1.15'],['Dva para','×1.25'],['Trije iz ekipe','×1.4'],['Liga (5 div.)','×1.45'],['Divizija','×1.6'],['Full House','×1.75'],['Štirje iz ekipe','×1.95'],['Divizija+par','×2.1'],['Peterka ekipe','×2.4']].map(([n,m])=>{
+      const active=(n==='Par'&&liveHand.key==='pair') || (n==='Dva para'&&liveHand.key==='twopair') || (n==='Trije iz ekipe'&&liveHand.key==='trips') || (n==='Liga (5 div.)'&&liveHand.key==='straight') || (n==='Divizija'&&liveHand.key==='flush') || (n==='Full House'&&liveHand.key==='full') || (n==='Štirje iz ekipe'&&liveHand.key==='four') || (n==='Divizija+par'&&liveHand.key==='sflush') || (n==='Peterka ekipe'&&liveHand.key==='five');
       return `<div class="hod-pk-ht-row ${active?'on':''}"><span>${n}</span><b>${m}</b></div>`;
     }).join('')}
     <div class="hod-pk-ht-legend">
-      <div class="hod-pk-ht-ltitle">♠ Barva = obdobje</div>
-      <div>♠ pred '80 · ♥ 80-90s · ♦ 2000s · ♣ 2010+</div>
-      <div class="hod-pk-ht-ltitle" style="margin-top:5px">🔢 Številka = pozicija</div>
-      <div>PG: A,K · SG: Q,J · SF: 10,9 · PF: 8,7 · C: 6,5</div>
+      <div class="hod-pk-ht-ltitle">🎨 Barva = divizija</div>
+      <div>🟢 Atlantic · 🔴 Central · 🟡 Southeast<br>🔵 Northwest · 🟣 Pacific · 🟠 Southwest</div>
+      <div class="hod-pk-ht-ltitle" style="margin-top:5px">🏀 Vrednost = ekipa</div>
+      <div>Par = ista ekipa · Flush = ista divizija<br>Lestvica = 5 različnih divizij</div>
       <div style="margin-top:5px">★ = univerzalec (joker)</div>
     </div>
   </div>`;
@@ -5567,7 +5605,7 @@ function renderPoker(finished, firstRender){
         <span class="hod-pk-stat ${(pokerFog&&!finished)?'fog':''}">Overall<br><b id="hod-pk-overall">${(pokerFog && !finished)?'?':liveOverall}</b></span>
         <span class="hod-pk-stat ${(pokerFog&&!finished)?'fog':''}">Kemija<br><b id="hod-pk-chemlive">${(pokerFog && !finished)?'?':'+'+liveChem.bonus}</b></span>
         <span class="hod-pk-stat">Roka<br><b id="hod-pk-handlive" class="hod-pk-handlive">${liveHand.name}</b></span>
-        <span class="hod-pk-stat">Vrtljaji<br><b>${'●'.repeat(st.spinsLeft)}${'○'.repeat(5-st.spinsLeft)}</b></span>
+        <span class="hod-pk-stat">Vrtljaji<br><b>${'●'.repeat(st.spinsLeft)}${'○'.repeat(3-st.spinsLeft)}</b></span>
       </div>
       <div class="hod-pk-hint">${finished?'':(pokerFog?'<b style="color:#c4a8ff">🌫️ MEGLA:</b> overall in kemija sta skrita! Sodi po statistiki. Razkrije se ko zakleneš.':'Zakleni dobre karte — <b style="color:var(--gold)">lock je dokončen!</b> Gradi kemijo (ista ekipa) IN poker roko.')}</div>
       <div class="hod-pk-layout">
@@ -5888,7 +5926,8 @@ function renderPokerVsAI(){
       </div>
       <div class="hod-vs-handlive">Tvoja roka: <b style="color:${pokerHand(st.you.cards).mult>1.8?'#ffd166':(pokerHand(st.you.cards).mult>1?'#9ec5e8':'#fff')}">${pokerHand(st.you.cards).name}${pokerHand(st.you.cards).mult>1?` ×${pokerHand(st.you.cards).mult}`:''}</b></div>
       <details class="hod-vs-handtable"><summary>🎴 Kombinacije in množitelji</summary>
-        <div class="hod-vs-ht-grid">${[['Par','×1.15'],['Dva para','×1.25'],['Tris','×1.4'],['Lestvica','×1.45'],['Barva','×1.55'],['Full House','×1.7'],['Poker 4','×1.9'],['Poker 5','×2.0'],['Str. Flush','×2.1'],['👑 Royal','×2.4']].map(([n,m])=>`<span><b>${n}</b> ${m}</span>`).join('')}</div>
+        <div class="hod-vs-ht-grid">${[['Par','×1.15'],['Dva para','×1.25'],['Trije','×1.4'],['Liga 5div','×1.45'],['Divizija','×1.6'],['Full House','×1.75'],['Štirje','×1.95'],['Div+par','×2.1'],['Peterka','×2.4']].map(([n,m])=>`<span><b>${n}</b> ${m}</span>`).join('')}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:6px;line-height:1.4">🎨 barva = divizija (🟢🔴🟡🔵🟣🟠) · vrednost = ekipa · par = ista ekipa · flush = ista divizija · ★ univerzalec</div>
       </details>
       <div class="hod-pk-hint">${st.pending==='reroll'?'<b style="color:var(--gold)">Re-roll:</b> tapni zaklenjeno karto za ponovni vrtljaj.':st.pending==='steal'?'<b style="color:var(--gold)">Steal:</b> tapni AI-jevo karto za krajo.':'Zakleni (lock je dokončen!), ostalo zavrti. Premagaj '+escapeHtml(ai.name)+'.'}</div>
       ${pkPowerupBar()}
