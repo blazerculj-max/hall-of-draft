@@ -3994,6 +3994,7 @@ function showQuizMenu(){
       </div>
       <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn secondary" id="hod-quiz-leaders">🏅 Lestvice kvizov</button>
+        <button class="hod-btn secondary" id="hod-quiz-howto">❓ Kako igrati</button>
         <button class="hod-btn secondary" id="hod-quiz-back">← Nazaj</button>
       </div>
     </div>`;
@@ -4001,6 +4002,12 @@ function showQuizMenu(){
   document.getElementById('hod-go-climb').onclick=()=>{ startClimb(); };
   document.getElementById('hod-go-hol').onclick=()=>{ startHigherLower(); };
   document.getElementById('hod-quiz-leaders').onclick=()=>{ showQuizLeadersPage("kviz"); };
+  document.getElementById('hod-quiz-howto').onclick=()=>showGameHowTo('KVIZI','Trije načini preverjanja košarkarskega znanja',[
+    ['🏆','Milijonar','15 vprašanj, vse težjih. Imaš <b>pomoči</b>: 50:50, 25% in zamenjava vprašanja. Ena napaka in končaš — a obdržiš zaslužek do varne stopnje.'],
+    ['⛰️','Daily Climb','Vprašanja na <b>čas</b>. Imaš 3 življenja — tri napake in konec. Vsak dan nova lestvica, top 3 dobijo kovance.'],
+    ['📊','Higher/Lower','Pokažeta se dva igralca — ugibaš, kdo ima <b>višjo statistiko</b> (točke, skoki...). Niz se nadaljuje, dokler ne zgrešiš.'],
+    ['💰','Nagrade','Igranje polni dnevno kapico kovancev. Daily Climb = dnevna lestvica, Higher/Lower = mesečna.'],
+  ]);
   document.getElementById('hod-quiz-back').onclick=()=>{ showLanding(); };
   renderProgress();
 }
@@ -5492,6 +5499,7 @@ function showPokerMenu(){
       </div>
       <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="hod-btn secondary" id="hod-pk-leaders">🏅 Lestvica</button>
+        <button class="hod-btn secondary" id="hod-pk-howto">❓ Kako igrati</button>
         <button class="hod-btn secondary" id="hod-pk-back">← Nazaj</button>
       </div>
     </div>`;
@@ -5499,6 +5507,13 @@ function showPokerMenu(){
   document.getElementById('hod-pk-highscore').onclick=()=>startPoker();
   document.getElementById('hod-pk-vsai').onclick=()=>{ resetPokerRun(); showPokerLadder(); };
   document.getElementById('hod-pk-leaders').onclick=()=>showQuizLeadersPage(pokerFog?"poker_fog":"poker");
+  document.getElementById('hod-pk-howto').onclick=()=>showGameHowTo('POKER','Sestavi najboljšo poker roko iz igralcev',[
+    ['1','Igralci = karte','Vsaka karta je NBA igralec. <b>Vrednost</b> karte je njegova ekipa, <b>barva</b> je divizija (🟢🔴🟡🔵🟣🟠).'],
+    ['2','Vrti in zadrži','Imaš <b>3 vrtljaje</b>. Po vsakem zadržiš karte, ki jih hočeš obdržati, ostale zavrtiš znova.'],
+    ['3','Poker roke','<b>Par</b> = ista ekipa · <b>Trije/Štirje</b> = več iste ekipe · <b>Divizija</b> (flush) = 5 iste divizije · <b>Liga</b> = 5 različnih divizij.'],
+    ['★','Univerzalci','Igralci, ki so igrali 3 pozicije, so <b>joker (★)</b> — nadomestijo katerokoli karto.'],
+    ['🏆','Cilj','Boljša roka = višji množitelj točk. Objavi rezultat na lestvico in se primerjaj!'],
+  ]);
   document.getElementById('hod-pk-back').onclick=()=>showLanding();
   renderProgress();
 }
@@ -6645,15 +6660,35 @@ async function showQuizLeadersPage(mode){
 }
 
 
+// generična "Kako igrati" za mini-igre (konsisten videz z draft howto)
+function showGameHowTo(title, sub, steps){
+  const ov=document.createElement('div');
+  ov.className='hod-howto-overlay';
+  ov.innerHTML=`<div class="hod-howto-card hod-pop">
+    <div class="hod-howto-head">
+      <div class="hod-howto-title">${title}</div>
+      <div class="hod-howto-sub">${sub}</div>
+    </div>
+    <div class="hod-howto-body">
+      ${steps.map(([n,t,d])=>`<div class="hod-ht-step"><span class="hod-ht-n ${n==='★'?'star':''}">${n}</span>
+        <div class="hod-ht-text"><div class="hod-ht-title">${t}</div><div class="hod-ht-desc">${d}</div></div></div>`).join('')}
+    </div>
+    <button class="hod-btn hod-howto-btn" id="hod-ght-close">RAZUMEM, IGRAJMO!</button>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#hod-ght-close').onclick=()=>ov.remove();
+  ov.onclick=(e)=>{ if(e.target===ov) ov.remove(); };
+}
 function showHowTo(){
   const steps=[
     ["1","Zavrti & izberi sezono","Slot zavrti tri sezone. Izbereš eno — iz nje dobiš ponudbo igralcev, po enega na pozicijo. Žreb je naključen: vsak run je svež."],
     ["2","Draftaj igralce","Vsak krog izbereš enega. Pri večpozicijskih izbereš mesto — rating namig pokaže, kje je najboljši. Karta <b>??</b> je hazard: plačaš, šele nato vidiš, koga dobiš."],
-    ["3","Budget","Boljši igralci stanejo več. Težji način = manj denarja. Igralci pod ratingom 50 so zastonj. Budget nikoli ne pade pod nič."],
-    ["4","Peterka + klop","Peterka šteje največ. Klop (7) te ne kaznuje po ratingu, a <b>mora pokriti vse pozicije</b> — sicer izgubiš točke."],
+    ["3","Načini drafta","<b>Dolgi:</b> 10 igralcev, 2 na pozicijo (starter + backup). <b>Kratki:</b> peterka + 6. mož (ki ne šteje v overall ne kemijo). <b>Dnevni izziv:</b> 5–10 pickov, isti cilj za vse."],
+    ["4","Peterka + klop","Peterka šteje največ. Klop te ne kaznuje po ratingu, a <b>mora pokriti pozicije</b>. Pri kratkem draftu je 6. mož le dodatek — ne šteje."],
     ["5","Kemija","<b>Zgodovinske vezi:</b> pravi soigralci, slavni duoji (Showtime, Splash Brothers), ista doba. <b>Stilske vezi:</b> Pick &amp; Roll, Spacing, Drive &amp; Kick. <b class='neg'>Trenja:</b> dva ego-strelca = preveč žoge; rivali."],
     ["6","Ocena & simulacija","OVERALL in ocena (S+ do F), nato simulacija sezone: rekord, playoff %, naslov %. Tvoja ekipa zamenja najšibkejšo v ligi."],
-    ["★","Dnevni izziv & Quickfire","Dnevni izziv ima vsak dan enak cilj in budget za vse (svoja lestvica), žreb pa je naključen. Quickfire: 8 izborov, samo peterka. Objavi rezultat in se primerjaj."],
+    ["⚔️","Izziv prijatelja","Po draftu klikni »Izzovi prijatelja« — pošlješ povezavo, prijatelj dobi <b>isti draft</b> (iste sezone in karte). Zmaga, kdor bolje izbere!"],
+    ["★","Dnevni izziv","Vsak dan enak cilj in število pickov za vse igralce (svoja lestvica), žreb pa je naključen. Loviš cilj (overall, asistence...) in se primerjaš na lestvici."],
   ];
   const ov=document.createElement('div');
   ov.className='hod-howto-overlay';
