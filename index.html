@@ -743,6 +743,8 @@
 .hod-pk-layout{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap;}
 .hod-pk-layout .hod-pk-grid{flex:1;min-width:280px;}
 .hod-pk-handtable{flex:none;width:150px;background:rgba(13,17,25,.7);border:1px solid var(--gold-warm);border-radius:12px;padding:10px;}
+.hod-pk-ht-legend{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.12);font-size:9px;color:var(--muted);line-height:1.4;}
+.hod-pk-ht-ltitle{color:var(--gold);font-weight:bold;font-size:10px;}
 .hod-pk-ht-title{font-family:'Anton';font-size:13px;color:var(--gold);text-align:center;margin-bottom:8px;}
 .hod-pk-ht-row{display:flex;justify-content:space-between;font-family:'Oswald';font-size:11px;color:var(--muted);padding:3px 6px;border-radius:5px;}
 .hod-pk-ht-row b{color:var(--ink);}
@@ -1508,8 +1510,18 @@
 // da deluje takoj. Ko imaš players.json, ga daj poleg te datoteke.
 const PLAYER_TEAM={"Magic Johnson|1986-87":"Lakers","Isiah Thomas|1986-87":"Pistons","Michael Jordan|1986-87":"Bulls","Clyde Drexler|1986-87":"Blazers","Larry Bird|1986-87":"Celtics","Dominique Wilkins|1986-87":"Hawks","Kevin McHale|1986-87":"Celtics","Charles Barkley|1986-87":"76ers","Hakeem Olajuwon|1986-87":"Rockets","Kareem Abdul-Jabbar|1986-87":"Lakers","Moses Malone|1986-87":"Bullets","John Stockton|1986-87":"Jazz","Alex English|1986-87":"Nuggets","Karl Malone|1986-87":"Jazz","Chris Mullin|1986-87":"Warriors","John Stockton|1991-92":"Jazz","Magic Johnson|1991-92":"Lakers","Michael Jordan|1991-92":"Bulls","Clyde Drexler|1991-92":"Blazers","Scottie Pippen|1991-92":"Bulls","Chris Mullin|1991-92":"Warriors","Karl Malone|1991-92":"Jazz","Charles Barkley|1991-92":"76ers","David Robinson|1991-92":"Spurs","Patrick Ewing|1991-92":"Knicks","Tim Hardaway|1991-92":"Warriors","Reggie Miller|1991-92":"Pacers","Dominique Wilkins|1991-92":"Hawks","Dennis Rodman|1991-92":"Pistons","Hakeem Olajuwon|1991-92":"Rockets","Penny Hardaway|1995-96":"Magic","John Stockton|1995-96":"Jazz","Michael Jordan|1995-96":"Bulls","Reggie Miller|1995-96":"Pacers","Scottie Pippen|1995-96":"Bulls","Grant Hill|1995-96":"Pistons","Karl Malone|1995-96":"Jazz","Dennis Rodman|1995-96":"Bulls","Hakeem Olajuwon|1995-96":"Rockets","David Robinson|1995-96":"Spurs","Shaquille O'Neal|1995-96":"Magic","Latrell Sprewell|1995-96":"Warriors","Vin Baker|1995-96":"Bucks","Nick Van Exel|1995-96":"Lakers","Detlef Schrempf|1995-96":"Sonics","Gary Payton|1997-98":"Sonics","Tim Hardaway|1997-98":"Heat","Michael Jordan|1997-98":"Bulls","Mitch Richmond|1997-98":"Kings","Scottie Pippen|1997-98":"Bulls","Grant Hill|1997-98":"Pistons","Karl Malone|1997-98":"Jazz","Tim Duncan|1997-98":"Spurs","Shaquille O'Neal|1997-98":"Lakers","David Robinson|1997-98":"Spurs","Jason Kidd|1997-98":"Suns","Reggie Miller|1997-98":"Pacers","Glen Rice|1997-98":"Hornets","Chris Webber|1997-98":"Bullets","Dikembe Mutombo|1997-98":"Hawks","Allen Iverson|2000-01":"76ers","Jason Kidd|2000-01":"Suns","Kobe Bryant|2000-01":"Lakers","Ray Allen|2000-01":"Bucks","Vince Carter|2000-01":"Raptors","Tracy McGrady|2000-01":"Magic","Tim Duncan|2000-01":"Spurs","Chris Webber|2000-01":"Kings","Shaquille O'Neal|2000-01":"Lakers","Dikembe Mutombo|2000-01":"76ers","Gary Payton|2000-01":"Sonics","Reggie Miller|2000-01":"Pacers","Paul Pierce|2000-01":"Celtics","Kevin Garnett|2000-01":"Wolves","Alonzo Mourning|2000-01":"Heat","Steve Nash|2003-04":"Mavericks","Baron Davis|2003-04":"Hornets","Kobe Bryant|2003-04":"Lakers","Tracy McGrady|2003-04":"Magic","Peja Stojakovic|2003-04":"Kings","Ron Artest|2003-04":"Pacers","Kevin Garnett|2003-04":"Wolves","Tim Duncan|2003-04":"Spurs","Shaquille O'Neal|2003-04":"Lakers","Ben Wallace|2003-04":"Pistons","Sam Cassell|2003-04":"Wolves","Michael Redd|2003-04":"Bucks","Paul Pierce|2003-04":"Celtics","Dirk Nowitzki|2003-04":"Mavericks","Yao Ming|2003-04":"Rockets","Chris Paul|2008-09":"Hornets","Derrick Rose|2008-09":"Bulls","Kobe Bryant|2008-09":"Lakers","Dwyane Wade|2008-09":"Heat","LeBron James|2008-09":"Cavaliers","Paul Pierce|2008-09":"Celtics","Dirk Nowitzki|2008-09":"Mavericks","Pau Gasol|2008-09":"Lakers","Dwight Howard|2008-09":"Magic","Shaquille O'Neal|2008-09":"Suns","Rajon Rondo|2008-09":"Celtics","Joe Johnson|2008-09":"Hawks","Hedo Turkoglu|2008-09":"Magic","Zach Randolph|2008-09":"Clippers","Andrew Bynum|2008-09":"Lakers","Stephen Curry|2015-16":"Warriors","Russell Westbrook|2015-16":"Thunder","Klay Thompson|2015-16":"Warriors","James Harden|2015-16":"Rockets","Kevin Durant|2015-16":"Thunder","Kawhi Leonard|2015-16":"Spurs","Draymond Green|2015-16":"Warriors","LaMarcus Aldridge|2015-16":"Spurs","DeMarcus Cousins|2015-16":"Kings","Anthony Davis|2015-16":"Pelicans","Damian Lillard|2015-16":"Blazers","DeMar DeRozan|2015-16":"Raptors","Paul George|2015-16":"Pacers","Kevin Love|2015-16":"Cavaliers","Andre Drummond|2015-16":"Pistons","Stephen Curry|2018-19":"Warriors","Kyrie Irving|2018-19":"Celtics","James Harden|2018-19":"Rockets","Bradley Beal|2018-19":"Wizards","Kawhi Leonard|2018-19":"Raptors","Paul George|2018-19":"Thunder","Giannis Antetokounmpo|2018-19":"Bucks","Anthony Davis|2018-19":"Pelicans","Nikola Jokic|2018-19":"Nuggets","Joel Embiid|2018-19":"76ers","Damian Lillard|2018-19":"Blazers","Devin Booker|2018-19":"Suns","LeBron James|2018-19":"Lakers","Pascal Siakam|2018-19":"Raptors","Rudy Gobert|2018-19":"Jazz","Luka Doncic|2022-23":"Mavericks","Stephen Curry|2022-23":"Warriors","Donovan Mitchell|2022-23":"Cavaliers","Devin Booker|2022-23":"Suns","Jayson Tatum|2022-23":"Celtics","Jimmy Butler|2022-23":"Heat","Giannis Antetokounmpo|2022-23":"Bucks","Anthony Davis|2022-23":"Lakers","Nikola Jokic|2022-23":"Nuggets","Joel Embiid|2022-23":"76ers","Shai Gilgeous-Alexander|2022-23":"Thunder","Anthony Edwards|2022-23":"Wolves","Kawhi Leonard|2022-23":"Clippers","Domantas Sabonis|2022-23":"Kings","Bam Adebayo|2022-23":"Heat"};
 function playerTeam(name,season){return PLAYER_TEAM[name+'|'+season]||'';}
+// UNIVERZALCI — igralci ki so igrali več pozicij (postanejo WILD/joker v pokru, prožnejši v draftu)
+const VERSATILE={
+  "Magic Johnson":["PG","SF","PF"], "LeBron James":["SF","PF","PG"], "Scottie Pippen":["SF","SG","PF"],
+  "Kevin Garnett":["PF","C","SF"], "Kevin Durant":["SF","PF","SG"], "Giannis Antetokounmpo":["PF","SF","C"],
+  "Draymond Green":["PF","C","SF"], "Grant Hill":["SF","SG","PG"], "Penny Hardaway":["PG","SG","SF"],
+  "Luka Doncic":["PG","SG","SF"], "Nikola Jokic":["C","PF","PG"], "Ben Wallace":["C","PF","SF"],
+  "Lamar Odom":["PF","SF","C"], "Tracy McGrady":["SG","SF","PG"], "Charles Barkley":["PF","SF","C"],
+  "Jimmy Butler":["SF","SG","PF"], "Pascal Siakam":["PF","SF","C"], "Bam Adebayo":["C","PF","SF"]
+};
+function playerPos3(name,pos){ return VERSATILE[name] || [pos]; }
 const P=(pos,name,season,pts,reb,ast,rating)=>({pos,name,season,pts,reb,ast,rating,
-  era:seasonEra(season),positions:[pos],playedFor:playerTeam(name,season)});
+  era:seasonEra(season),positions:playerPos3(name,pos),playedFor:playerTeam(name,season)});
 function seasonEra(s){const y=parseInt(s);const d=Math.floor(y/10)*10;
   return({1970:"70s",1980:"80s",1990:"90s",2000:"2000s",2010:"2010s",2020:"2020s"})[d]||d+"s";}
 let POOL=[
@@ -5186,14 +5198,33 @@ function startPoker(){
 }
 const POKER_RANKS=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const POKER_SUITS=[{s:'♠',c:'#1a1a1a'},{s:'♥',c:'#d8334a'},{s:'♦',c:'#d8334a'},{s:'♣',c:'#1a1a1a'}];
+// ERA -> SUIT (barva = obdobje). Flush = igralci iste dobe.
+function eraSuit(season){
+  const y=parseInt(season)||0;
+  if(y<1980) return POKER_SUITS[0];      // ♠ klasika (pred 1980)
+  if(y<2000) return POKER_SUITS[1];      // ♥ zlata doba (80-90s)
+  if(y<2010) return POKER_SUITS[2];      // ♦ 2000s
+  return POKER_SUITS[3];                  // ♣ moderna (2010+)
+}
+// POZICIJA -> RANG (vsaka pozicija 2-3 vrednosti). Lestvica = razpon pozicij.
+const POS_RANKS={
+  PG:['A','K'], SG:['Q','J'], SF:['10','9'], PF:['8','7'], C:['6','5','4']
+};
+function posRank(p){
+  const pos=(playerPositions(p)[0])||p.pos||'SF';
+  const opts=POS_RANKS[pos]||['9','8'];
+  // izberi vrednost znotraj pozicije glede na rating (boljši = višja vrednost para)
+  const idx=(p.rating>=88)?0:(p.rating>=80?1:Math.min(opts.length-1,2));
+  return opts[Math.min(idx,opts.length-1)];
+}
 function pokerPick(){
   return pokerIdentity(pokerState.list[Math.floor(Math.random()*pokerState.list.length)]);
 }
-// doda poker identiteto (vrednost/barva/wild) poljubni karti
+// doda poker identiteto: suit=era, rang=pozicija, wild=univerzalec (igra 3+ pozicije)
 function pokerIdentity(base){
-  const isWild=Math.random()<0.05;
-  const rank=POKER_RANKS[Math.floor(Math.random()*POKER_RANKS.length)];
-  const suit=POKER_SUITS[Math.floor(Math.random()*POKER_SUITS.length)];
+  const isWild=(playerPositions(base).length>=3); // univerzalec = joker
+  const rank=posRank(base);
+  const suit=eraSuit(base.season);
   return {...base, pkWild:isWild, pkRank:rank, pkSuit:suit.s, pkSuitCol:suit.c};
 }
 // vrednost ranga za lestvico
@@ -5375,6 +5406,13 @@ function renderPoker(finished, firstRender){
       const active=liveHand.name.toLowerCase().includes(n.toLowerCase().split(' ')[0]) || (n==='Par'&&liveHand.key==='pair') || (n==='Dva para'&&liveHand.key==='twopair') || (n==='Tris'&&liveHand.key==='trips') || (n==='Lestvica'&&liveHand.key==='straight') || (n==='Barva'&&liveHand.key==='flush') || (n==='Full House'&&liveHand.key==='full') || (n==='Poker (4)'&&liveHand.key==='four') || (n==='Poker (5)'&&liveHand.key==='five') || (n==='Straight Flush'&&liveHand.key==='sflush') || (liveHand.key==='royal'&&n.includes('Royal'));
       return `<div class="hod-pk-ht-row ${active?'on':''}"><span>${n}</span><b>${m}</b></div>`;
     }).join('')}
+    <div class="hod-pk-ht-legend">
+      <div class="hod-pk-ht-ltitle">♠ Barva = obdobje</div>
+      <div>♠ pred '80 · ♥ 80-90s · ♦ 2000s · ♣ 2010+</div>
+      <div class="hod-pk-ht-ltitle" style="margin-top:5px">🔢 Številka = pozicija</div>
+      <div>PG: A,K · SG: Q,J · SF: 10,9 · PF: 8,7 · C: 6,5</div>
+      <div style="margin-top:5px">★ = univerzalec (joker)</div>
+    </div>
   </div>`;
   screen.innerHTML=`
     <div class="hod-result hod-fade">
