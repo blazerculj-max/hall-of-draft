@@ -2950,7 +2950,7 @@ async function loadDataset(){
           pos:p.pos,name:p.name,season:p.season,
           pts:p.pts,reb:p.reb,ast:p.ast,rating:p.rating,
           fg3a:p.fg3a||0,blk:p.blk||0,mpg:p.mpg||0,
-          era:s.era,gp:p.gp,team:p.team||"",pid:p.pid||0,
+          era:s.era,gp:p.gp,team:p.team||"",playedFor:p.team||p.playedFor||"",pid:p.pid||0,
           positions:(p.positions&&p.positions.length)?p.positions:[p.pos]
         }))
       })).filter(s=>s.players.length>=5);
@@ -8026,7 +8026,7 @@ function makeOffer(){
       <div class="hod-pinfo">
         <div class="hod-pname">${p.name}</div>
         <div class="hod-pteamline">
-          ${p.playedFor?`<span class="hod-pteam-badge">${p.playedFor}</span>`:''}
+          ${(p.playedFor||p.team)?`<span class="hod-pteam-badge">${p.playedFor||p.team}</span>`:''}
           <span class="hod-pszn">${p.season}</span>
           ${canTake?'':'<span class="hod-pfull">pozicije polne</span>'}
         </div>
@@ -8569,7 +8569,7 @@ function mpShowPick(){
       <div class="hod-pinfo">
         <div class="hod-pname">${p.name}</div>
         <div class="hod-pteamline">
-          ${p.playedFor?`<span class="hod-pteam-badge">${p.playedFor}</span>`:''}
+          ${(p.playedFor||p.team)?`<span class="hod-pteam-badge">${p.playedFor||p.team}</span>`:''}
           <span class="hod-pszn">${p.season}</span>
           ${why?`<span class="hod-pfull">${why}</span>`:''}
         </div>
