@@ -730,6 +730,15 @@
 .hod-mom3-cell.empty.target{border-color:#ff4d6d;animation:miniTargetPulse 1s ease-in-out infinite;}
 .hod-mom3-q{font-family:'Anton';font-size:14px;color:rgba(255,255,255,.4);}
 .hod-mom3-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.hod-mompart-bg{position:absolute;inset:0;width:100%;height:100%;}
+/* moment tretjina v paketu (flip front) — pokaže točno svojo tretjino slike */
+.hod-mompart-fill{position:absolute;inset:0;width:100%;height:100%;}
+.hod-sticker-mompart .hod-stk-photo{background:#2a1820;}
+.hod-sticker-mompart .hod-stk-photo::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  box-shadow:inset 0 0 0 2px rgba(255,77,109,.5);}
+/* puzzle namig: rob tretjine */
+.hod-sticker-mompart .hod-stk-photo::after{content:'';position:absolute;top:0;bottom:0;width:2px;z-index:3;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.3) 0 6px,transparent 6px 12px);right:0;}
 .hod-mom3-num{position:absolute;bottom:2px;right:3px;font-size:9px;font-weight:800;color:#fff;background:rgba(0,0,0,.6);padding:0 4px;border-radius:4px;}
 .hod-mom3-label{font-family:'Oswald';font-size:11px;color:var(--ink);margin-top:5px;text-align:center;}
 .hod-mom3-label b{color:#ff4d6d;}
@@ -5128,8 +5137,10 @@ function momentImgTag(m){
 }
 // img za eno tretjino momenta (1/2/3) — pokaže levo/sredino/desno
 function momentPartImgTag(baseId, part, cls){
+  // slika je razdeljena na 3 NAVPIČNE tretjine; del N pokaže svojo tretjino
+  // background-size 300% (slika 3× širša od okvirja) + position izbere levo/sredino/desno tretjino
   const xpos = part===1?'0%' : part===2?'50%' : '100%';
-  return `<img class="${cls||'hod-mompart-img'}" src="assets/moments/${baseId}.png" style="object-position:${xpos} center" alt="" onerror="this.style.display='none'">`;
+  return `<div class="${cls||'hod-mompart-img'} hod-mompart-bg" style="background-image:url('assets/moments/${baseId}.png');background-size:300% 100%;background-position:${xpos} center;background-repeat:no-repeat;"></div>`;
 }
 
 // zbirka unikatnih kartic iz POOL-a: rating 70+, ena kartica = unikaten pid (najboljša sezona)
@@ -7875,14 +7886,14 @@ function showPackOpening(){
         const tc1 = !isMoment ? teamColor(c.team) : '#ff4d6d';
         const tc2 = !isMoment ? teamColor2(c.team) : '#b3324a';
         const front = isMoment
-          ? `<div class="hod-flip-face hod-flip-front hod-sticker hod-sticker-moment rar-${c.rarity}" style="--tc1:${tc1};--tc2:${tc2}">
+          ? `<div class="hod-flip-face hod-flip-front hod-sticker hod-sticker-moment ${c.part?'hod-sticker-mompart':''} rar-${c.rarity}" style="--tc1:${tc1};--tc2:${tc2}">
                ${r.isNew?'<div class="hod-flip-new">NOVO</div>':'<div class="hod-flip-dup">×2</div>'}
-               <div class="hod-stk-badge">${c.slovenski?'🇸🇮':(c.lowlight?'💀':'⭐')}</div>
-               <div class="hod-stk-photo">${hasMomentImg&&hasMomentImg(c.id)?`<img src="assets/moments/${c.id}.png" onerror="this.style.display='none'">`:avatarImg(c.pid,'')}</div>
+               <div class="hod-stk-badge">${c.part?`🧩 ${c.part}/3`:(c.slovenski?'🇸🇮':(c.lowlight?'💀':'⭐'))}</div>
+               <div class="hod-stk-photo">${c.part&&c.baseId?momentPartImgTag(c.baseId,c.part,'hod-mompart-fill'):(hasMomentImg&&hasMomentImg(c.id)?`<img src="assets/moments/${c.id}.png" onerror="this.style.display='none'">`:avatarImg(c.pid,''))}</div>
                <div class="hod-stk-info">
                  <div class="hod-stk-nm">${escapeHtml(c.name||'')}</div>
                  <div class="hod-stk-mom">${escapeHtml(c.moment||'')}</div>
-                 <div class="hod-stk-rar" style="color:${RARITY_DEFS[c.rarity].col}">${RARITY_DEFS[c.rarity].name}</div>
+                 <div class="hod-stk-rar" style="color:${RARITY_DEFS[c.rarity].col}">${c.part?`Del ${c.part} od 3`:RARITY_DEFS[c.rarity].name}</div>
                </div>
              </div>`
           : `<div class="hod-flip-face hod-flip-front hod-sticker ${eliteCls} rar-${c.rarity}" style="--tc1:${tc1};--tc2:${tc2}">
