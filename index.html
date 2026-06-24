@@ -2876,6 +2876,24 @@ async function marketCancel(id){
   return rows.length?rows[0]:null;
 }
 // prevzem kupljenih kartic: poišči ponudbe, kjer sem kupec, in jih dodaj v zbirko
+// prevzem ZASLUŽKA: poišči moje ponudbe, ki so prodane (seller=me, status=sold), in pripiši kovance
+async function marketCollectSales(){
+  const me=currentUser(); if(!me) return 0;
+  const url=`${SUPA_URL}/rest/v1/market?seller=eq.${encodeURIComponent(me)}&status=eq.sold&order=created_at.desc&limit=100`;
+  const res=await fetch(url, { headers:SUPA_HEADERS });
+  if(!res.ok) return 0;
+  const rows=await res.json();
+  let paid={}; try{ paid=JSON.parse(storeGet('hod-market-paid')||'{}'); }catch(e){}
+  let earned=0, count=0;
+  rows.forEach(r=>{
+    if(paid[r.id]) return;          // že izplačano
+    const price=r.price||0;
+    if(price>0){ earned+=price; count++; }
+    paid[r.id]=true;
+  });
+  if(earned>0){ addCoins(earned); storeSet('hod-market-paid', JSON.stringify(paid)); }
+  return earned;
+}
 async function marketCollectPurchases(){
   const me=currentUser(); if(!me) return 0;
   const url=`${SUPA_URL}/rest/v1/market?buyer=eq.${encodeURIComponent(me)}&status=eq.sold&order=created_at.desc&limit=100`;
@@ -7192,6 +7210,8 @@ async function renderMarket(body){
   const mb=body.querySelector('#hod-mkt-body');
   // ob vstopu prevzemi morebitne kupljene kartice
   try{ const got=await marketCollectPurchases(); if(got>0){ hodToast(`📦 <b>${got} kupljenih kartic</b> dodanih med nenalepljene!`); updateUnstuckBadge(); } }catch(e){}
+  // in prevzemi zaslužek od prodanih kartic
+  try{ const earned=await marketCollectSales(); if(earned>0){ hodToast(`🪙 <b>+${earned} kovancev</b> od prodaje na marketu!`); refreshCoinDisplays&&refreshCoinDisplays(); } }catch(e){}
   if(_marketView==='browse') return renderMarketBrowse(mb);
   if(_marketView==='sell') return renderMarketSell(mb);
   if(_marketView==='mine') return renderMarketMine(mb);
