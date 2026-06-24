@@ -9315,7 +9315,6 @@ async function postToLeaderboard(ev, sim, btn){
     goal_id:g?g.id:null, goal_done:goalDone,
     overall:lbScore, chem:ev.chem.chem,
     sim_wins: sim?sim.avgWins:null, sim_title: sim?sim.titlePct:null,
-    draft_kind: draftKind, picks: teamSize(),
     roster: rosterForSave()||[]
   };
   try{
