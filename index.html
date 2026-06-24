@@ -137,11 +137,17 @@
 .hod-pcard-photo-wild{display:flex;align-items:center;justify-content:center;}
 .hod-pcard-photo-wild span{font-family:'Anton';font-size:26px;color:var(--gold);}
 .hod-pinfo{flex:1;min-width:0;}
-.hod-pname{font-family:'Oswald';font-size:18px;font-weight:600;line-height:1.1;color:var(--ink);}
+.hod-pname{font-family:'Oswald';font-size:20px;font-weight:700;line-height:1.05;color:var(--ink);}
 .hod-pseason{font-size:12px;color:var(--muted);letter-spacing:.5px;}
-.hod-pstats{display:flex;gap:12px;margin-top:5px;font-size:12px;}
-.hod-pstats b{font-family:'Bebas Neue';font-size:17px;color:var(--amber);display:block;line-height:1;}
-.hod-pstats span{color:var(--muted);font-size:10px;letter-spacing:1px;}
+.hod-pstats{display:flex;gap:16px;margin-top:7px;font-size:14px;}
+.hod-pstats div{display:flex;flex-direction:column;align-items:center;line-height:1;}
+.hod-pstats b{font-family:'Anton';font-size:20px;color:var(--ink);}
+.hod-pstats span{font-size:9px;color:var(--muted);letter-spacing:.5px;margin-top:1px;}
+.hod-pteamline{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;}
+.hod-pteam-badge{font-family:'Oswald';font-weight:700;font-size:11px;color:#1a1206;background:var(--gold-warm);
+  border-radius:5px;padding:1px 8px;letter-spacing:.3px;text-transform:uppercase;}
+.hod-pszn{font-size:12px;color:var(--muted);letter-spacing:.5px;}
+.hod-pfull{font-size:10px;color:var(--gold-deep);font-style:italic;}
 .hod-prating{font-family:'Anton';font-size:30px;flex:none;}
 .hod-r-elite{color:#ffd60a;text-shadow:0 0 12px rgba(255,214,10,.5);}
 .hod-r-good{color:var(--amber);} .hod-r-mid{color:#c9a87a;} .hod-r-low{color:#a08862;}
@@ -1447,7 +1453,7 @@
   .hod-pname{font-size:15px;}
   .hod-pseason{font-size:11px;}
   .hod-pstats{gap:9px;}
-  .hod-pstats b{font-size:15px;}
+  .hod-pstats b{font-size:18px;}
   .hod-prating{font-size:25px;}
   .hod-price{font-size:13px;}
   .hod-chem-mini{font-size:10px;padding:2px 6px;}
@@ -8019,7 +8025,11 @@ function makeOffer(){
       <div class="hod-pcard-photo">${avatarImg(p.pid,'hod-pcard-img')}</div>
       <div class="hod-pinfo">
         <div class="hod-pname">${p.name}</div>
-        <div class="hod-pseason">${p.playedFor?`<b style="color:var(--gold-deep)">${p.playedFor}</b> · `:''}${p.season}${canTake?'':' · pozicije polne'}</div>
+        <div class="hod-pteamline">
+          ${p.playedFor?`<span class="hod-pteam-badge">${p.playedFor}</span>`:''}
+          <span class="hod-pszn">${p.season}</span>
+          ${canTake?'':'<span class="hod-pfull">pozicije polne</span>'}
+        </div>
         <div class="hod-pstats">
           <div><b>${p.pts}</b><span>PPG</span></div>
           <div><b>${p.reb}</b><span>RPG</span></div>
@@ -8558,7 +8568,11 @@ function mpShowPick(){
       <div class="hod-pcard-photo">${avatarImg(p.pid,'hod-pcard-img')}</div>
       <div class="hod-pinfo">
         <div class="hod-pname">${p.name}</div>
-        <div class="hod-pseason">${p.playedFor?`<b style="color:var(--gold-deep)">${p.playedFor}</b> · `:''}${p.season}${why?' · '+why:''}</div>
+        <div class="hod-pteamline">
+          ${p.playedFor?`<span class="hod-pteam-badge">${p.playedFor}</span>`:''}
+          <span class="hod-pszn">${p.season}</span>
+          ${why?`<span class="hod-pfull">${why}</span>`:''}
+        </div>
         <div class="hod-pstats">
           <div><b>${p.pts}</b><span>PPG</span></div>
           <div><b>${p.reb}</b><span>RPG</span></div>
