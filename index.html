@@ -3311,8 +3311,34 @@ function latestSeason(){
   return best;
 }
 // zgradi moč vsake NBA ekipe iz dejanskih igralcev zadnje sezone
+// Sezona, ki predstavlja "ligo". Namenoma fiksna in ne najnovejša: 2004-05 ima
+// spodoben razpon med dobrimi in slabimi ekipami in — za razliko od večine sezon
+// — model iz nje pravilno postavi dejansko najboljšo ekipo (Phoenix 62-20) na
+// prvo mesto. Po filtru CONFERENCE ostane 27 ekip. Če sezone v datasetu ni,
+// pademo nazaj na najnovejšo.
+const LEAGUE_SEASON="2004-05";
+// Prave ekipe so v resnici igrale skupaj, zato po istem kemijskem modelu, ki ga
+// uporablja igralec, dobijo poln bonus za "ista ekipa + ista sezona" (+8 na
+// igralca v playerChemAdj). Brez tega bi bila primerjava neenaka: igralčeva
+// kemija bi štela, kemija pravih ekip pa ne.
+const LEAGUE_CHEM=8;
+// Ciljni standardni odklon moči v ligi. Surove moči so prestisnjene (sd ~1.4),
+// zato jih raztegnemo. Razteg je vezan na dejanski odklon sezone, ne na fiksno
+// število, da umeritev zdrži menjavo LEAGUE_SEASON (sezone se po razgibanosti
+// močno razlikujejo, sd od 0.96 do 2.02).
+const LEAGUE_TARGET_SD=3.0;
+// Razteg zgoraj velja le ZNOTRAJ ozkega razpona lige (surove moči 80..86). Tvoja
+// ekipa pa je sestavljena iz 56 sezon in gre lahko krepko čez — če jo pomnožimo z
+// istim faktorjem, ekstrapolira v nesmisel (peterka samih 70 je dobila 9-73,
+// peterka 99 pa 74-8). Zato odklon tvoje ekipe peljemo skozi tanh: blizu lige je
+// preslikava enaka linearni, na robovih pa se zajezi. LEAGUE_SAT je strop odklona
+// v točkah moči. Izmerjeno pri 26 (povprečen rating peterke -> rekord):
+//   70 -> 14-68 | 78 -> 24-58 | 84 -> 42-40 | 88 -> 53-29 | 92 -> 61-21 | 99 -> 67-15
+// Strop 67-15 je pod rekordom NBA (73-9); prej je bil 82-0 dosegljiv.
+// Kemija pri isti kakovosti igralcev prinese ~6-7 zmag in podvoji % za naslov.
+const LEAGUE_SAT=26;
 function buildLeague(){
-  const season=latestSeason();
+  const season=POOL.some(s=>s.year===LEAGUE_SEASON)?LEAGUE_SEASON:latestSeason();
   const sObj=POOL.find(s=>s.year===season);
   const teams={};
   if(sObj){
@@ -3333,11 +3359,15 @@ function buildLeague(){
     str=str/wsum;
     league.push({abbr:t,name:TEAM_NAME[t]||t,conf:CONFERENCE[t],rawStrength:str});
   });
-  // RAZTEGNI razpon moči okoli povprečja (surove moči so prestisnjene -> realen
-  // NBA razpon ~64..21 zmag). Shranimo leagueMean za kalibracijo uporabnika.
+  // RAZTEGNI razpon moči okoli povprečja (surove moči so prestisnjene). Razteg
+  // je vezan na dejanski odklon sezone, ne na fiksno število, da umeritev zdrži
+  // tudi, če LEAGUE_SEASON zamenjaš — sezone se po razgibanosti močno razlikujejo
+  // (sd od 0.96 do 2.02). Shranimo leagueMean in K za kalibracijo uporabnika.
   const leagueMean=league.reduce((a,t)=>a+t.rawStrength,0)/(league.length||1);
-  const K=1.5;
-  league.forEach(t=>{ t.strength=leagueMean+(t.rawStrength-leagueMean)*K; });
+  const variance=league.reduce((a,t)=>a+Math.pow(t.rawStrength-leagueMean,2),0)/(league.length||1);
+  const sd=Math.sqrt(variance)||1;
+  const K=LEAGUE_TARGET_SD/sd;
+  league.forEach(t=>{ t.strength=leagueMean+(t.rawStrength-leagueMean)*K+LEAGUE_CHEM; });
   return {season, league, leagueMean, stretchK:K};
 }
 
@@ -9356,17 +9386,28 @@ function setMpFrame(){
 function setMpAction(html){ setMpFrame(); document.getElementById('hod-action').innerHTML=html; }
 
 // ---- SIMULACIJA ----
+// SUROVA moč iz ratingov — isto merilo kot buildLeague (uteženo povprečje top 8).
+// Namenoma NE uporablja effRating: ta vsebuje kemijski dodatek (do +8 na igralca),
+// kemija pa se prišteje posebej v userStrengthFor(). Prej se je štela dvakrat
+// (enkrat v effRating, enkrat kot chem*0.5) in to je bil glavni razlog za
+// napihnjene rekorde. Kazen za napačno pozicijo ostane, ker je del gradnje ekipe.
 function userTeamStrength(){
-  const ev=evaluateTeam();
   const pool=quickMode?roster.filter(p=>p.role==="U1"):roster;
-  const sorted=[...pool].map(p=>effRating(p)).sort((a,b)=>b-a).slice(0,8);
+  const sorted=[...pool].map(p=>Math.max(20,p.rating-posPenalty(p))).sort((a,b)=>b-a).slice(0,8);
   const w=[0.22,0.18,0.15,0.12,0.1,0.09,0.08,0.06];
   let str=0,wsum=0;
   sorted.forEach((er,i)=>{const wi=w[i]||0.05;str+=er*wi;wsum+=wi;});
-  str=str/wsum;
-  str += ev.chem.chem*0.5;
-  str += 2.5; // blagi radodarni bonus — tvoja ekipa nekoliko lažje zmaguje (realno, a nagrajujoče)
-  return str;
+  return str/wsum;
+}
+// Moč tvoje ekipe na isti lestvici kot ligaške: razteg okoli povprečja lige, nato
+// kemija. Prave ekipe dobijo na tem mestu LEAGUE_CHEM (igrale so skupaj), ti pa
+// toliko, kolikor si je je nagradil — zato je kemija zdaj vredna ~8 zmag.
+function userStrengthFor(full){
+  const raw=userTeamStrength();
+  const ev=evaluateTeam();
+  const dev=(raw-full.leagueMean)*(full.stretchK||1);
+  const sat=LEAGUE_SAT*Math.tanh(dev/LEAGUE_SAT);
+  return full.leagueMean+sat+ev.chem.chem*0.5;
 }
 function winProb(a,b,home){
   const HCA=2.5;             // home court advantage (v točkah moči)
@@ -9398,7 +9439,10 @@ function monteCarlo(myStr, full, myConf, runs){
     const myWins=simSeason(myStr, full.league);
     winsSum+=myWins; winsArr.push(myWins);
     const standings=confTeams.filter(t=>!t.mine).map(t=>{
-      return {abbr:t.abbr, wins:41+(t.strength-avgStr)*1.6 + (Math.random()-0.5)*10};
+      // 1.4 = naklon "zmage na točko moči" pri D=30 v winProb. Mora se ujemati s
+      // simSeason, sicer se tvoje zmage primerjajo z lestvico v drugem merilu in
+      // uvrstitev (ter s tem playoff/naslov %) je napačna.
+      return {abbr:t.abbr, wins:41+(t.strength-avgStr)*1.4 + (Math.random()-0.5)*10};
     });
     standings.push({abbr:"__ME__", wins:myWins});
     standings.sort((a,b)=>b.wins-a.wins);
@@ -10120,8 +10164,7 @@ function autoSimulate(){
   // najšibkejša ekipa
   const weakest=[...full.league].sort((a,b)=>a.strength-b.strength)[0];
   const conf=weakest.conf;
-  const rawMy=userTeamStrength();
-  const myStr=full.leagueMean+(rawMy-full.leagueMean)*(full.stretchK||1.5);
+  const myStr=userStrengthFor(full);
   const simLeague={season:full.season, leagueMean:full.leagueMean, stretchK:full.stretchK,
     league:full.league.map(t=>t.abbr===weakest.abbr?{...t,strength:myStr,name:"TVOJA EKIPA",mine:true}:t)};
   const res=monteCarlo(myStr, simLeague, conf, 1000);
@@ -10165,9 +10208,7 @@ function showTeamPicker(){
 function runSimulation(abbr, conf, full){
   phase="simulating";
   const replaced=full.league.find(t=>t.abbr===abbr);
-  // uporabnikova surova moč -> raztegni na isto lestvico kot ligaške moči
-  const rawMy=userTeamStrength();
-  const myStr=full.leagueMean+(rawMy-full.leagueMean)*(full.stretchK||1.5);
+  const myStr=userStrengthFor(full);
   const simLeague={season:full.season, leagueMean:full.leagueMean, stretchK:full.stretchK,
     league:full.league.map(t=>t.abbr===abbr?{...t,strength:myStr,name:"TVOJA EKIPA",mine:true}:t)};
   screen.innerHTML=`<div class="hod-slot-stage hod-fade">
